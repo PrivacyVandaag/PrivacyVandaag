@@ -29,8 +29,8 @@ The app is not distributed through Google App store, therefore its own update fu
 * search through your articles
 
 ## How to contribute ?
-If you have any idea to improve Privacy Vandaag, fell free to add it [here](https://github.com/PrivacyVandaag/PrivacyVandaag/issues).  
+If you have any idea to improve Privacy Vandaag, feel free to add it [here](https://github.com/PrivacyVandaag/PrivacyVandaag/issues).  
 
 ## Links
 GitHub project: https://github.com/PrivacyVandaag/PrivacyVandaag 
-Privacy Vandaag is a fork of [spaRSS](https://github.com/Etuldan/spaRSS)
+Privacy Vandaag is a fork from [spaRSS](https://github.com/Etuldan/spaRSS)
