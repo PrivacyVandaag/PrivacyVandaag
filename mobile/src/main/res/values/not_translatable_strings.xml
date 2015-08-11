@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="about_us_copyright" translatable="false"><![CDATA[
+       Privacy Vandaag is een uitgave van Privacy&nbsp;Barometer.
+    ]]></string>
+    <string name="about_us_content" translatable="false"><![CDATA[
+    <b>Meer informatie</b><br />
+    Wilt u meer informatie over deze app of heeft u vragen of opmerkingen, gaat u dan
+    naar https://www.privacybarometer.nl/privacyvandaag. Daar vindt u een korte handleiding,
+    antwoord op veelgestelde vragen en kunt u suggesties ter verbetering in de commentaren achterlaten.<br />
+    <br />
+
+    Deze app is een vrij-verkrijgbare open source toepassing. U kunt deze software verder distibueren of aanpassen
+    voor eigen gebruik onder de voorwaarden van GNU General Public License versie 3 of een later versie zoals
+    die zijn gepubliceerd door de Free Software Foundation. Kijk voor meer informatie hierover op http://www.gnu.org/licenses<br/>
+        <br />
+    De app is gebaseerd op de open source Flym / Spa rss-reader en Sparse rss.
+    ]]></string>
+
+    <string-array name="settings_interval_values" translatable="false">
+        <!-- !!!!! NOTICE: These options corresponds with the values in strings.xml  -->
+        <!--    <item>60000</item>      1 minuut -->
+        <!--    <item>300000</item>     5 minuten -->
+        <!--    <item>900000</item>     15 minuten -->
+        <!--    <item>1800000</item>    30 minuten -->
+        <item>3600000</item>
+        <item>7200000</item>    <!-- 2 uur, standaard instelling vind je in xml > general_preferences.xml -->
+        <item>21600000</item>
+        <item>43200000</item>
+        <item>86400000</item>
+    </string-array>
+    <string-array name="settings_keep_time_values" translatable="false">
+        <item>1</item>
+        <item>2</item>
+        <item>4</item>  <!-- standaard instelling bewaartermijn van de artikelen 4 dagen, aangepast naar 30 dagen -->
+        <item>7</item>
+        <item>14</item>
+        <item>30</item> <!-- nieuwe standaard instelling bewaartermijn van de artikelen 30 dagen -->
+        <item>61</item>
+        <item>91</item>
+        <item>0</item>
+    </string-array>
+    <string-array name="settings_font_size_values" translatable="false">
+        <item>-2</item>
+        <item>-1</item>
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+        <item>3</item>
+    </string-array>
+    <string-array name="settings_proxy_types" translatable="false">
+        <item>0</item>
+        <item>1</item>
+    </string-array>
+    <string-array name="settings_proxy_types_names" translatable="false">
+        <item>HTTP</item>
+        <item>SOCKS</item>
+    </string-array>
+    <string-array name="settings_preload_image_modes_values" translatable="false">
+        <item>NEVER_DISPLAYED</item>
+        <item>WIFI_ONLY_PRELOAD</item>
+        <item>ALWAYS_PRELOAD</item>
+    </string-array>
+</resources>

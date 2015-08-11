@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto"
+      xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- ModPrivacyVandaag: Onderstaande 'menu_edit' uit het ActionBar menu halen.
+            Er mogen geen feeds worden gewijzigd, maar alleen worden verwijderd.
+             Wordt opgeroepen vanuit fragment > EditFeedsListFragment.java-->
+    <!--
+    <item
+        android:id="@+id/menu_edit"
+        android:icon="@drawable/content_edit"
+        android:title="@string/context_menu_edit"
+        app:showAsAction="always"
+        tools:ignore="AlwaysShowAction"/>
+    -->
+    <item
+        android:id="@+id/menu_delete"
+        android:icon="@drawable/content_discard"
+        android:title="@string/context_menu_delete"
+        app:showAsAction="always"
+        tools:ignore="AlwaysShowAction"/>
+
+</menu>

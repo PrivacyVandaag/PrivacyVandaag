@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8"?><!--
+ Copyright (c) 2015 Kalahiri
+ Copyright (c) 2015 Arnaud Renaud-Goud
+ Copyright (c) 2012-2015 Frederic Julian
+ Copyright (c) 2010-2012 Stefan Handschuh
+
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+
+ The above copyright notice and this permission notice shall be included in
+ all copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+-->
+<resources>
+
+    <!-- GENERAL -->
+    <string name="app_name">Privacy Vandaag</string>
+    <string name="about_this_app">Over Privacy Vandaag</string>
+    <string name="welcome_title">Van welke organisatie wilt u het nieuws volgen?</string>
+    <string name="never">nog nooit</string>
+    <string name="update">laatste update</string>
+    <string name="colon">:\u00A0</string>
+    <string name="menu_settings">Instellingen</string>
+    <string name="menu_refresh">Verversen</string>
+    <string name="menu_all_read">Markeer alles als gelezen</string>
+    <string name="all_feeds">Alle artikelen</string>
+    <string name="error">Fout</string>
+    <string name="network_error">Er is geen netwerkverbinding</string>
+    <string name="loading">Loading…</string>
+    <string name="no_result">No result</string>
+    <string name="drawer_open">Open navigation drawer</string>
+    <string name="drawer_close">Close navigation drawer</string>
+    <string name="back_again_to_quit">Klik \u0027terug\u0027 nog een keer om af te sluiten.</string>
+
+    <!-- FEEDS -->
+    <string name="feeds">Organisaties</string>
+    <string name="menu_add_feed">Add feed</string>
+    <string name="no_feeds">No feeds</string>
+    <string name="no_filters">No rules</string>
+    <string name="context_menu_delete">Delete</string>
+    <string name="edit_feed_title">Edit feed</string>
+    <string name="new_feed_title">New feed</string>
+    <string name="context_menu_edit">Edit</string>
+    <string name="menu_add_group">Add group</string>
+    <string name="menu_import">Import from OPML</string>
+    <string name="menu_export">Export to OPML</string>
+    <string name="error_feed_error">De website van de organisatie is onbereikbaar.</string>
+    <string name="error_feed_process">De artikelen kunnen niet worden ingelezen.</string>
+    <string name="error_feed_url_exists">The address already exists.</string>
+    <string name="error_feed_import">The selected file could not be imported.</string>
+    <string name="error_feed_export">The export has failed. Make sure you have a writable SD-card
+        mounted.
+    </string>
+    <string name="error_external_storage_not_available">The external storage (e.g. SD-card) is not
+        available.
+    </string>
+    <string name="feed_url">URL address</string>
+    <string name="optional">(optional)</string>
+    <string name="website_or_feed">(website or feed)</string>
+    <string name="feed_cookie">Authentication Cookie</string>
+    <string name="cookiename">Name</string>
+    <string name="cookievalue">Value</string>
+    <string name="tab_feed_title">Feed</string>
+    <string name="tab_filters_title">Filter</string>
+    <string name="feed_title">TITLE</string>
+    <string name="feed_filters">FILTER RULES</string>
+    <string name="filter_add_title">Add rule</string>
+    <string name="filter_delete_title">Delete rule</string>
+    <string name="filter_edit_title">Edit rule</string>
+    <string name="filter_is_regex">is a regular expression</string>
+    <string name="filter_apply_to_title">Apply to title</string>
+    <string name="filter_apply_to_content">Apply to content</string>
+    <string name="accept">ACCEPT</string>
+    <string name="reject">REJECT</string>
+    <string name="feed_search">Feed search</string>
+    <string name="select_file">Select file (SD-root)</string>
+    <string name="question_delete_feed">Do you really want to delete this feed?</string>
+    <string name="question_delete_group">Do you really want to delete this group and all of its
+        feeds?
+    </string>
+    <string name="question_delete_filter">Do you really want to delete this filter?</string>
+    <string name="add_group_title">Select group name</string>
+    <string name="edit_group_title">Edit group name</string>
+    <string name="message_exported_to">Exported into %s.</string>
+    <string name="to_group_title">Feed move action</string>
+    <string name="to_group_message">You can either put this feed into or above this group. What do
+        you want to do?
+    </string>
+    <string name="to_group_above">Above the group</string>
+    <string name="to_group_into">Into the group</string>
+    <string name="add_custom_feed">Add a custom feed or search for one</string>
+    <string name="google_news_title">Google News topics</string>
+    <string name="google_news_indicator">Select one or several topics to add. Some of them may not be provided by Google for your language.</string>
+    <string name="google_news_top_stories">Top Stories</string>
+    <string name="google_news_world">World</string>
+    <string name="google_news_business">Business</string>
+    <string name="google_news_technology">Technology</string>
+    <string name="google_news_entertainment">Entertainment</string>
+    <string name="google_news_sports">Sports</string>
+    <string name="google_news_science">Science</string>
+    <string name="google_news_health">Health</string>
+
+    <!-- ENTRIES -->
+    <string name="all">Alle artikelen</string>
+    <string name="no_entries">Geen artikelen</string>
+    <string name="favorites">Favorieten</string>
+    <string name="context_menu_hide_read">Verberg gelezen artikelen</string>
+    <string name="context_menu_show_read">Toon gelezen artikelen</string>
+    <string name="context_menu_share_starred">Deel favoriete artikelen</string>
+    <string name="menu_star">Favoriet</string>
+    <string name="menu_unstar">Onfavoriet</string>
+    <string name="menu_share">Deel</string>
+    <string name="menu_full_screen">Volledig scherm</string>
+    <string name="menu_copy_clipboard">Kopieer link</string>
+    <string name="menu_mark_as_unread">Markeer als ongelezen</string>
+    <string name="share_favorites_title">Privacy Vandaag Favorieten</string>
+    <string name="copied_clipboard">Link gekopieerd</string>
+    <string name="get_full_text">Toon het volledige artikel</string>
+    <string name="original_text">Laat de originele tekst zien</string>
+    <string name="see_enclosure">Bekijk bijlage</string>
+    <string name="see_link">Bekijk in browser</string>
+    <string name="cant_open_link">Geen applicatie gevonden voor deze link</string>
+    <string name="open_enclosure">Open bijlage</string>
+    <string name="file">Bestand</string>
+    <string name="download_and_save">Download en opslaan</string>
+    <string name="open_link">Open link</string>
+    <string name="tip_sentence">Tip: veeg naar links om te markeren als gelezen en veeg naar rechts om toe te voegen aan favorieten.</string>
+    <!-- ModPrivacyVandaag: added two tips for using the floating hide read button and to explain onClick in feedList. -->
+    <string name="tip_sentence_float">Tip: druk op knop rechtsonder om gelezen artikelen te verbergen of weer zichtbaar te maken.</string>
+    <string name="tip_sentence_feeds">Tip: druk op een organisatie om deze wel/niet te volgen.</string>
+
+    <!-- WIDGET -->
+    <string name="red">Rood</string>
+    <string name="green">Groen</string>
+    <string name="blue">Blauw</string>
+    <string name="transparency">Transparantie</string>
+
+    <!-- SETTINGS -->
+    <string name="settings_category_refresh">Automatisch verversen</string>
+    <string name="settings_refresh_enabled">Automatisch verversen</string>
+    <string name="settings_refresh_enabled_description">Haal automatisch de nieuwste artikelen op.
+    </string>
+    <string name="settings_refresh_interval">Tijdsinterval</string>
+    <string name="settings_category_notifications">Meldingen</string>
+    <string name="settings_notifications_enabled">Meldingen aan</string>
+    <string name="settings_notifications_enabled_description">Geef een melding als er een nieuw artikel is</string>
+    <string name="settings_notifications_ringtone">Meldingstoon</string>
+    <string name="settings_notifications_ringtone_none">Geen</string>
+    <string name="settings_notifications_vibrate">Trillen</string>
+    <string name="settings_notifications_vibrate_description">Trilstand aan als er een nieuw artikel is</string>
+    <string name="settings_notifications_light">Licht</string>
+    <string name="settings_notifications_light_description">Zet meldingslampje aan als er een nieuw artikel is</string>
+    <string name="settings_category_content_presentation">Weergave</string>
+    <string name="settings_light_theme">Licht thema</string>
+    <string name="settings_light_theme_description">Gebruik het lichte thema</string>
+    <string name="settings_left_panel">Uitschuifmenu</string>
+    <string name="settings_left_panel_description">Laat links het uitschuifmenu zien na het opstarten</string>
+    <string name="settings_keep_time">Bewaartijd van artikelen</string>
+    <string name="settings_display_images">Toon afbeeldingen</string>
+    <string name="settings_display_images_description">Laat eventuele afbeeldingen bij de artikelen zien</string>
+    <string name="settings_preload_image_mode">Haal afbeeldingen vooraf op</string>
+    <string name="settings_font_size">Lettergrootte</string>
+    <string name="settings_display_oldest_first">Volgorde van artikelen</string>
+    <string name="settings_display_oldest_first_description">Oudste bovenaan</string>
+    <string name="settings_display_entries_fullscreen">Volledig scherm</string>
+    <string name="settings_display_entries_fullscreen_description">Laat artikelen automatisch in het volledige scherm zien</string>
+    <string name="settings_refresh_on_open">Ververs bij opstarten</string>
+    <string name="settings_refresh_on_open_description">Controleer automatisch op nieuwe artikelen bij opstarten</string>
+    <string name="settings_refresh_wifi_only">Ververs alleen over WiFi</string>
+    <string name="settings_refresh_wifi_only_description">Automatisch controleren op nieuwe artikelen gebeurt alleen over een WiFi verbinding.</string>
+    <string name="settings_visible_feeds">Zichtbare feeds</string>
+    <string name="settings_widget_background">Achtergrond</string>
+    <string name="settings_widget_background_description">Color and transparency of the widget background</string>
+    <string name="all_feeds_widget">All feeds (incl. future)</string>
+    <string name="settings_screen_proxy">Proxy</string>
+    <string name="settings_category_network">Netwerk</string>
+    <string name="settings_proxy_enabled">Gebruik Proxy</string>
+    <string name="settings_proxy_wifi_only">Alleen over WiFi</string>
+    <string name="settings_proxy_wifi_only_description">Gebruik proxy alleen over Wifi</string>
+    <string name="settings_proxy_host">Host</string>
+    <string name="settings_proxy_port">Port</string>
+    <string name="settings_proxy_type">Type</string>
+
+    <plurals name="number_of_new_entries">
+        <item quantity="one">Eén nieuw artikel</item>
+        <item quantity="other">%d nieuwe artikelen</item>
+    </plurals>
+
+    <string-array name="settings_intervals">
+        <!-- !!!!! NOTICE: These options corresponds with the values in not_translatable_strings.xml  -->
+        <!--   <item>1 minuut</item>    -->
+        <!--     <item>5 minuut</item>  -->
+        <!--     <item>15 minuut</item> -->
+        <!--     <item>30 minuut</item> -->
+        <item>1 uur</item>
+        <item>2 uren</item>
+        <item>6 uren</item>
+        <item>12 uren</item>
+        <item>1 dag</item>
+    </string-array>
+    <string-array name="settings_keep_times">
+        <item>1 dag</item>
+        <item>2 dagen</item>
+        <item>4 dagen</item>
+        <item>1 week</item>
+        <item>2 weken</item>
+        <item>1 maand</item>
+        <item>2 maanden</item>
+        <item>3 maanden</item>
+        <item>Altijd</item>
+    </string-array>
+    <string-array name="settings_font_sizes">
+        <item>-2</item>
+        <item>-1</item>
+        <item>Standaard</item>
+        <item>+1</item>
+        <item>+2</item>
+        <item>+3</item>
+    </string-array>
+    <string-array name="settings_preload_image_modes">
+        <item>Nooit</item>
+        <item>Alleen over Wifi</item>
+        <item>Altijd</item>
+    </string-array>
+
+</resources>

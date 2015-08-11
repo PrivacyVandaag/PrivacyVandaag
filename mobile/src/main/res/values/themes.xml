@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    // @layout/view_drawer_list_selector toegevoegd om de kleur van de menufocus te wijzigen. Zie ook layout > view_drawer_list_selecter.xml
+    <style name="Theme.Light" parent="Theme.AppCompat.Light">
+        <item name="windowActionBar">false</item>
+        <item name="windowActionModeOverlay">true</item>
+        <!-- customize the color palette -->
+        <item name="colorPrimary">@color/light_theme_color_primary</item>
+        <item name="colorPrimaryDark">@color/light_theme_color_primary_dark</item>
+        <item name="colorAccent">@color/light_theme_color_primary</item>
+        <item name="android:activatedBackgroundIndicator">@layout/view_drawer_list_selector</item>
+    </style>
+
+    <style name="Theme.Dark" parent="Theme.AppCompat">
+        <item name="windowActionBar">false</item>
+        <item name="windowActionModeOverlay">true</item>
+        <!-- customize the color palette -->
+        <item name="colorPrimary">@color/dark_theme_color_primary</item>
+        <item name="colorPrimaryDark">@color/dark_theme_color_primary_dark</item>
+        <item name="colorAccent">@color/light_theme_color_primary</item>
+        <item name="android:activatedBackgroundIndicator">@layout/view_drawer_list_selector</item>
+    </style>
+</resources>
