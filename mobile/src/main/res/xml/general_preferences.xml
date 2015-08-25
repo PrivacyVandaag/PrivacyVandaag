@@ -10,8 +10,7 @@
         <intent android:action="privacy_vandaag_about_activity_intent" />
     </PreferenceScreen>
 
-
-
+    <!-- !!!!! NOTICE: These options corresponds with the values in strings.xml and not_translatable_strings.xml -->
 
     <!-- automatisch verversen -->
     <PreferenceCategory
@@ -113,7 +112,7 @@
         <nl.privacybarometer.privacyvandaag.view.AutoSummaryListPreference
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:defaultValue="WIFI_ONLY_PRELOAD"
+            android:defaultValue="ALWAYS_PRELOAD"
             android:dependency="display_images"
             android:entries="@array/settings_preload_image_modes"
             android:entryValues="@array/settings_preload_image_modes_values"

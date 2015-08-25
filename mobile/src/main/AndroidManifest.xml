@@ -17,8 +17,8 @@
     android:protectionLevel="signature"/>
 
 <application
+    android:allowBackup="false"
     android:name="nl.privacybarometer.privacyvandaag.MainApplication"
-    android:allowBackup="true"
     android:icon="@mipmap/ic_launcher"
     android:label="@string/app_name"
     android:theme="@style/Theme.Light">
@@ -30,12 +30,6 @@
         android:authorities="nl.privacybarometer.privacyvandaag.provider.FeedData"
         android:exported="true"
         android:writePermission="nl.privacybarometer.privacyvandaag.provider.WRITE_PERMISSION"/>
-    <!-- ModPrivacyVandaag:
-       bovenstaande was niet automatisch refractored, dus handmatig gedaan.
-       Origineel was: android:writePermission="net.etuldan.sparss.provider.WRITE_PERMISSION"/>
-    -->
-
-
         <activity
             android:name="nl.privacybarometer.privacyvandaag.activity.HomeActivity"
             android:label="@string/app_name"
@@ -77,16 +71,10 @@
             android:name="nl.privacybarometer.privacyvandaag.activity.GeneralPrefsActivity"
             android:label="@string/menu_settings"
             android:launchMode="singleTask"/>
-        <activity android:name="nl.privacybarometer.privacyvandaag.widget.WidgetConfigActivity">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/>
-            </intent-filter>
-        </activity>
 
-
-        <!-- ModPrivacyVandaag: Die hele ' EditFeedActivity' activity uitgezet, welke intent er ook is.
-            De EditFeedActivity laat mensen een feed aanmaken. Gaan we niet doen natuurlijk.
-        -->
+    <!-- ModPrivacyVandaag: ' EditFeedActivity' activity turned off, welke intent er ook is.
+        De EditFeedActivity laat mensen een feed aanmaken. Gaan we niet doen.
+    -->
         <!--
         <activity
             android:name="nl.privacybarometer.privacyvandaag.activity.EditFeedActivity"

@@ -87,14 +87,15 @@ public class EntryView extends WebView {
     private static final String SUBTITLE_COLOR = PrefUtils.getBoolean(PrefUtils.LIGHT_THEME, true) ? "#666666" : "#8c8c8c";
     private static final String SUBTITLE_BORDER_COLOR = PrefUtils.getBoolean(PrefUtils.LIGHT_THEME, true) ? "solid #ddd" : "solid #303030";
     private static final String CSS = "<head><style type='text/css'> "
-            + "body {max-width: 100%; margin: 0.3cm; font-family: sans-serif-light; color: " + TEXT_COLOR + "; background-color:" + BACKGROUND_COLOR + "; line-height: 170%} "
+            + "body {max-width:100%; margin: 0.3cm; font-family: sans-serif-light; color: " + TEXT_COLOR + "; background-color:" + BACKGROUND_COLOR + "; line-height: 170%} "
             + "* {max-width: 100%; word-break: break-word}"
+            + "div.main {margin:0 auto; max-width:700px;} "
             + "h1, h2 {font-weight: normal; line-height: 140%} "
             + "h1 {font-size: 170%; margin-bottom: 0.6em} "
             + "h2 {font-size: 140%; margin: 1.2em 0 0 0} "
             + "a {color: #662d91} "
             + "h1 a {color: inherit; text-decoration: none}"
-            + "img {height: auto} "
+            + "img {height:auto; max-width:500px; width:100%; display:block; margin:0 auto 0.5em auto;} "
             + "pre {white-space: pre-wrap;} "
             + "blockquote {border-left: thick solid " + QUOTE_LEFT_COLOR + "; background-color:" + QUOTE_BACKGROUND_COLOR + "; margin: 0.5em 0 0.5em 0em; padding: 0.5em} "
             + "p {margin: 0.4em 0 1.8em 0} "
@@ -106,8 +107,8 @@ public class EntryView extends WebView {
             + ".button-section p.marginfix {margin: 0.5cm 0 0.5cm 0}"
             + ".button-section input, .button-section a {font-family: sans-serif-light; font-size: 100%; color: #FFFFFF; background-color: " + BUTTON_COLOR + "; text-decoration: none; border: none; border-radius:0.2cm; padding: 0.3cm} "
             + "</style><meta name='viewport' content='width=device-width'/></head>";
-    private static final String BODY_START = "<body>";
-    private static final String BODY_END = "</body>";
+    private static final String BODY_START = "<body><div class='main'>";
+    private static final String BODY_END = "</div></body>";
     private static final String TITLE_START = "<h1><a href='";
     private static final String TITLE_MIDDLE = "'>";
     private static final String TITLE_END = "</a></h1>";

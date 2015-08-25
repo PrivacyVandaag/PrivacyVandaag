@@ -170,7 +170,7 @@
     <string name="settings_display_images">Toon afbeeldingen</string>
     <string name="settings_display_images_description">Laat eventuele afbeeldingen bij de artikelen zien</string>
     <string name="settings_preload_image_mode">Haal afbeeldingen vooraf op</string>
-    <string name="settings_font_size">Lettergrootte</string>
+    <string name="settings_font_size">Lettergrootte artikelen</string>
     <string name="settings_display_oldest_first">Volgorde van artikelen</string>
     <string name="settings_display_oldest_first_description">Oudste bovenaan</string>
     <string name="settings_display_entries_fullscreen">Volledig scherm</string>
@@ -233,5 +233,27 @@
         <item>Alleen over Wifi</item>
         <item>Altijd</item>
     </string-array>
+
+    <!-- ABOUT -->
+    <string name="about_us_copyright"><![CDATA[
+       Privacy Vandaag is een uitgave van Privacy&nbsp;Barometer.
+    ]]></string>
+    <string name="about_us_content"><![CDATA[
+    <b>Meer informatie</b><br />
+    Wilt u meer informatie over deze app of heeft u vragen of opmerkingen, gaat u dan
+    naar https://www.privacybarometer.nl/privacyvandaag. Daar vindt u een korte handleiding,
+    antwoord op veelgestelde vragen en kunt u suggesties ter verbetering in de commentaren achterlaten.<br />
+    <br />
+
+    Deze app is een vrij-verkrijgbare open source toepassing. U kunt deze software verder distibueren of aanpassen
+    voor eigen gebruik onder de voorwaarden van GNU General Public License versie 3 of een later versie zoals
+    die zijn gepubliceerd door de Free Software Foundation. Kijk voor meer informatie hierover op http://www.gnu.org/licenses<br/>
+        <br />
+    De app is gebaseerd op de open source Flym / Spa rss-reader en Sparse rss.
+    ]]></string>
+
+    <string name="check_for_update">Controleer op nieuwere versie</string>
+    <string name="do_update">Update Privacy Vandaag</string>
+
 
 </resources>

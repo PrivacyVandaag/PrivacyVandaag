@@ -23,6 +23,7 @@ package nl.privacybarometer.privacyvandaag.activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.MenuItem;
 
 import nl.privacybarometer.privacyvandaag.Constants;
@@ -60,7 +61,8 @@ public class EntryActivity extends BaseActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == android.R.id.home) {
             Bundle b = getIntent().getExtras();
-            if (b != null && b.getBoolean(Constants.INTENT_FROM_WIDGET, false)) {
+            //if (b != null && b.getBoolean(Constants.INTENT_FROM_WIDGET, false)) {
+            if (b != null) {
                 Intent intent = new Intent(this, HomeActivity.class);
                 startActivity(intent);
             }
@@ -77,4 +79,18 @@ public class EntryActivity extends BaseActivity {
 
         mEntryFragment.setData(intent.getData());
     }
+
+    /**
+     * Testing the back-key, because is gives a SQLite error (14): cannot open file / open(/NotificationPermissions.db)
+     * App doesn't crash, but it still generates an error in the debugger
+     * Unfortunately, still unable to understand what's going on.
+     */
+    /*
+    @Override
+    public void onBackPressed() {
+        Log.e ("PrivacyVandaag", "backpressed");
+        finish();
+
+    }
+    */
 }

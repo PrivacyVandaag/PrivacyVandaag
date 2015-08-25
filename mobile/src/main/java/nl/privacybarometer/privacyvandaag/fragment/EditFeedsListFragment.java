@@ -55,8 +55,8 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.os.Environment;
-import android.support.v7.app.ActionBarActivity;
-import android.support.v7.internal.widget.AdapterViewCompat;
+//import android.support.v7.app.ActionBarActivity;
+//import android.support.v7.internal.widget.AdapterViewCompat;
 import android.support.v7.view.ActionMode;
 import android.util.Pair;
 import android.view.Gravity;
@@ -66,8 +66,8 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemLongClickListener;
+//import android.widget.AdapterView;
+//import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.EditText;
 import android.widget.ExpandableListView;
 import android.widget.ListView;
@@ -86,8 +86,7 @@ import nl.privacybarometer.privacyvandaag.view.DragNDropListener;
 
 import java.io.File;
 import java.io.FilenameFilter;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
 
 /**
  * Class to edit the feeds. It controls actionmode and contextmenu.
