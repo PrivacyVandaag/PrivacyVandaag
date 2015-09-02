@@ -1,6 +1,7 @@
 /**
- * spaRSS
+ * Privacy Vandaag
  * <p/>
+ * Copyright (c) 2015 Privacy Barometer
  * Copyright (c) 2015 Arnaud Renaud-Goud
  * Copyright (c) 2012-2015 Frederic Julian
  * <p/>
@@ -314,6 +315,8 @@ public class FetcherService extends IntentService {
                     int feedIdPos = entryCursor.getColumnIndex(EntryColumns.FEED_ID);
                     HttpURLConnection connection = null;
 
+
+
                     try {
                         String link = entryCursor.getString(linkPos);
                         String feedId = entryCursor.getString(feedIdPos);
@@ -337,7 +340,6 @@ public class FetcherService extends IntentService {
                         }
                         connection = NetworkUtils.setupConnection(link,cookieName, cookieValue);
                         String mobilizedHtml = ArticleTextExtractor.extractContent(connection.getInputStream(), contentIndicator);
-
                         if (mobilizedHtml != null) {
                             mobilizedHtml = HtmlUtils.improveHtmlContent(mobilizedHtml, NetworkUtils.getBaseUrl(link));
                             ContentValues values = new ContentValues();
@@ -378,7 +380,7 @@ public class FetcherService extends IntentService {
                         Log.e ("PrivacyVandaag","Fout in ophalen volledig artikel");
                         Log.e ("PrivacyVandaag","Error: "+e1.getMessage());
                         Log.e ("PrivacyVandaag","Error: "+e1.getCause());
-    */
+    //*/
                     } catch (Throwable ignored) {
                         if (connection != null) {
                             connection.disconnect();

@@ -1,4 +1,11 @@
-package nl.privacybarometer.privacyvandaag.utils;
+/**
+ * Privacy Vandaag
+ * 
+ */
+ 
+ package nl.privacybarometer.privacyvandaag.utils;
+
+import android.util.Log;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;

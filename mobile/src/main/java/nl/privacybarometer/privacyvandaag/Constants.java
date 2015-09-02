@@ -1,6 +1,7 @@
 /**
- * spaRSS
+ * Privacy Vandaag
  * <p/>
+ * Copyright (c) 2015 Privacy Barometer
  * Copyright (c) 2015 Arnaud Renaud-Goud
  * Copyright (c) 2012-2015 Frederic Julian
  * Copyright (c) 2010-2012 Stefan Handschuh

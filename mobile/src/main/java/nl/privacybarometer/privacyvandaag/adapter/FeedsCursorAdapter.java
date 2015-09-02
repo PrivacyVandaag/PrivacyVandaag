@@ -1,6 +1,7 @@
 /**
- * spaRSS
+ * Privacy Vandaag
  * <p/>
+ * Copyright (c) 2015 Privacy Barometer
  * Copyright (c) 2015 Arnaud Renaud-Goud
  * Copyright (c) 2012-2015 Frederic Julian
  * <p/>
@@ -73,7 +74,6 @@ public class FeedsCursorAdapter extends CursorLoaderExpandableListAdapter {
         boolean activeFeedChannel =  !(cursor.getInt(mFetchModePos)==FETCHMODE_DO_NOT_FETCH);
 
         //   ModPrivacyVandaag: Use icons in package instead of fetching favicons from internet.
-        // TODO: put reference to drawables in feed table of the database
         Drawable mDrawable;
         int mIconResourceId = cursor.getInt(mIconId);
         if (mIconResourceId > 0) {

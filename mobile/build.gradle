@@ -2,17 +2,14 @@ apply plugin: 'com.android.application'
 apply plugin: 'com.droidtitan.lintcleaner'
 
 android {
-    compileSdkVersion 21
-    //compileSdkVersion 23
+    compileSdkVersion 22
     buildToolsVersion "22.0.1"
-    //buildToolsVersion "23"
 
     defaultConfig {
         applicationId 'nl.privacybarometer.privacyvandaag'
         minSdkVersion 14
         targetSdkVersion 21
-        //targetSdkVersion 23
-        versionCode 86
+        versionCode 90
         versionName "0.9.3"
     }
 
@@ -64,8 +61,7 @@ repositories {
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     //wearApp project(':wear')\n' +
-   compile 'com.android.support:appcompat-v7:21.+'
-    //compile 'com.android.support:appcompat-v7:23.0.0'
+    compile 'com.android.support:appcompat-v7:21.+'
     // ModPrivacyVandaag: Erorr using 22.2.0: appcompat-v7:22+ do not support current theme features.
     //compile 'com.android.support:appcompat-v7:22.2.0'
     gplayCompile 'com.google.android.gms:play-services-wearable:+'

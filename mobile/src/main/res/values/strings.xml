@@ -112,7 +112,7 @@
     <string name="google_news_health">Health</string>
 
     <!-- ENTRIES -->
-    <string name="all">Alle artikelen</string>
+    <string name="all"> Alle artikelen</string>
     <string name="no_entries">Geen artikelen</string>
     <string name="favorites">Favorieten</string>
     <string name="context_menu_hide_read">Verberg gelezen artikelen</string>
@@ -241,7 +241,7 @@
     <string name="about_us_content"><![CDATA[
     <b>Meer informatie</b><br />
     Wilt u meer informatie over deze app of heeft u vragen of opmerkingen, gaat u dan
-    naar https://www.privacybarometer.nl/privacyvandaag. Daar vindt u een korte handleiding,
+    naar https://www.privacybarometer.nl/app. Daar vindt u een korte introductie,
     antwoord op veelgestelde vragen en kunt u suggesties ter verbetering in de commentaren achterlaten.<br />
     <br />
 

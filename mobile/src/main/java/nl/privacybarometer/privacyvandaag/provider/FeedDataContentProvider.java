@@ -1,6 +1,7 @@
 /**
- * spaRSS
+ * Privacy Vandaag
  * <p/>
+ * Copyright (c) 2015 Privacy Barometer
  * Copyright (c) 2015 Arnaud Renaud-Goud
  * Copyright (c) 2012-2015 Frederic Julian
  * <p/>
@@ -193,7 +194,7 @@ public class FeedDataContentProvider extends ContentProvider {
     public String getType(Uri uri) {
         int matchCode = URI_MATCHER.match(uri);
 
-        // ModPrivacyVandaag: Changed spaRSS to privacyvandaag
+        // ModPrivacyVandaag: Changed URI to privacyvandaag
         switch (matchCode) {
             case URI_GROUPED_FEEDS:
             case URI_GROUPS:

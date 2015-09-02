@@ -1,6 +1,7 @@
 /**
- * spaRSS
+ * Privacy Vandaag
  * <p/>
+ * Copyright (c) 2015 Privacy Barometer
  * Copyright (c) 2015 Arnaud Renaud-Goud
  * Copyright (c) 2012-2015 Frederic Julian
  * <p/>
@@ -265,8 +266,7 @@ public class NetworkUtils {
                 if (!proxyList.isEmpty()) {
                     proxy = proxyList.get(0);
                 }
-            } catch (Throwable ignored) {
-            }
+            } catch (Throwable ignored) {}
         }
         HttpURLConnection connection = null;
         CookieManager cookieManager = new CookieManager();
@@ -290,10 +290,15 @@ public class NetworkUtils {
             connection.setUseCaches(false);
             connection.setInstanceFollowRedirects(true);
             connection.setRequestProperty("accept", "*/*");
-
             COOKIE_MANAGER.getCookieStore().removeAll(); // Cookie is important for some sites, but we clean them each times
-            connection.connect();
+          //  Log.i("Privacy Vandaag: ", url.toString());
+            try {
+                connection.connect();
+            }  catch (IOException e) {
+                Log.e("Privacy Vandaag error: ", e.toString() );
+            }
             status = connection.getResponseCode();
+          //  Log.i("Privacy Vandaag: ", "connection status: " + status);
         }
         return connection;
     }

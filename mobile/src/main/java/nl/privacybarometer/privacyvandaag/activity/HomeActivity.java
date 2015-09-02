@@ -1,6 +1,7 @@
 /**
- * spaRSS
+ * Privacy Vandaag
  * <p/>
+ * Copyright (c) 2015 Privacy Barometer
  * Copyright (c) 2015 Arnaud Renaud-Goud
  * Copyright (c) 2012-2015 Frederic Julian
  * <p/>
@@ -418,6 +419,8 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
     /* ModPrivacyVandaag: This is where feeds are placed in left drawer on start of the app if dBase is empty */
     private void selectDrawerItem(int position) {
         mCurrentDrawerPos = position;
+        Drawable mDrawable=null;
+        Bitmap bitmap=null;
         mIcon = null;
 
         Uri newUri;
@@ -429,6 +432,12 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
                 break;
             case 0:
                 newUri = EntryColumns.ALL_ENTRIES_CONTENT_URI;
+                //   ModPrivacyVandaag: rescale the app-icon to the right size for use in the actionBar
+                    mDrawable = ContextCompat.getDrawable(this, R.drawable.ic_statusbar_pv);
+                    bitmap = ((BitmapDrawable) mDrawable).getBitmap();
+                    if (bitmap != null) {
+                        mIcon = new BitmapDrawable(getResources(), Bitmap.createScaledBitmap(bitmap, 36, 36, true));
+                    }
                 break;
             case 1:
                 newUri = EntryColumns.FAVORITES_CONTENT_URI;
@@ -441,11 +450,11 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
                 } else {
 
                     //   ModPrivacyVandaag: Use icons in package instead of fetching favicons from internet.
-                    // in order to rescale the resources to the right size
+                    // in order to rescale the resources to the right size for use as drawer icon
                     int mIconResourceId = mDrawerAdapter.getIconResourceId(position);
                     if (mIconResourceId > 0) {
-                        Drawable mDrawable = ContextCompat.getDrawable(this, mIconResourceId);
-                        Bitmap bitmap = ((BitmapDrawable) mDrawable).getBitmap();
+                        mDrawable = ContextCompat.getDrawable(this, mIconResourceId);
+                        bitmap = ((BitmapDrawable) mDrawable).getBitmap();
                         if (bitmap != null) {
                             mIcon = new BitmapDrawable(getResources(), Bitmap.createScaledBitmap(bitmap, 36, 36, true));
                         }
@@ -524,7 +533,12 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
             case 0:
                 getSupportActionBar().setTitle(R.string.all);
                 /* ModPrivacyVandaag: Change of app favicon in ActionBar. */
-                getSupportActionBar().setIcon(R.drawable.ic_statusbar_pv);
+               // getSupportActionBar().setIcon(R.drawable.ic_statusbar_pv);
+                if (mIcon != null) {
+                    getSupportActionBar().setIcon(mIcon);
+                } else {
+                    getSupportActionBar().setIcon(null);
+                }
                 break;
             case 1:
                 getSupportActionBar().setTitle(R.string.favorites);
