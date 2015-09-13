@@ -517,6 +517,11 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
          //   FeedDataContentProvider.addFeed(this, "http://www.vrijbit.nl/component/k2/itemlist.feed?moduleID=106", "Vrijbit",  true, "", "", 61);
          //   FeedDataContentProvider.addFeed(this, "http://www.kdvp.nl/?format=feed&amp;type=rss", "KDVP",  true, "", "", 61);
 
+
+		 /* ModPrivacyVandaag: This last feed is used as a service channel. Messages about the app , like available updates, can be send through here.
+		 * NOTICE: This last feed is not displayed in de drawer menu, and cannot be set inactive because of the nature of the messages.
+		 * Therefore, this service-feed should always be added last.
+		 */
             FeedDataContentProvider.addFeed(this, "https://www.privacybarometer.nl/app/feed/", "Privacy Vandaag",  false, "", "", 61, "logo_icon_pv"); // 61 is het aantal dagen dat items bewaard moeten worden.
 
 
