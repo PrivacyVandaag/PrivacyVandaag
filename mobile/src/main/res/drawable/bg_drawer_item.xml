@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- New -->
+    <item android:state_activated="true" android:drawable="@color/light_theme_left_drawer_item_selected" />
+    <item android:state_selected="true" android:drawable="@color/light_theme_left_drawer_item_selected" />
+    <item android:state_pressed="true" android:drawable="@color/light_theme_left_drawer_item_selected" />
+
+
+    <!-- Tot aan Privacy Vandaag versie 0.9.3 -->
+    <!--
+    <item android:state_activated="true" android:drawable="@color/light_theme_color_primary" />
+    <item android:state_selected="true" android:drawable="@color/light_theme_color_primary" />
+    <item android:state_pressed="true" android:drawable="@color/light_theme_color_primary" />
+    -->
+   <!-- <item android:drawable="@color/default_color" />  default=#111 -->
+</selector>

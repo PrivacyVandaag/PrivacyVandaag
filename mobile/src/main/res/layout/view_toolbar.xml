@@ -9,3 +9,5 @@
                                    support:popupTheme="@style/ThemeOverlay.AppCompat.Light"
                                    support:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
                                    tools:showIn="@layout/view_home" />
+
+    <!-- LET OP!! De inhoud van de toolbar zit in de directory 'menu'. Logisch!! :-P -->

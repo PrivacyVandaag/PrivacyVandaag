@@ -59,12 +59,9 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.os.Handler;
 import android.text.TextUtils;
-import android.util.Log;
-import android.widget.Toast;
 
 import nl.privacybarometer.privacyvandaag.BuildConfig;
 import nl.privacybarometer.privacyvandaag.Constants;
-import nl.privacybarometer.privacyvandaag.R;
 import nl.privacybarometer.privacyvandaag.provider.FeedData.EntryColumns;
 import nl.privacybarometer.privacyvandaag.provider.FeedData.FeedColumns;
 import nl.privacybarometer.privacyvandaag.provider.FeedData.FilterColumns;
@@ -379,7 +376,6 @@ public class FeedDataContentProvider extends ContentProvider {
                 cursor.close();
 
                 newId = database.insert(FeedColumns.TABLE_NAME, null, values);
-                mDatabaseHelper.exportToOPML();
 
                 break;
             }
@@ -562,10 +558,6 @@ public class FeedDataContentProvider extends ContentProvider {
 
         int count = database.update(table, values, where.toString(), selectionArgs);
 
-        if (FeedColumns.TABLE_NAME.equals(table)
-                && (values.containsKey(FeedColumns.NAME) || values.containsKey(FeedColumns.URL) || values.containsKey(FeedColumns.PRIORITY))) {
-            mDatabaseHelper.exportToOPML();
-        }
         if (count > 0) {
             notifyChangeOnAllUris(matchCode, uri);
         }
@@ -750,10 +742,6 @@ public class FeedDataContentProvider extends ContentProvider {
         int count = database.delete(table, where.toString(), selectionArgs);
 
         if (count > 0) {
-            if (FeedColumns.TABLE_NAME.equals(table)) {
-                mDatabaseHelper.exportToOPML();
-            }
-
             notifyChangeOnAllUris(matchCode, uri);
         }
         return count;

@@ -1,17 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Deze layout is gekoppeld aan
+        > fragment > GeneralPrefsFragment.java
+        > layout > activity_general_prefs.xml
+        > activity > GenerealPrefsActivity.java
+-->
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
                   android:layout_width="wrap_content"
                   android:layout_height="wrap_content">
 
+    <!-- TODO: Kan weg, want opgenomen in het overflow menu als een zelfstandige keuze -->
+    <!--
     <PreferenceScreen
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:title="@string/about_this_app">
         <intent android:action="privacy_vandaag_about_activity_intent" />
     </PreferenceScreen>
+    -->
 
     <!-- !!!!! NOTICE: These options corresponds with the values in strings.xml and not_translatable_strings.xml -->
-
     <!-- automatisch verversen -->
     <PreferenceCategory
         android:layout_width="wrap_content"
@@ -138,6 +145,7 @@
     </PreferenceCategory>
 
     <!-- notificaties -->
+    <!-- De notificatie settings worden gebruikt in >service > FetcherService.java -->
     <PreferenceCategory
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -150,6 +158,49 @@
             android:key="notifications.enabled"
             android:summary="@string/settings_notifications_enabled_description"
             android:title="@string/settings_notifications_enabled"/>
+
+        <!-- melding voor zeeheldennieuws artikel -->
+        <CheckBoxPreference
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:dependency="notifications.enabled"
+            android:layout="?android:attr/preferenceLayoutChild"
+            android:defaultValue="true"
+            android:key="notifications.privacybarometer"
+            android:summary="@string/settings_notifications_enabled_pb"/>
+        <!-- melding voor stadsnieuws artikel -->
+        <CheckBoxPreference
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:dependency="notifications.enabled"
+            android:layout="?android:attr/preferenceLayoutChild"
+            android:defaultValue="true"
+            android:key="notifications.bitsoffreedom"
+            android:summary="@string/settings_notifications_enabled_bof"/>
+        <!-- melding voor gemeenteberichten -->
+        <CheckBoxPreference
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:dependency="notifications.enabled"
+            android:layout="?android:attr/preferenceLayoutChild"
+            android:defaultValue="true"
+            android:key="notifications.privacyfirst"
+            android:summary="@string/settings_notifications_enabled_pf"/>
+        <!-- melding voor evenementen -->
+        <CheckBoxPreference
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:dependency="notifications.enabled"
+            android:layout="?android:attr/preferenceLayoutChild"
+            android:defaultValue="true"
+            android:key="notifications.autoriteitpersoonsgegevens"
+            android:summary="@string/settings_notifications_enabled_ap"/>
+
+
+
+
+
+
 
         <!-- ModPrivacyVandaag: android:defaultValue="content://settings/system/notification_sound" toegevoegd
             zodat de standaard beltoon gelijk wordt gekozen. Dit element ontbrak, en stond dus standaard op stil. -->

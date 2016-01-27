@@ -28,6 +28,15 @@ import android.view.MenuItem;
 import nl.privacybarometer.privacyvandaag.R;
 import nl.privacybarometer.privacyvandaag.utils.UiUtils;
 
+/**
+ * Shows a list of feeds from the database in order to edit them.
+ * The list of feeds is loaded using class
+ *      > fragment > EditFeedsListFragment.java and
+ *      > adapter > FeedsCursorAdapter.java
+ * This class uses
+ *      > res > layout > activity_edit_feeds.xml to get the fragments for the feedlist
+ * In our case, one can press the feed to toggle it's state between active and inactive.
+ */
 public class EditFeedsListActivity extends BaseActivity {
 
     @Override

@@ -9,16 +9,53 @@
         android:title="@string/menu_refresh"
         app:showAsAction="always"
         tools:ignore="AlwaysShowAction"/>
-    <item
-        android:id="@+id/menu_all_read"
-        android:icon="@drawable/read_all"
-        android:title="@string/menu_all_read"
-        app:showAsAction="always"
-        tools:ignore="AlwaysShowAction"/>
+
     <item
         android:id="@+id/menu_share_starred"
         android:icon="@drawable/social_share"
         android:title="@string/context_menu_share_starred"
         app:showAsAction="always"/>
+
+    <!-- *** OVERFLOW *** -->
+    <!-- always in the overflow menu: showAsAction="never" puts it in overflow -->
+
+    <item
+        android:id="@+id/menu_all_read"
+        android:icon="@drawable/read_all"
+        android:title="@string/menu_all_read"
+        app:showAsAction="never"
+        tools:ignore="AlwaysShowAction"/>
+
+    <item
+        android:id="@+id/settings"
+        android:icon="@drawable/action_settings"
+        android:title="@string/menu_settings"
+        app:showAsAction="never"/>
+
+    <!-- edit feeds, always in the overflow menu -->
+    <!-- Deze knop hoort bij case R.id.edit_feeds in HomeActivity op regel 298. -->
+    <item
+        android:id="@+id/edit_feeds"
+        android:icon="@drawable/content_edit"
+        android:title="@string/menu_edit_feeds"
+        app:showAsAction="never"
+       />
+    <item
+        android:id="@+id/search"
+        android:icon="@drawable/content_edit"
+        android:title="@string/menu_search"
+        app:showAsAction="never"
+        />
+
+    <item
+        android:id="@+id/about_this_app"
+        android:icon="@drawable/action_settings"
+        android:title="@string/menu_about_this_app"
+        app:showAsAction="never"
+        />
+
+
+
+
 
 </menu>

@@ -1,24 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!--
+        LET OP: Sommige kleuren zijn hard gecodeerd in de java bestanden:
+            > view > EntryView.java regel 80
+            > adapter > FeedsCursorAdapter.java regel 59
+    -->
 
-    // standaard kleur voor de action bar, de menukeuze, de floating button, etc. Origineel #247ab0
-    <color name="light_theme_color_primary">#8139b7</color> // Donkerpaars uit logo: #662d91
-    // behoort bij standaard kleur voor de action bar, nemlijk als deze inactief is. Origineel: #175073
-    <color name="light_theme_color_primary_dark">#4a2169</color> //Donkerpaars inactief: #4a2169
+    <!-- standaard kleur voor de action bar, de menukeuze, de floating button, etc. Origineel #247ab0    -->
+    <color name="light_theme_left_drawer_item_selected">#333333</color>
+    <color name="light_theme_color_primary">#8139b7</color> <!-- Donkerpaars uit logo: #662d91 -->
+    <!-- behoort bij standaard kleur voor de action bar, nemlijk als deze inactief is. Origineel: #175073  -->
+    <color name="light_theme_color_primary_dark">#4a2169</color> <!-- Donkerpaars inactief: #4a2169 -->
+   <!-- <color name="light_theme_color_primary_bright">#d5a0f0</color> --><!-- lichtpaars  -->
+    <color name="light_theme_color_primary_bright">#be91ff</color> <!-- lichtpaars  -->
 
-    // Dark theme
-    <color name="dark_theme_color_primary">#4a2169</color>
+
+
+    <!-- Dark theme -->
+    <color name="dark_theme_color_primary">#4a2169</color>   <!-- same as light_theme_color_primary_dark  -->
     <color name="dark_theme_color_primary_dark">#ff301545</color>
     <color name="dark_background">#FF202020</color>
 
-    // floating button
-    <color name="floating_action_button_disabled">#ff301545</color>
+    <!-- floating button -->
+    <color name="floating_action_button_disabled">#ff301545</color>     <!-- same as dark_theme_color_primary_dark  -->
 
-    //kleuren voor focussed of niet-focussed menu-item
-    <color name="menu_item_focus_color">#8139b7</color>
-    <color name="default_color">#111</color> // Wordt gebruikt in layout> view_drawer_list_selector.xml. Aldaar uitgezet.
-
-    //Colors used to differentiate between active feed channels and inactive feed channels (i.e. no refresh)
+    <!-- Colors used to differentiate between active feed channels and inactive feed channels (i.e. no refresh) -->
     <color name="light_theme_default_text_color">#ff222222</color>
     <color name="light_theme_default_inactive_color">#ffcccccc</color>
 

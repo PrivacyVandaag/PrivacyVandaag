@@ -80,6 +80,8 @@ public class EntryView extends WebView {
 
     private static final String TEXT_HTML = "text/html";
     private static final String HTML_IMG_REGEX = "(?i)<[/]?[ ]?img(.|\n)*?>";
+
+    // Special layout colors are defined in > res > values > colors.xml !!
     private static final String BACKGROUND_COLOR = PrefUtils.getBoolean(PrefUtils.LIGHT_THEME, true) ? "#f6f6f6" : "#181b1f";
     private static final String QUOTE_BACKGROUND_COLOR = PrefUtils.getBoolean(PrefUtils.LIGHT_THEME, true) ? "#e6e6e6" : "#383b3f";
     private static final String QUOTE_LEFT_COLOR = PrefUtils.getBoolean(PrefUtils.LIGHT_THEME, true) ? "#a6a6a6" : "#686b6f";
@@ -125,7 +127,7 @@ public class EntryView extends WebView {
     private static final String LINK_BUTTON_MIDDLE = "'>";
     private static final String LINK_BUTTON_END = "</a></p>";
     private static final String IMAGE_ENCLOSURE = "[@]image/";
-    private static final String NOTE_ON_CBP_ARTICLES = "<p style='font-style:italic'>Vanwege restricties op de server van het CBP is het volledige bericht alleen via de browser te bekijken.</p>";
+    private static final String NOTE_ON_AP_ARTICLES = "<p style='font-style:italic;margin-top:2em'>Vanwege restricties op de server van de Autoriteit Persoonsgegevens is het volledige bericht alleen via de browser te bekijken.</p>";
 
     private final JavaScriptObject mInjectedJSObject = new JavaScriptObject();
     private EntryViewManager mEntryViewMgr;
@@ -192,10 +194,10 @@ public class EntryView extends WebView {
 
         content.append(dateStringBuilder).append(SUBTITLE_END).append(contentText);
 
-        // ModPrivacyVandaag: Notification beneath rss-feed text that full articles from CBP cannot be retrieved using the app.
+        // ModPrivacyVandaag: Notification beneath rss-feed text that full articles from AP cannot be retrieved using the app.
         if (link.length() > 0) {
-            if (link.indexOf("cbpweb")>4) {
-                content.append(NOTE_ON_CBP_ARTICLES);
+            if (link.indexOf("autoriteitpersoons")>4) {
+                content.append(NOTE_ON_AP_ARTICLES);
             }
         }
         content.append(BUTTON_SECTION_START);

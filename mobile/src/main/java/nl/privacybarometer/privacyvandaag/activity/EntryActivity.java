@@ -33,6 +33,11 @@ import nl.privacybarometer.privacyvandaag.fragment.EntryFragment;
 import nl.privacybarometer.privacyvandaag.utils.PrefUtils;
 import nl.privacybarometer.privacyvandaag.utils.UiUtils;
 
+/**
+ * This activity shows an article to read and allows the reader to swype to the next article.
+ * It uses the EntryFragment.java class to get the article and display it.
+ */
+
 public class EntryActivity extends BaseActivity {
 
     private EntryFragment mEntryFragment;
@@ -70,14 +75,12 @@ public class EntryActivity extends BaseActivity {
             finish();
             return true;
         }
-
         return false;
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
-
         mEntryFragment.setData(intent.getData());
     }
 

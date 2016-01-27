@@ -64,7 +64,6 @@ import nl.privacybarometer.privacyvandaag.R;
 import nl.privacybarometer.privacyvandaag.provider.FeedData;
 import nl.privacybarometer.privacyvandaag.provider.FeedData.EntryColumns;
 import nl.privacybarometer.privacyvandaag.provider.FeedData.FeedColumns;
-import nl.privacybarometer.privacyvandaag.utils.CircleTransform;
 import nl.privacybarometer.privacyvandaag.utils.StringUtils;
 
 /**
@@ -78,7 +77,6 @@ public class EntriesCursorAdapter extends ResourceCursorAdapter {
 
     private final Uri mUri;
     private final boolean mShowFeedInfo;
-    private final CircleTransform mCircleTransform = new CircleTransform();
     private int mIdPos, mTitlePos, mMainImgPos, mDatePos, mIsReadPos, mFavoritePos, mFeedIdPos, mFeedIconPos, mFeedNamePos;
     private int mIconIdPos;    // ModPrivacyVandaag: Added to find reference to logo drawable resource
 
@@ -118,23 +116,6 @@ public class EntriesCursorAdapter extends ResourceCursorAdapter {
         } else {
             holder.mainImgView.setImageResource(R.drawable.logo_icon_pv);
         }
-
-        /* Following code is no longer necessary.
-        final long feedId = cursor.getLong(mFeedIdPos);
-        String mainImgUrl = cursor.getString(mMainImgPos);
-        mainImgUrl = TextUtils.isEmpty(mainImgUrl) ? null : NetworkUtils.getDownloadedOrDistantImageUrl(cursor.getLong(mIdPos), mainImgUrl);
-        ColorGenerator generator = ColorGenerator.DEFAULT;
-        int color = generator.getColor(Long.valueOf(feedId)); // The color is specific to the feedId (which shouldn't change)
-        TextDrawable letterDrawable = TextDrawable.builder().buildRound((feedName != null ? feedName.substring(0, 1).toUpperCase() : ""), color);
-        Picasso.with(context).cancelRequest(holder.mainImgView);
-        if (mainImgUrl != null) {   // Als er een plaatje bij het artikel is gevonden
-            Picasso.with(context).load(mainImgUrl).transform(mCircleTransform).placeholder(letterDrawable).error(letterDrawable).into(holder.mainImgView);
-        } else {    // if no photo is found within the article, show the feed's logo.
-            Picasso.with(context).cancelRequest(holder.mainImgView);
-            holder.mainImgView.setImageDrawable(letterDrawable);
-        }
-        */
-        // End modification Privacy Vandaag
 
         holder.isFavorite = cursor.getInt(mFavoritePos) == 1;
         holder.starImgView.setVisibility(holder.isFavorite ? View.VISIBLE : View.INVISIBLE);

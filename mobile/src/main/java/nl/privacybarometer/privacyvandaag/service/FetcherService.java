@@ -48,6 +48,7 @@ package nl.privacybarometer.privacyvandaag.service;
 
 import android.app.IntentService;
 import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
@@ -61,6 +62,8 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.service.notification.StatusBarNotification;
+import android.support.v4.app.NotificationCompat;
 import android.text.Html;
 import android.text.TextUtils;
 import android.util.Log;
@@ -107,6 +110,7 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 
 public class FetcherService extends IntentService {
+    private static final String TAG = FetcherService.class.getSimpleName() + " ~> ";
 
     public static final String ACTION_REFRESH_FEEDS = "nl.privacybarometer.privacyvandaag.REFRESH";
     public static final String ACTION_MOBILIZE_FEEDS = "nl.privacybarometer.privacyvandaag.MOBILIZE_FEEDS";
@@ -143,8 +147,8 @@ public class FetcherService extends IntentService {
         Cursor cursor = MainApplication.getContext().getContentResolver().query(TaskColumns.CONTENT_URI, TaskColumns.PROJECTION_ID,
                 TaskColumns.ENTRY_ID + '=' + entryId + Constants.DB_AND + TaskColumns.IMG_URL_TO_DL + Constants.DB_IS_NULL, null, null);
 
-        boolean result = cursor.getCount() > 0;
-        cursor.close();
+        boolean result = cursor != null && cursor.getCount() > 0 ;
+        if (cursor != null) cursor.close();
 
         return result;
     }
@@ -228,59 +232,47 @@ public class FetcherService extends IntentService {
             String feedId = intent.getStringExtra(Constants.FEED_ID);
             int newCount = (feedId == null ? refreshFeeds(keepDateBorderTime) : refreshFeed(feedId, keepDateBorderTime));  // number of new articles found after refresh all the feeds
 
-            if (newCount > 0) {
-                if (PrefUtils.getBoolean(PrefUtils.NOTIFICATIONS_ENABLED, true)) {
-                    /* ModPrivacyVandaag: The counter for new articles does not represent the new downloads, but the unread articles.
-                    This is not what people expect. While in testing fase I already received complaints about this.
-                    So, in the code below, I removed the code that puts the unread count in place of just the new downloaded acrticles.
-                     */
-                    /*
-                    Cursor cursor = getContentResolver().query(EntryColumns.CONTENT_URI, new String[]{Constants.DB_COUNT}, EntryColumns.WHERE_UNREAD, null, null);
-                    cursor.moveToFirst();
-                    newCount = cursor.getInt(0); // The number has possibly changed, because refreshing is done in the background
-                    cursor.close();
-                    */
-                    // if (newCount > 0) { // ModPrivacyVandaag: No longer needed if-statement, because we keep the original value of newCount.
+            // notification for new articles.
+            if (newCount > 0 && isFromAutoRefresh && PrefUtils.getBoolean(PrefUtils.NOTIFICATIONS_ENABLED, true)) {
+                int mNotificationId = 2;    // een willekeurige ID, want we doen er nu niks mee
+                Intent notificationIntent = new Intent(FetcherService.this, HomeActivity.class);
+                // Voorlopig doen we niets met aantallen, want wekt verwarring omdat aantal in de melding kan afwijken van totaal nieuw.
+                newCount += PrefUtils.getInt(PrefUtils.NOTIFICATIONS_PREVIOUS_COUNT, 0); // Tel aantal van bestaande melding erbij op
+                String text = getResources().getQuantityString(R.plurals.number_of_new_entries, newCount, newCount);
+                notificationIntent.setFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                PendingIntent contentIntent = PendingIntent.getActivity(FetcherService.this, mNotificationId, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-                        String text = getResources().getQuantityString(R.plurals.number_of_new_entries, newCount, newCount);
+                NotificationCompat.Builder notifBuilder = new NotificationCompat.Builder(MainApplication.getContext()) //
+                        .setContentIntent(contentIntent) // Wat moet er gebeuren als er op de melding geklikt wordt.
+                        .setSmallIcon(R.drawable.ic_statusbar_pv) //
+                        .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher)) //
+                        .setTicker(text) //
+                        .setWhen(System.currentTimeMillis()) // Set het tijdstip van de melding
+                        .setAutoCancel(true) // Melding verwijderen als erop geklikt wordt.
+                        .setContentTitle(getString(R.string.app_name))
+                        .setStyle(new NotificationCompat.BigTextStyle().bigText(text))  // Style: Tekst over meerdere regels
+                        .setContentText(text) // Tekst van de melding
+                        .setLights(0xffffffff, 0, 0);
 
-                        Intent notificationIntent = new Intent(FetcherService.this, HomeActivity.class);
-                        PendingIntent contentIntent = PendingIntent.getActivity(FetcherService.this, 0, notificationIntent,
-                                PendingIntent.FLAG_UPDATE_CURRENT);
-
-                        Notification.Builder notifBuilder = new Notification.Builder(MainApplication.getContext()) //
-                                .setContentIntent(contentIntent) //
-                                .setSmallIcon(R.drawable.ic_statusbar_rss) //
-                                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.mipmap.ic_launcher)) //
-                                .setTicker(text) //
-                                .setWhen(System.currentTimeMillis()) //
-                                .setAutoCancel(true) //
-                                .setContentTitle(getString(R.string.app_name)) //
-                                .setContentText(text) //
-                                .setLights(0xffffffff, 0, 0);
-
-                        if (PrefUtils.getBoolean(PrefUtils.NOTIFICATIONS_VIBRATE, false)) {
-                            notifBuilder.setVibrate(new long[]{0, 1000});
-                        }
-
-                        String ringtone = PrefUtils.getString(PrefUtils.NOTIFICATIONS_RINGTONE, null);
-                        if (ringtone != null && ringtone.length() > 0) {
-                            notifBuilder.setSound(Uri.parse(ringtone));
-                        }
-
-                        if (PrefUtils.getBoolean(PrefUtils.NOTIFICATIONS_LIGHT, false)) {
-                            notifBuilder.setLights(0xffffffff, 300, 1000);
-                        }
-
-                        if (Constants.NOTIF_MGR != null) {
-                            Constants.NOTIF_MGR.notify(0, notifBuilder.getNotification());
-                        }
-                    // }    // ModPrivacyVandaag: belongs to no longer needed if-statement. See above.
-                } else if (Constants.NOTIF_MGR != null) {
-                    Constants.NOTIF_MGR.cancel(0);
+                if (PrefUtils.getBoolean(PrefUtils.NOTIFICATIONS_VIBRATE, false)) {
+                    notifBuilder.setVibrate(new long[]{0, 1000});
                 }
+
+                String ringtone = PrefUtils.getString(PrefUtils.NOTIFICATIONS_RINGTONE, null);
+                if (ringtone != null && ringtone.length() > 0) {
+                    notifBuilder.setSound(Uri.parse(ringtone));
+                }
+
+                if (PrefUtils.getBoolean(PrefUtils.NOTIFICATIONS_LIGHT, false)) {
+                    notifBuilder.setLights(0xffffffff, 300, 1000);
+                }
+
+                NotificationManager mNotifyMgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+                mNotifyMgr.notify(mNotificationId, notifBuilder.build());
+
             }
 
+            PrefUtils.putInt(PrefUtils.NOTIFICATIONS_PREVIOUS_COUNT, newCount);
             mobilizeAllEntries();
             downloadAllImages();
 
@@ -295,7 +287,7 @@ public class FetcherService extends IntentService {
 
         ArrayList<ContentProviderOperation> operations = new ArrayList<>();
 
-        while (cursor.moveToNext()) {
+        while (cursor != null && cursor.moveToNext()) {
             long taskId = cursor.getLong(0);
             long entryId = cursor.getLong(1);
             int nbAttempt = 0;
@@ -308,7 +300,7 @@ public class FetcherService extends IntentService {
             Uri entryUri = EntryColumns.CONTENT_URI(entryId);
             Cursor entryCursor = cr.query(entryUri, null, null, null, null);
 
-            if (entryCursor.moveToFirst()) {
+            if (entryCursor != null && entryCursor.moveToFirst()) {
                 if (entryCursor.isNull(entryCursor.getColumnIndex(EntryColumns.MOBILIZED_HTML))) { // If we didn't already mobilized it
                     int linkPos = entryCursor.getColumnIndex(EntryColumns.LINK);
                     int abstractHtmlPos = entryCursor.getColumnIndex(EntryColumns.ABSTRACT);
@@ -369,18 +361,6 @@ public class FetcherService extends IntentService {
                                 }
                             }
                         }
-
-    /* ModPrivacyVandaag: For testing purposes
-                    } catch(SSLHandshakeException e) {
-
-                    } catch (SSLException e) {
-                        Log.e ("PrivacyVandaag","Fout in ophalen volledig artikel");
-                        Log.e ("PrivacyVandaag","Error: "+e);
-                    } catch (Throwable e1) {
-                        Log.e ("PrivacyVandaag","Fout in ophalen volledig artikel");
-                        Log.e ("PrivacyVandaag","Error: "+e1.getMessage());
-                        Log.e ("PrivacyVandaag","Error: "+e1.getCause());
-    //*/
                     } catch (Throwable ignored) {
                         if (connection != null) {
                             connection.disconnect();
@@ -395,7 +375,7 @@ public class FetcherService extends IntentService {
                     operations.add(ContentProviderOperation.newDelete(TaskColumns.CONTENT_URI(taskId)).build());
                 }
             }
-            entryCursor.close();
+            if (entryCursor != null) entryCursor.close();
 
             if (!success) {
                 if (nbAttempt + 1 > MAX_TASK_ATTEMPT) {
@@ -408,7 +388,7 @@ public class FetcherService extends IntentService {
             }
         }
 
-        cursor.close();
+        if (cursor != null) cursor.close();
 
         if (!operations.isEmpty()) {
             try {
@@ -425,7 +405,7 @@ public class FetcherService extends IntentService {
 
         ArrayList<ContentProviderOperation> operations = new ArrayList<>();
 
-        while (cursor.moveToNext()) {
+        while (cursor != null && cursor.moveToNext()) {
             long taskId = cursor.getLong(0);
             long entryId = cursor.getLong(1);
             String imgPath = cursor.getString(2);
@@ -450,7 +430,7 @@ public class FetcherService extends IntentService {
             }
         }
 
-        cursor.close();
+        if (cursor != null) cursor.close();
 
         if (!operations.isEmpty()) {
             try {
@@ -467,7 +447,7 @@ public class FetcherService extends IntentService {
             MainApplication.getContext().getContentResolver().delete(EntryColumns.CONTENT_URI, where, null);
         }
         Cursor cursor = MainApplication.getContext().getContentResolver().query(FeedColumns.CONTENT_URI, new String[]{FeedColumns._ID, FeedColumns.KEEP_TIME},null, null, null);
-        while (cursor.moveToNext()) {
+        while (cursor != null && cursor.moveToNext()) {
             long feedid = cursor.getLong(0);
             long keepTimeLocal = cursor.getLong(1) * 86400000l;
             long keepDateBorderTimeLocal = keepTimeLocal > 0 ? System.currentTimeMillis() - keepTimeLocal : 0;
@@ -476,14 +456,14 @@ public class FetcherService extends IntentService {
                 MainApplication.getContext().getContentResolver().delete(EntryColumns.CONTENT_URI, where, null);
             }
         }
-        cursor.close();
+        if (cursor != null) cursor.close();
 
     }
 
     private int refreshFeeds(final long keepDateBorderTime) {
         ContentResolver cr = getContentResolver();
         final Cursor cursor = cr.query(FeedColumns.CONTENT_URI, FeedColumns.PROJECTION_ID, null, null, null);
-        int nbFeed = cursor.getCount();
+        int nbFeed = (cursor != null) ? cursor.getCount() : 0;
 
         ExecutorService executor = Executors.newFixedThreadPool(THREAD_NUMBER, new ThreadFactory() {
             @Override
@@ -495,28 +475,30 @@ public class FetcherService extends IntentService {
         });
 
         CompletionService<Integer> completionService = new ExecutorCompletionService<>(executor);
-        while (cursor.moveToNext()) {
+        while (cursor != null && cursor.moveToNext()) {
             final String feedId = cursor.getString(0);
             completionService.submit(new Callable<Integer>() {
                 @Override
                 public Integer call() {
                     int result = 0;
                     try {
-                        result = refreshFeed(feedId, keepDateBorderTime);   // ModPrivacyVandaag: refresh feed en return number of new articles found
-                    } catch (Exception ignored) {
+                        result = refreshFeed(feedId, keepDateBorderTime);
+                    } catch (Exception e) {
+                        Log.e (TAG, "Error refreshing feed " + e.getMessage());
                     }
                     return result;
                 }
             });
         }
-        cursor.close();
+        if (cursor != null) cursor.close();
 
         int globalResult = 0;
         for (int i = 0; i < nbFeed; i++) {
             try {
                 Future<Integer> f = completionService.take();       // ModPrivacyVandaag: the count of new articles after a feed is refreshed
                 globalResult += f.get();
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                Log.e (TAG, "Error counting new articles " + e.getMessage());
             }
         }
 
@@ -547,36 +529,16 @@ public class FetcherService extends IntentService {
                 return 0;
             }
             // end of this added block of code; commented out initialize of fetchmode on line 520
-
             String id = cursor.getString(idPosition);
             HttpURLConnection connection = null;
-
-                        /* ModPrivacyVandaag: Send the versionCode with the feed to PrivacyBarometer to check if version of this app
-                            is still the most recent. Else an update message is sent through this RSS channel urging user to update app.
-                         */
-                        /* not anymore, because Privacy Vandaag uses it's own feed channel to transmit service message about the app
-                        int vCode = BuildConfig.VERSION_CODE;
-                        String versionCode = String.valueOf(vCode);
-                        */
-             try {
+            try {
                 String feedUrl = cursor.getString(urlPosition);
-                            /* ModPrivacyVandaag: check if "barometer.nl/feed" is in the URL.
-                                If so, append version number on refresh call to check if app needs an update.
-                             */
-                            /*
-                            if (feedUrl.indexOf("barometer.nl/feed")>1) {
-                                feedUrl = feedUrl + versionCode;
-                            }
-                            */
-                            // end new code bij PrivacyVandaag
-
                 connection = NetworkUtils.setupConnection(feedUrl);
                 String contentType = connection.getContentType();
-                // int fetchMode = cursor.getInt(fetchModePosition);
-
                 handler = new RssAtomParser(new Date(cursor.getLong(realLastUpdatePosition)), keepDateBorderTime, id, cursor.getString(titlePosition), feedUrl,
                         cursor.getInt(retrieveFullscreenPosition) == 1);
                 handler.setFetchImages(NetworkUtils.needDownloadPictures());
+                // Log.e (TAG,"feedUrl = "+feedUrl);
 
                 if (fetchMode == 0) {
                     if (contentType != null && contentType.startsWith(CONTENT_TYPE_TEXT_HTML)) {
@@ -725,7 +687,8 @@ public class FetcherService extends IntentService {
                                         StringReader reader = new StringReader(new String(outputStream.toByteArray(), index2 > -1 ? contentType.substring(
                                                 index + 8, index2) : contentType.substring(index + 8)));
                                         Xml.parse(reader, handler);
-                                    } catch (Exception ignored) {
+                                    } catch (Exception e) {
+                                        Log.e ("Privacy Vandaag: ", "Error reading string " + e.getMessage());
                                     }
                                 } else {
                                     StringReader reader = new StringReader(xmlText);
@@ -757,24 +720,24 @@ public class FetcherService extends IntentService {
 
                     values.put(FeedColumns.ERROR, e.getMessage() != null ? e.getMessage() : getString(R.string.error_feed_process));
                     cr.update(FeedColumns.CONTENT_URI(id), values, null, null);
+                    handler = null; // If an error has occurred, reset the new articles counter for this feed to avoid notifications.
                 }
             } finally {
-
-				/* check and optionally find favicon */
-				/* No longer needed, because the icons of the feeds are included in the package */
-                /*
-                    try {
-                        if (handler != null && cursor.getBlob(iconPosition) == null) {
-                            String feedLink = handler.getFeedLink();
-                            if (feedLink != null) {
-                                NetworkUtils.retrieveFavicon(this, new URL(feedLink), id);
-                            } else {
-                                NetworkUtils.retrieveFavicon(this, connection.getURL(), id);
-                            }
-                        }
-                    } catch (Throwable ignored) {
-                    }
-                */
+                            /* check and optionally find favicon */
+                            /* No longer needed, because the icons of the feeds are included in the package */
+                            /*
+                                try {
+                                    if (handler != null && cursor.getBlob(iconPosition) == null) {
+                                        String feedLink = handler.getFeedLink();
+                                        if (feedLink != null) {
+                                            NetworkUtils.retrieveFavicon(this, new URL(feedLink), id);
+                                        } else {
+                                            NetworkUtils.retrieveFavicon(this, connection.getURL(), id);
+                                        }
+                                    }
+                                } catch (Throwable ignored) {
+                                }
+                            */
                 if (connection != null) {
                     connection.disconnect();
                 }
@@ -783,9 +746,31 @@ public class FetcherService extends IntentService {
 
         cursor.close();
 
-        return handler != null ? handler.getNewCount() : 0;
+        int newArticles = (handler != null) ? handler.getNewCount() : 0;
+        //Log.e(TAG, "Test notification is gegeven voor feedID " + feedId);
+        //if (newArticles == 0 ) newArticles =2;      // ONLY FOR TESTING !!!!
+
+        // Check of meldingen voor deze feed aanstaat, anders newArticles op 0 zetten
+        if (newArticles  > 0 ) {
+            boolean notifyFeed = true;
+            switch (Integer.parseInt(feedId)) {
+                case 1: // feedID Privacy Barometer
+                    notifyFeed = PrefUtils.getBoolean(PrefUtils.NOTIFY_PRIVACYBAROMETER, true);
+                    break;
+                case 2: // feedID Bits of Freedom
+                    notifyFeed = PrefUtils.getBoolean(PrefUtils.NOTIFY_BITSOFFREEDOM, true);
+                    break;
+                case 3: // feedID Privacy First
+                    notifyFeed = PrefUtils.getBoolean(PrefUtils.NOTIFY_PRIVACYFIRST, true);
+                    break;
+                case 4: // feedID Autoriteit Persoonsgegevens
+                    notifyFeed = PrefUtils.getBoolean(PrefUtils.NOTIFY_AUTORITEITPERSOONSGEGEVENS, true);
+            }
+            if (!notifyFeed) newArticles = 0;   // geen melding als de meldingen voor deze feed uitstaan.
+        }
+       //Log.e(TAG, "Nieuwe artikelen is " + newArticles);
+
+        return newArticles;
     }
-
-
 
 }

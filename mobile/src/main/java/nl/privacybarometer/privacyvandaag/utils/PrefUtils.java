@@ -42,9 +42,17 @@ public class PrefUtils {
     public static final String REFRESH_WIFI_ONLY = "refreshwifionly.enabled";
 
     public static final String NOTIFICATIONS_ENABLED = "notifications.enabled";
+    public static final String NOTIFY_PRIVACYBAROMETER = "notifications.privacybarometer";
+    public static final String NOTIFY_BITSOFFREEDOM = "notifications.bitsoffreedom";
+    public static final String NOTIFY_PRIVACYFIRST = "notifications.privacyfirst";
+    public static final String NOTIFY_AUTORITEITPERSOONSGEGEVENS = "notifications.autoriteitpersoonsgegevens";
+
+    public static final String NOTIFICATIONS_PREVIOUS_COUNT = "notifications.numberofpreviousarticles";
     public static final String NOTIFICATIONS_RINGTONE = "notifications.ringtone";
     public static final String NOTIFICATIONS_VIBRATE = "notifications.vibrate";
     public static final String NOTIFICATIONS_LIGHT = "notifications.light";
+
+    public static final String APP_VERSION_CODE = "app.versioncode";
 
     public static final String LIGHT_THEME = "lighttheme";
     public static final String LEFT_PANEL = "leftpanel";

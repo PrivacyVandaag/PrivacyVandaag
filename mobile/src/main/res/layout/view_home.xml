@@ -6,8 +6,6 @@
               android:orientation="vertical"
               tools:showIn="@layout/activity_home">
 
-    <include layout="@layout/view_toolbar"/>
-
     <fragment
         android:id="@+id/entries_list_fragment"
         android:name="nl.privacybarometer.privacyvandaag.fragment.EntriesListFragment"

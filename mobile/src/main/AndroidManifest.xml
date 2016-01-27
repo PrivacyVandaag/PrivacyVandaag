@@ -17,8 +17,8 @@
     android:protectionLevel="signature"/>
 
 <application
-    android:allowBackup="false"
     android:name="nl.privacybarometer.privacyvandaag.MainApplication"
+    android:allowBackup="true"
     android:icon="@mipmap/ic_launcher"
     android:label="@string/app_name"
     android:theme="@style/Theme.Light">
@@ -30,6 +30,12 @@
         android:authorities="nl.privacybarometer.privacyvandaag.provider.FeedData"
         android:exported="true"
         android:writePermission="nl.privacybarometer.privacyvandaag.provider.WRITE_PERMISSION"/>
+    <!-- ModPrivacyVandaag:
+       bovenstaande was niet automatisch refractored, dus handmatig gedaan.
+       Origineel was: android:writePermission="net.etuldan.sparss.provider.WRITE_PERMISSION"/>
+    -->
+
+
         <activity
             android:name="nl.privacybarometer.privacyvandaag.activity.HomeActivity"
             android:label="@string/app_name"
@@ -39,11 +45,7 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <activity
-            android:name="nl.privacybarometer.privacyvandaag.activity.AddGoogleNewsActivity"
-            android:label="@string/google_news_title"
-            android:launchMode="singleTask"/>
-        <activity
+    <activity
             android:name="nl.privacybarometer.privacyvandaag.activity.AboutActivity"
             android:label="@string/about_this_app"
             android:launchMode="singleTask">
@@ -71,80 +73,11 @@
             android:name="nl.privacybarometer.privacyvandaag.activity.GeneralPrefsActivity"
             android:label="@string/menu_settings"
             android:launchMode="singleTask"/>
-
-    <!-- ModPrivacyVandaag: ' EditFeedActivity' activity turned off, welke intent er ook is.
-        De EditFeedActivity laat mensen een feed aanmaken. Gaan we niet doen.
-    -->
-        <!--
-        <activity
-            android:name="nl.privacybarometer.privacyvandaag.activity.EditFeedActivity"
-            android:windowSoftInputMode="adjustResize">
-            <intent-filter>
-                <action android:name="android.intent.action.EDIT"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <data android:mimeType="vnd.android.cursor.item/vnd.spaRSS.feed"/>
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.INSERT"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <data android:mimeType="vnd.android.cursor.dir/vnd.spaRSS.feed"/>
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.SEND"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <data android:mimeType="text/plain"/>
-            </intent-filter>
-        </activity>
-    -->
-
-
-        <!-- ModPrivacyVandaag: De widget zetten we voorlopig uit, want niet heel zinvol volgens mij
-            Als ik het goed heb, horen de onderstaande declaraties daarbij.
-         -->
-
-        <!--
-        <receiver android:name="nl.privacybarometer.privacyvandaag.widget.WidgetProvider">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
-            </intent-filter>
-
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/widgetinfo"/>
-        </receiver>
-
-        <receiver android:name="nl.privacybarometer.privacyvandaag.widget.TickerWidgetProvider">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
-            </intent-filter>
-
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/tickerwidgetinfo"/>
-        </receiver>
-
-        <service
-            android:name="nl.privacybarometer.privacyvandaag.widget.WidgetService"
-            android:permission="android.permission.BIND_REMOTEVIEWS"/>
-        <service android:name="nl.privacybarometer.privacyvandaag.widget.TickerWidgetService"/>
-        -->
         <receiver android:name="nl.privacybarometer.privacyvandaag.receiver.BootCompletedBroadcastReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED"/>
             </intent-filter>
         </receiver>
-    <!-- ModPrivacyVandaag: Added OnUpgradeReceiver to make changes to the database if newer version of the app is installed. -->
-    <receiver android:name="nl.privacybarometer.privacyvandaag.receiver.OnUpgradeReceiver">
-        <intent-filter>
-            <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
-            <data android:scheme="package"  />
-        </intent-filter>
-        <intent-filter>
-            <action android:name="android.intent.action.PACKAGE_CHANGED"/>
-            <data android:scheme="package"  />
-         </intent-filter>
-    </receiver>
-
     <receiver android:name="nl.privacybarometer.privacyvandaag.receiver.ConnectionChangeReceiver">
             <intent-filter>
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE"/>

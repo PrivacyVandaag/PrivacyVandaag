@@ -1,4 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+           Click action button to hide the read articles
+
+           Deze functie gebruiken we niet in het zeeheldennieuws
+
+           De onClick vind je in activity > HomeActivity.java regel 320
+           en wordt aangeorpen in > fragment > EntriesListFragment.java regel 280
+
+           Hulpfuncties vind je in > utils > UiUtils.java
+           (UiUtils.displayHideReadButtonAction() en UiUtils.updateHideReadButton())\
+
+           Dit layout bestandje wordt aangeroepen vanuit
+           layout > fragment_entry_list.xml en layout > view_left_drawer.xml
+         -->
 <com.melnykov.fab.FloatingActionButton xmlns:android="http://schemas.android.com/apk/res/android"
                                        xmlns:fab="http://schemas.android.com/apk/res-auto"
                                        android:id="@+id/hide_read_button"

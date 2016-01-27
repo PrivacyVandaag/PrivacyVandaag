@@ -47,6 +47,7 @@
 package nl.privacybarometer.privacyvandaag.provider;
 
 import android.content.ContentValues;
+import android.content.Context;
 import android.net.Uri;
 import android.provider.BaseColumns;
 import android.text.TextUtils;
@@ -74,7 +75,6 @@ public class FeedData {
     static final String TYPE_DATE_TIME = "DATETIME";
     static final String TYPE_INT = "INT";
     static final String TYPE_BOOLEAN = "INTEGER(1)";
-
 
 
 
@@ -268,5 +268,25 @@ public class FeedData {
                 {NUMBER_ATTEMPT, TYPE_INT}, {"UNIQUE", "(" + ENTRY_ID + ", " + IMG_URL_TO_DL + ") ON CONFLICT IGNORE"}};
 
         public static final Uri CONTENT_URI = Uri.parse(CONTENT_AUTHORITY + "/tasks");
+    }
+
+    /**
+     * Add predefined feeds on first run of the app. Put them in order of first appearance in left drawer menu.
+     * params:
+     * context, URL of the feed, name of the feed, boolean if full article should be retrieved,
+     * two params for cookie settings, number of days that articles should be kept in database, name of icon resource.
+     */
+    public static void addPredefinedFeeds (Context context) {
+        FeedDataContentProvider.addFeed(context, "https://www.privacybarometer.nl/feed/", "Privacy Barometer", true, "", "", 61, "logo_icon_pb"); // 61 is het aantal dagen dat items bewaard moeten worden.
+        FeedDataContentProvider.addFeed(context, "https://www.bof.nl/feed/", "Bits of Freedom",  true, "", "", 61, "logo_icon_bof");
+        FeedDataContentProvider.addFeed(context, "https://www.privacyfirst.nl/index.php?option=com_k2&view=itemlist&format=feed", "Privacy First",  true, "", "", 61, "logo_icon_pf");
+        //FeedDataContentProvider.addFeed(context, "https://cbpweb.nl/nl/rss", "CBP",  false, "", "", 61, "logo_icon_cbp");
+        FeedDataContentProvider.addFeed(context, "https://autoriteitpersoonsgegevens.nl/nl/rss", "Autoriteit Persoonsgegevens",  false, "", "", 61, "logo_icon_ap");
+ 		 /* This last feed is used as a service channel. Messages about the app , like available updates,
+		  * can be send through here. NOTICE: This last feed is not displayed in de drawer menu,
+		  * and cannot be set inactive because of the nature of the messages.
+		  * This service-feed should always be added last to prevent it from being displayed in the left menu drawer.
+		 */
+        FeedDataContentProvider.addFeed(context, "https://www.privacybarometer.nl/app/feed/", "Privacy Vandaag",  false, "", "", 61, "logo_icon_pv"); // 61 is het aantal dagen dat items bewaard moeten worden.
     }
 }

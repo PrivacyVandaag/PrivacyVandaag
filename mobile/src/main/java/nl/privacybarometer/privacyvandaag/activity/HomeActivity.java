@@ -22,7 +22,6 @@
 package nl.privacybarometer.privacyvandaag.activity;
 
 import android.app.LoaderManager;
-import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
@@ -41,16 +40,13 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.widget.Toolbar;
 
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.Display;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
-import android.widget.Toast;
 
-import java.io.File;
-
+import nl.privacybarometer.privacyvandaag.BuildConfig;
 import nl.privacybarometer.privacyvandaag.Constants;
 import nl.privacybarometer.privacyvandaag.R;
 import nl.privacybarometer.privacyvandaag.adapter.DrawerAdapter;
@@ -62,19 +58,18 @@ import nl.privacybarometer.privacyvandaag.service.FetcherService;
 import nl.privacybarometer.privacyvandaag.service.RefreshService;
 import nl.privacybarometer.privacyvandaag.utils.PrefUtils;
 import nl.privacybarometer.privacyvandaag.utils.UiUtils;
+import nl.privacybarometer.privacyvandaag.provider.UpgradeActions;
 
-/* ModPrivacyVandaag: Class is needed to add feeds to database after installation of the app. More info at line 383 */
-import nl.privacybarometer.privacyvandaag.provider.FeedDataContentProvider;
-/* ModPrivacyVandaag: This class is needed to get the versionCode of de build of the app. See for more info at line 420 */
-import nl.privacybarometer.privacyvandaag.BuildConfig;
-
+/**
+ * Main activity
+ * including fragment-list of articles read from the database
+ * and a left drawer menu with categories and feeds.
+ */
 public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCallbacks<Cursor> {
-
+    private static final String TAG = HomeActivity.class.getSimpleName() + " ~> ";
     private static final String STATE_CURRENT_DRAWER_POS = "STATE_CURRENT_DRAWER_POS";
-
     private static final String FEED_UNREAD_NUMBER = "(SELECT " + Constants.DB_COUNT + " FROM " + EntryColumns.TABLE_NAME + " WHERE " +
             EntryColumns.IS_READ + " IS NULL AND " + EntryColumns.FEED_ID + '=' + FeedColumns.TABLE_NAME + '.' + FeedColumns._ID + ')';
-
     private static final String WHERE_UNREAD_ONLY = "(SELECT " + Constants.DB_COUNT + " FROM " + EntryColumns.TABLE_NAME + " WHERE " +
             EntryColumns.IS_READ + " IS NULL AND " + EntryColumns.FEED_ID + "=" + FeedColumns.TABLE_NAME + '.' + FeedColumns._ID + ") > 0" +
             " OR (" + FeedColumns.IS_GROUP + "=1 AND (SELECT " + Constants.DB_COUNT + " FROM " + FeedData.ENTRIES_TABLE_WITH_FEED_INFO +
@@ -91,28 +86,16 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
     private DrawerAdapter mDrawerAdapter;
     private ActionBarDrawerToggle mDrawerToggle;
 
-    //Context mContext = this.getContext();
-
-    /* ModPrivacyVandaag: No longer necessary. We don't want floating button 'mDrawerHideReadButton' in left drawer visible.    */
-    // private FloatingActionButton mDrawerHideReadButton;
 
     private final SharedPreferences.OnSharedPreferenceChangeListener mShowReadListener = new SharedPreferences.OnSharedPreferenceChangeListener() {
         @Override
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
             if (PrefUtils.SHOW_READ.equals(key)) {
                 getLoaderManager().restartLoader(LOADER_ID, null, HomeActivity.this);
-
-               /* ModPrivacyVandaag: Floating button no longer visible in left drawer. */
-               /*
-                if (mDrawerHideReadButton != null) {
-                    UiUtils.updateHideReadButton(mDrawerHideReadButton);
-                }
-                */
             }
         }
     };
     private CharSequence mTitle;
-    private BitmapDrawable mIcon;
     private int mCurrentDrawerPos;
 
     private boolean mCanQuit = false;
@@ -121,8 +104,24 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
     protected void onCreate(Bundle savedInstanceState) {
         UiUtils.setPreferenceTheme(this);
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_home);
+
+        /**
+         * Check of er een upgrade heeft plaatsgevonden en voer zonodig acties uit.
+         * We gebruiken dit nu hier omdat het bijwerken vanuit provider > DatabaseHelper.onUpgrade()
+         * niet overweg kan met de aanpassingen Daarvoor moet namelijk eerst de database goed zijn geinitialiseerd.
+         *
+         */
+        final int versionCode = BuildConfig.VERSION_CODE;
+        final int storedVersionCode = PrefUtils.getInt(PrefUtils.APP_VERSION_CODE,0);
+        if (versionCode > storedVersionCode) {
+        // if (versionCode > -1 ) { // Voor test doeleinden!
+            if (UpgradeActions.startUpgradeActions(this)) PrefUtils.putInt(PrefUtils.APP_VERSION_CODE, versionCode);
+        } //*** einde upgrade
+
+
+
+
         // Entries are the articles from the rss feeds
         mEntriesFragment = (EntriesListFragment) getFragmentManager().findFragmentById(R.id.entries_list_fragment);
 
@@ -161,24 +160,6 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
                 mDrawerLayout.openDrawer(mLeftDrawer);
             }
         }
-
-        /* ModPrivacyVandaag: Disable floating button in left drawer.
-            So, helptext onLongClick also no longer needed. */
-        /*
-        mDrawerHideReadButton = (FloatingActionButton) mLeftDrawer.findViewById(R.id.hide_read_button);
-        if (mDrawerHideReadButton != null) {
-            mDrawerHideReadButton.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View view) {
-                    UiUtils.displayHideReadButtonAction(HomeActivity.this);
-                    return true;
-                }
-            });
-            UiUtils.updateHideReadButton(mDrawerHideReadButton);
-            UiUtils.addEmptyFooterView(mDrawerList, 90);
-        }
-        */
-
         if (savedInstanceState != null) {
             mCurrentDrawerPos = savedInstanceState.getInt(STATE_CURRENT_DRAWER_POS);
         }
@@ -197,6 +178,8 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
                 startService(new Intent(HomeActivity.this, FetcherService.class).setAction(FetcherService.ACTION_REFRESH_FEEDS));
             }
         }
+
+        PrefUtils.putInt(PrefUtils.NOTIFICATIONS_PREVIOUS_COUNT, 0);  // Reset the counter for new articles, used in service > FetcherService.class
     }
 
     @Override
@@ -209,6 +192,7 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
     protected void onResume() {
         super.onResume();
         PrefUtils.registerOnPrefChangeListener(mShowReadListener);
+        PrefUtils.putInt(PrefUtils.NOTIFICATIONS_PREVIOUS_COUNT, 0);  // Reset the counter for new articles, used in service > FetcherService.class
     }
 
     @Override
@@ -217,103 +201,25 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
         super.onPause();
     }
 
-    /**
-     * ModPrivacyVandaag: The cache seems rather large for this app. At this time it doesn't seem to be a problem,
-     * but it could be in the future. Therefore, I added some code to clear the cache of the app when it is closed down.
-     * Because I do not feel the need to do this at this time, the code is in the comments
-     */
-    /*
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-
-        try {
-            trimCache(this);
-             Toast.makeText(this, "onDestroy ", Toast.LENGTH_LONG).show();
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-
-    }
-    public static void trimCache(Context context) {
-        try {
-            File dir = context.getCacheDir();
-            if (dir != null && dir.isDirectory()) {
-                deleteDir(dir);
-            }
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
-    }
-
-    public static boolean deleteDir(File dir) {
-        if (dir != null && dir.isDirectory()) {
-            String[] children = dir.list();
-            for (int i = 0; i < children.length; i++) {
-                boolean success = deleteDir(new File(dir, children[i]));
-                if (!success) {
-                    return false;
-                }
-            }
-        }
-
-        // The directory is now empty so delete it
-        return dir.delete();
-    }
-    */
-
-
-     /**
-      *  ModPrivacyVandaag: It is rather annoying that the back button does not close left drawer and
-      *  to have to press the back butten twice in orde to close app. Tis is counter-intuitive for users.
-      *  So I put original code between comments and changed the behaviour of the button back to normal.
-      */
     @Override
     public void finish() {
-
-        /*
-        if (mCanQuit) { // if 'back' is pressed for the second time.
-            super.finish();
-            return;
-        }
-
-        Toast.makeText(this, R.string.back_again_to_quit, Toast.LENGTH_SHORT).show(); // Melding om nog een keer te drukken
-
-        mCanQuit = true;
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                mCanQuit = false;
-            }
-        }, 3000);   // apparantly one has to press 'back' within 3 seconds to close the app.
-
-        */
-
-        /* ModPrivacyVandaag: New code added to make the button work like one would expect it to do.
-        */
-        // On wide screens (tablets) the left drawer is always open,
+        // On wide screens (tablets) the left menu drawer is always open,
         // so back button should finish the app immediately.
+        // TODO: There should be an easier way to check if the wide-layout for tablets is used.
         Display display = getWindowManager().getDefaultDisplay();
         DisplayMetrics outMetrics = new DisplayMetrics ();
         display.getMetrics(outMetrics);
         float density  = getResources().getDisplayMetrics().density;
         float dpWidth  = outMetrics.widthPixels / density;
-        //show width and density in toast message for developers info.
-        // Toast.makeText(this, "density="+String.valueOf(density) + ", breedte dp="+String.valueOf(dpWidth), Toast.LENGTH_LONG).show();
-
-        if (dpWidth >= 700f) {  // on wide screen (tablet) finish immediately
+         if (dpWidth >= 700f) {  // on wide screen (tablet) finish immediately
             super.finish();
-        } else {    // on small screens close left drawer first
+        } else {    // on small screens if left menu drawer is open, close only left menu drawer.
             if (mDrawerLayout.isDrawerOpen(mLeftDrawer)) {
                 mDrawerLayout.closeDrawer(mLeftDrawer);
-            } else {
+            } else {    // If left menu drawer is already closed, finish the app.
                 super.finish();
             }
         }
-        // end of this modification by PrivacyVandaag
-
-
     }
 
     @Override
@@ -324,15 +230,65 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
         selectDrawerItem(0);
     }
 
+    /**
+     * Het algemene menu en wat er gebeurt als men erop klikt.
+     * Specifieke items per kanaal/feed worden ingesteld in fragment > EntriesListFragment.java
+     * De menu indeling vind je in res > menu >entry_list.xml
+     *
+     * @param item  Het item in het menu waarop geklikt wordt.
+     * @return is altijd true.
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         if (mDrawerToggle != null && mDrawerToggle.onOptionsItemSelected(item)) {
             return true;
         }
+        switch (item.getItemId()) {
+
+            case R.id.search: {    // optie zat eerst in het 'general preferences'. Zie ook xml > general_preferences.xml
+                selectDrawerItem(SEARCH_DRAWER_POSITION);
+                if (mDrawerLayout != null) {
+                    mDrawerLayout.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            mDrawerLayout.closeDrawer(mLeftDrawer);
+                        }
+                    }, 50);
+                }
+                return true;
+            }
+
+            case R.id.settings: {  // Click 'menu_settings' in the overflow toolbar menu ( layout > entrylist.xml ): go to preferences
+                startActivity(new Intent(this, GeneralPrefsActivity.class));
+                return true;
+            }
+            case R.id.edit_feeds: { // Start het scherm om de organisaties te sorteren of te (ont-)volgen.
+                startActivity(new Intent(this, EditFeedsListActivity.class));
+                return true;
+            }
+            case R.id.about_this_app: {    // optie zat eerst in het 'general preferences'. Zie ook xml > general_preferences.xml
+                startActivity(new Intent(this, AboutActivity.class));
+                return true;
+            }
+        }
 
         return super.onOptionsItemSelected(item);
     }
 
+    /**
+     *  Click action on the button to hide the read articles
+     *
+     *  Deze functie gebruiken we niet in het PrivacyVandaag.
+     *  De knop hebben we uit de layout gehaald.
+     *  De knop vind je in layout > view_hide_read_button.xml
+     *  en wordt aangeroepen in > fragment > EntriesListFragment.java regel 280.
+     *
+     *  Hulpfuncties vind je in > utils > UiUtils.java
+     *  (UiUtils.displayHideReadButtonAction() en UiUtils.updateHideReadButton())
+     *
+     *
+     */
+    /*
     public void onClickHideRead(View view) {
         if (!PrefUtils.getBoolean(PrefUtils.SHOW_READ, true)) {
             PrefUtils.putBoolean(PrefUtils.SHOW_READ, true);
@@ -340,26 +296,7 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
             PrefUtils.putBoolean(PrefUtils.SHOW_READ, false);
         }
     }
-
-    public void onClickEditFeeds(View view) {
-        startActivity(new Intent(this, EditFeedsListActivity.class));
-    }
-
-    public void onClickSearch(View view) {
-        selectDrawerItem(SEARCH_DRAWER_POSITION);
-        if (mDrawerLayout != null) {
-            mDrawerLayout.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    mDrawerLayout.closeDrawer(mLeftDrawer);
-                }
-            }, 50);
-        }
-    }
-
-    public void onClickSettings(View view) {
-        startActivity(new Intent(this, GeneralPrefsActivity.class));
-    }
+    */
 
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
@@ -379,12 +316,11 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
     }
 
     // Get the feeds from database
-    // ModPrivacyVandaag: include FETCH_MODE, because FETCH-MODE=99 means a feed that is not to be refreshed
-    // ModPrivacyVandaag: include ICON_DRAWABLE to get the resource identifier to the feed logo
+    // including FETCH_MODE, because FETCH-MODE=99 means a feed that is inactive (not to be refreshed)
+    // including ICON_DRAWABLE to get the resource identifier to the feed logo in the resources.
     @Override
     public Loader<Cursor> onCreateLoader(int i, Bundle bundle) {
         CursorLoader cursorLoader = new CursorLoader(this, FeedColumns.GROUPED_FEEDS_CONTENT_URI, new String[]{FeedColumns._ID, FeedColumns.URL, FeedColumns.NAME,
-         //       FeedColumns.IS_GROUP, FeedColumns.ICON, FeedColumns.LAST_UPDATE, FeedColumns.ERROR, FEED_UNREAD_NUMBER},
                 FeedColumns.IS_GROUP, FeedColumns.ICON, FeedColumns.LAST_UPDATE, FeedColumns.ERROR, FEED_UNREAD_NUMBER, FeedColumns.FETCH_MODE, FeedColumns.ICON_DRAWABLE},
                 PrefUtils.getBoolean(PrefUtils.SHOW_READ, true) ? "" : WHERE_UNREAD_ONLY, null, null
         );
@@ -392,7 +328,7 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
         return cursorLoader;
     }
 
-    // If feeds are loaded from database
+    // If feeds are loaded from the database
     @Override
     public void onLoadFinished(Loader<Cursor> cursorLoader, Cursor cursor) {
         if (mDrawerAdapter != null) {
@@ -416,12 +352,12 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
         mDrawerAdapter.setCursor(null);
     }
 
-    /* ModPrivacyVandaag: This is where feeds are placed in left drawer on start of the app if dBase is empty */
+    /* This is where feeds are placed in left drawer on start of the app if dBase is empty */
     private void selectDrawerItem(int position) {
         mCurrentDrawerPos = position;
         Drawable mDrawable=null;
         Bitmap bitmap=null;
-        mIcon = null;
+        BitmapDrawable mIcon = null;
 
         Uri newUri;
         boolean showFeedInfo = true;
@@ -432,7 +368,7 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
                 break;
             case 0:
                 newUri = EntryColumns.ALL_ENTRIES_CONTENT_URI;
-                //   ModPrivacyVandaag: rescale the app-icon to the right size for use in the actionBar
+                //   Rescale the app-icon from the resources to the right size for use in the actionBar
                     mDrawable = ContextCompat.getDrawable(this, R.drawable.ic_statusbar_pv);
                     bitmap = ((BitmapDrawable) mDrawable).getBitmap();
                     if (bitmap != null) {
@@ -444,13 +380,12 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
                 break;
             default:
                 long feedOrGroupId = mDrawerAdapter.getItemId(position);
-                mTitle = mDrawerAdapter.getItemName(position); // ModPrivacyVandaag: line moved from just before break-statement
-                if (mDrawerAdapter.isItemAGroup(position)) {
+                mTitle = mDrawerAdapter.getItemName(position);
+                if (mDrawerAdapter.isItemAGroup(position)) {    // TODO: remove groups from the app. Not going to use this.
                     newUri = EntryColumns.ENTRIES_FOR_GROUP_CONTENT_URI(feedOrGroupId);
                 } else {
-
-                    //   ModPrivacyVandaag: Use icons in package instead of fetching favicons from internet.
-                    // in order to rescale the resources to the right size for use as drawer icon
+                    // Get icons from resources instead of fetching favicons from websites on the internet.
+                    // Rescale the resources to the right size for use as drawer icon
                     int mIconResourceId = mDrawerAdapter.getIconResourceId(position);
                     if (mIconResourceId > 0) {
                         mDrawable = ContextCompat.getDrawable(this, mIconResourceId);
@@ -459,17 +394,17 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
                             mIcon = new BitmapDrawable(getResources(), Bitmap.createScaledBitmap(bitmap, 36, 36, true));
                         }
                     }
-// end ModPrivacyVandaag
-/*                    byte[] iconBytes = mDrawerAdapter.getItemIcon(position);
-                    Bitmap bitmap = UiUtils.getScaledBitmap(iconBytes, 24);
-                    if (bitmap != null) {
-                       mIcon = new BitmapDrawable(getResources(), bitmap);
-                    }
-*/
+                                    //  If favicons from websites are used, they are feteched and stored as bitmaps in database
+                                    /*
+                                    byte[] iconBytes = mDrawerAdapter.getItemIcon(position);
+                                    Bitmap bitmap = UiUtils.getScaledBitmap(iconBytes, 24);
+                                    if (bitmap != null) {
+                                       mIcon = new BitmapDrawable(getResources(), bitmap);
+                                    }
+                                    */
                     newUri = EntryColumns.ENTRIES_FOR_FEED_CONTENT_URI(feedOrGroupId);
                     showFeedInfo = false;
                 }
-                //mTitle = mDrawerAdapter.getItemName(position);
                 break;
         }
         if (!newUri.equals(mEntriesFragment.getUri())) {
@@ -478,7 +413,7 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
 
         mDrawerList.setItemChecked(position, true);
 
-        // First open => we open the drawer for you
+        // First run of the app => we open the drawer for you
         if (PrefUtils.getBoolean(PrefUtils.FIRST_OPEN, true)) {
             PrefUtils.putBoolean(PrefUtils.FIRST_OPEN, false);
             if (mDrawerLayout != null) {
@@ -489,47 +424,18 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
                     }
                 }, 500);
             }
-            /* ModPrivacyVandaag: This is the dialog popup that's been shown at first run after installatie.
-                Not needed for our use, because we predefined the feed channels.
-                Therefore, code put in comments.
-            */
-            /*
-            AlertDialog.Builder builder = new AlertDialog.Builder(this);
-            builder.setTitle(R.string.welcome_title)
-                    .setItems(new CharSequence[]{getString(R.string.google_news_title), getString(R.string.add_custom_feed)}, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            if (which == 1) {
-                                startActivity(new Intent(Intent.ACTION_INSERT).setData(FeedColumns.CONTENT_URI));
-                            } else {
-                                startActivity(new Intent(HomeActivity.this, AddGoogleNewsActivity.class));
-                            }
-                        }
-                    });
-            builder.show();
-            */
+                                // Dialog popup that can be shown at first run after installation.
+                                /*
+                                AlertDialog.Builder builder = new AlertDialog.Builder(this);
+                                builder.setTitle(R.string.welcome_title);
+                                builder.show();
+                                */
 
-            /* ModPrivacyVandaag: On first run after installation, try to add these feeds in database */
-            // TODO: Put all values in resource file and make this a for each loop
-            FeedDataContentProvider.addFeed(this, "https://www.privacybarometer.nl/feed/", "Privacy Barometer", true, "", "", 61, "logo_icon_pb"); // 61 is het aantal dagen dat items bewaard moeten worden.
-            FeedDataContentProvider.addFeed(this, "https://www.bof.nl/feed/", "Bits of Freedom",  true, "", "", 61, "logo_icon_bof");
-            FeedDataContentProvider.addFeed(this, "https://www.privacyfirst.nl/index.php?option=com_k2&view=itemlist&format=feed", "Privacy First",  true, "", "", 61, "logo_icon_pf");
-            FeedDataContentProvider.addFeed(this, "https://cbpweb.nl/nl/rss", "CBP",  false, "", "", 61, "logo_icon_cbp");
-         //   FeedDataContentProvider.addFeed(this, "http://www.vrijbit.nl/component/k2/itemlist.feed?moduleID=106", "Vrijbit",  true, "", "", 61);
-         //   FeedDataContentProvider.addFeed(this, "http://www.kdvp.nl/?format=feed&amp;type=rss", "KDVP",  true, "", "", 61);
+            /* On first run after installation, try to add these feeds in database */
+            FeedData.addPredefinedFeeds(this);
+        }   // end of settings on first run of the app.
 
-
-		 /* ModPrivacyVandaag: This last feed is used as a service channel. Messages about the app , like available updates, can be send through here.
-		 * NOTICE: This last feed is not displayed in de drawer menu, and cannot be set inactive because of the nature of the messages.
-		 * Therefore, this service-feed should always be added last.
-		 */
-            FeedDataContentProvider.addFeed(this, "https://www.privacybarometer.nl/app/feed/", "Privacy Vandaag",  false, "", "", 61, "logo_icon_pv"); // 61 is het aantal dagen dat items bewaard moeten worden.
-
-
-
-
-        }
-
-        // Set title & icon
+        // Set title and icon in left drawer menu
         switch (mCurrentDrawerPos) {
             case SEARCH_DRAWER_POSITION:
                 getSupportActionBar().setTitle(android.R.string.search_go);
@@ -537,8 +443,6 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
                 break;
             case 0:
                 getSupportActionBar().setTitle(R.string.all);
-                /* ModPrivacyVandaag: Change of app favicon in ActionBar. */
-               // getSupportActionBar().setIcon(R.drawable.ic_statusbar_pv);
                 if (mIcon != null) {
                     getSupportActionBar().setIcon(mIcon);
                 } else {

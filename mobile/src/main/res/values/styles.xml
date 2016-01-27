@@ -8,11 +8,11 @@
         <item name="android:paddingLeft">15dip</item>
         <item name="android:paddingRight">15dip</item>
         <item name="android:layout_marginTop">0dip</item>
-        <item name="android:background">?attr/colorPrimary</item>
         <item name="android:textColor">#ffffff</item>
-        <item name="android:textSize">15sp</item>
-    </style>
+<!--        <item name="android:background">?attr/colorPrimary</item>   -->
 
+        <item name="android:textSize">12sp</item>
+    </style>
 
     // parent="@android:style/TextAppearance.Medium"
 

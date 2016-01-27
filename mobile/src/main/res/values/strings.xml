@@ -32,16 +32,25 @@
     <string name="update">laatste update</string>
     <string name="colon">:\u00A0</string>
     <string name="menu_settings">Instellingen</string>
+    <string name="menu_edit_feeds">Organisaties</string>
+    <string name="menu_about_this_app">Over Privacy Vandaag</string>
     <string name="menu_refresh">Verversen</string>
+    <string name="menu_search">Zoeken</string>
     <string name="menu_all_read">Markeer alles als gelezen</string>
     <string name="all_feeds">Alle artikelen</string>
     <string name="error">Fout</string>
+    <string name="error_fetching_feed">Onleesbaar. Fout in lijst met artikelen.</string>
     <string name="network_error">Er is geen netwerkverbinding</string>
     <string name="loading">Loading…</string>
+    <string name="dont_follow_feed">Niet volgen</string>
     <string name="no_result">No result</string>
     <string name="drawer_open">Open navigation drawer</string>
     <string name="drawer_close">Close navigation drawer</string>
-    <string name="back_again_to_quit">Klik \u0027terug\u0027 nog een keer om af te sluiten.</string>
+    <string name="checking_for_update">Controleren&#8230;</string>
+    <string name="already_latest_version">U heeft de meest recente versie.</string>
+    <string name="download_failed">Download is niet gelukt. Controleer de verbinding en probeer opnieuw.</string>
+    <string name="installing_update">Download is gereed. Installeren vanaf</string>
+    <string name="installation_failed">Installeren is helaas niet gelukt. Probeer opnieuw of installeer de update handmatig. Kijk op https://www.privacybarometer.nl/app voor meer informatie.</string>
 
     <!-- FEEDS -->
     <string name="feeds">Organisaties</string>
@@ -155,6 +164,10 @@
     <string name="settings_category_notifications">Meldingen</string>
     <string name="settings_notifications_enabled">Meldingen aan</string>
     <string name="settings_notifications_enabled_description">Geef een melding als er een nieuw artikel is</string>
+    <string name="settings_notifications_enabled_pb">van Privacy Barometer</string>
+    <string name="settings_notifications_enabled_bof">van Bits of Freedom</string>
+    <string name="settings_notifications_enabled_pf">van Privacy First</string>
+    <string name="settings_notifications_enabled_ap">van Autoriteit Persoonsgegevens</string>
     <string name="settings_notifications_ringtone">Meldingstoon</string>
     <string name="settings_notifications_ringtone_none">Geen</string>
     <string name="settings_notifications_vibrate">Trillen</string>
@@ -193,6 +206,11 @@
     <string name="settings_proxy_type">Type</string>
 
     <plurals name="number_of_new_entries">
+        <item quantity="one">Eén nieuw artikel</item>
+        <item quantity="other">Nieuwe artikelen</item>
+        <!-- <item quantity="other">%d nieuwe artikelen</item>  -->
+    </plurals>
+    <plurals name="number_of_new_entries_button">
         <item quantity="one">Eén nieuw artikel</item>
         <item quantity="other">%d nieuwe artikelen</item>
     </plurals>

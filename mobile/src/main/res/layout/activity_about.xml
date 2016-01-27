@@ -75,6 +75,7 @@
 
             <Button
                 style="@style/StandaardButton"
+                android:background="@drawable/bg_standard_buttons"
                 android:id="@+id/check_for_update"
                 android:text="@string/check_for_update"
                 android:onClick="checkForUpdate"

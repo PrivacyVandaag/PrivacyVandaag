@@ -46,13 +46,18 @@
 
 package nl.privacybarometer.privacyvandaag.provider;
 
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.net.Uri;
 import android.os.Environment;
 import android.os.Handler;
+import android.util.Log;
 
-import nl.privacybarometer.privacyvandaag.parser.OPML;
+import nl.privacybarometer.privacyvandaag.MainApplication;
 import nl.privacybarometer.privacyvandaag.provider.FeedData.EntryColumns;
 import nl.privacybarometer.privacyvandaag.provider.FeedData.FeedColumns;
 import nl.privacybarometer.privacyvandaag.provider.FeedData.FilterColumns;
@@ -61,9 +66,9 @@ import nl.privacybarometer.privacyvandaag.provider.FeedData.TaskColumns;
 import java.io.File;
 
 class DatabaseHelper extends SQLiteOpenHelper {
-
+    private static final String TAG = DatabaseHelper.class.getSimpleName() + " ~> ";
     private static final String DATABASE_NAME = "FeedEx.db";
-    private static final int DATABASE_VERSION = 10;
+    private static final int DATABASE_VERSION = 11;
 
     private static final String ALTER_TABLE = "ALTER TABLE ";
     private static final String ADD = " ADD ";
@@ -81,48 +86,8 @@ class DatabaseHelper extends SQLiteOpenHelper {
         database.execSQL(createTable(FilterColumns.TABLE_NAME, FilterColumns.COLUMNS));
         database.execSQL(createTable(EntryColumns.TABLE_NAME, EntryColumns.COLUMNS));
         database.execSQL(createTable(TaskColumns.TABLE_NAME, TaskColumns.COLUMNS));
-
-        /* ModPrivacyVandaag: For our use a backup facility seems overdone.
-            By removing it, the permission to write external storage is no longer needed.
-            Remove function to read OPML backupfile
-        */
-        /*
-        // Check if we need to import the backup
-        File backupFile = new File(OPML.BACKUP_OPML);
-        final boolean hasBackup = backupFile.exists();
-        mHandler.post(new Runnable() { // In order to it after the database is created
-            @Override
-            public void run() {
-                new Thread(new Runnable() { // To not block the UI
-                    @Override
-                    public void run() {
-                        try {
-                            if (hasBackup) {
-                                // Perform an automated import of the backup
-                                OPML.importFromFile(OPML.BACKUP_OPML);
-                            }
-                        } catch (Exception ignored) {
-                        }
-                    }
-                }).start();
-            }
-        });
-        */
     }
 
-    public void exportToOPML() {
-        /* ModPrivacyVandaag: For our use a backup facility seems overdone.
-            By removing it, the permission to write external storage is no longer needed.
-            Remove function to write OPML backupfile
-        */
-        /*
-        try {
-            OPML.exportToFile(OPML.BACKUP_OPML);
-        } catch (Exception ignored) {
-        }
-        */
-
-    }
 
     private String createTable(String tableName, String[][] columns) {
         if (tableName == null || columns == null || columns.length == 0) {
@@ -144,6 +109,7 @@ class DatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase database, int oldVersion, int newVersion) {
+        /* De database bij de eerste release van Privacy Vandaag is versie 10. Upgrades dus niet nodig.
         if (oldVersion < 2) {
             executeCatchedSQL(database, ALTER_TABLE + FeedColumns.TABLE_NAME + ADD + FeedColumns.REAL_LAST_UPDATE + ' ' + FeedData.TYPE_DATE_TIME);
         }
@@ -177,6 +143,8 @@ class DatabaseHelper extends SQLiteOpenHelper {
         if (oldVersion < 10) {
             executeCatchedSQL(database, ALTER_TABLE + FeedColumns.TABLE_NAME + ADD + FeedColumns.KEEP_TIME + ' ' + FeedData.TYPE_DATE_TIME);
         }
+        */
+
     }
 
     private void executeCatchedSQL(SQLiteDatabase database, String query) {

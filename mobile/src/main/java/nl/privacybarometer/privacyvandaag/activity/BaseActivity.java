@@ -23,13 +23,19 @@ package nl.privacybarometer.privacyvandaag.activity;
 import android.annotation.SuppressLint;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.view.WindowManager;
 
 import nl.privacybarometer.privacyvandaag.Constants;
 
-public abstract class BaseActivity extends ActionBarActivity {
+/**
+ * BaseActivity used as a basis for all the other activities.
+ *
+ */
+
+// public abstract class BaseActivity extends ActionBarActivity {
+public abstract class BaseActivity extends AppCompatActivity {
 
     private static final String STATE_IS_NORMAL_FULLSCREEN = "STATE_IS_NORMAL_FULLSCREEN";
     private static final String STATE_IS_IMMERSIVE_FULLSCREEN = "STATE_IS_IMMERSIVE_FULLSCREEN";

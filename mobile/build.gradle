@@ -2,21 +2,9 @@ apply plugin: 'com.android.application'
 apply plugin: 'com.droidtitan.lintcleaner'
 
 android {
-    compileSdkVersion 22
-    buildToolsVersion "22.0.1"
-
-    defaultConfig {
-        applicationId 'nl.privacybarometer.privacyvandaag'
-        minSdkVersion 14
-        targetSdkVersion 21
-        versionCode 90
-        versionName "0.9.3"
-    }
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_7
-        targetCompatibility JavaVersion.VERSION_1_7
-    }
+    compileSdkVersion 23
+    //buildToolsVersion "22.0.1"
+    buildToolsVersion "23.0.1"
 
     signingConfigs {
         release {
@@ -28,7 +16,6 @@ android {
             }
         }
     }
-
     buildTypes {
         release {
             signingConfig signingConfigs.release
@@ -39,17 +26,31 @@ android {
         }
     }
 
+
+    defaultConfig {
+        applicationId 'nl.privacybarometer.privacyvandaag'
+        minSdkVersion 14
+        targetSdkVersion 23
+        versionCode 94
+        versionName "1.0.0"
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
+
+
     productFlavors {
         floss {
-            /* ModPrivacyVandaag: We don't need a build variant at this time, so the applicationId is made identical. */
-            /*   applicationId 'nl.privacybarometer.privacyvandaag.floss' */
+            /* We don't need a build variant at this time, so the applicationId is made identical. */
+            /* applicationId 'nl.privacybarometer.privacyvandaag.floss' */
             applicationId 'nl.privacybarometer.privacyvandaag'
         }
         gplay {
             applicationId 'nl.privacybarometer.privacyvandaag'
         }
     }
-
 }
 
 repositories {
@@ -60,13 +61,9 @@ repositories {
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    //wearApp project(':wear')\n' +
-    compile 'com.android.support:appcompat-v7:21.+'
-    // ModPrivacyVandaag: Erorr using 22.2.0: appcompat-v7:22+ do not support current theme features.
-    //compile 'com.android.support:appcompat-v7:22.2.0'
-    gplayCompile 'com.google.android.gms:play-services-wearable:+'
-    compile 'com.melnykov:floatingactionbutton:+'
+    compile 'com.android.support:appcompat-v7:23.+'
+    compile 'com.melnykov:floatingactionbutton:+' // TODO: Deze kan weg, want we gebruiken die knop niet meer
     compile 'org.jsoup:jsoup:+'
-    compile 'com.squareup.picasso:picasso:+'
-    compile 'com.amulyakhare:com.amulyakhare.textdrawable:+'
+  //  compile 'com.squareup.picasso:picasso:+'
+  //  compile 'com.amulyakhare:com.amulyakhare.textdrawable:+'
 }

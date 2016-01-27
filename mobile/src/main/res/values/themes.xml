@@ -5,20 +5,34 @@
     <style name="Theme.Light" parent="Theme.AppCompat.Light">
         <item name="windowActionBar">false</item>
         <item name="windowActionModeOverlay">true</item>
+        <item name="windowNoTitle">true</item>
+
+
         <!-- customize the color palette -->
         <item name="colorPrimary">@color/light_theme_color_primary</item>
         <item name="colorPrimaryDark">@color/light_theme_color_primary_dark</item>
         <item name="colorAccent">@color/light_theme_color_primary</item>
-        <item name="android:activatedBackgroundIndicator">@layout/view_drawer_list_selector</item>
+        <item name="android:activatedBackgroundIndicator">@drawable/bg_drawer_item</item>
     </style>
 
     <style name="Theme.Dark" parent="Theme.AppCompat">
         <item name="windowActionBar">false</item>
         <item name="windowActionModeOverlay">true</item>
+        <item name="windowNoTitle">true</item>
+
         <!-- customize the color palette -->
         <item name="colorPrimary">@color/dark_theme_color_primary</item>
         <item name="colorPrimaryDark">@color/dark_theme_color_primary_dark</item>
         <item name="colorAccent">@color/light_theme_color_primary</item>
-        <item name="android:activatedBackgroundIndicator">@layout/view_drawer_list_selector</item>
+        <item name="android:activatedBackgroundIndicator">@drawable/bg_drawer_item</item>
+        <item name="android:selectableItemBackground">@color/dark_theme_color_primary_dark</item>
+    </style>
+    <style name="Theme.Light.NoActionBar">
+        <!--  <item name="windowActionBar">false</item>   -->
+        <item name="windowNoTitle">true</item>
+    </style>
+    <style name="Theme.Dark.NoActionBar">
+       <!--  <item name="windowActionBar">false</item>   -->
+        <item name="windowNoTitle">true</item>
     </style>
 </resources>

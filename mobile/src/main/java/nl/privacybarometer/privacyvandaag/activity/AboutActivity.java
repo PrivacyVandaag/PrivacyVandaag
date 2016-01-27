@@ -21,8 +21,6 @@
 
 package nl.privacybarometer.privacyvandaag.activity;
 
-
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -30,7 +28,6 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.v7.widget.Toolbar;
 import android.text.Html;
 import android.util.Log;
@@ -38,8 +35,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-
-
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
@@ -50,8 +45,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
-
 
 import nl.privacybarometer.privacyvandaag.BuildConfig;
 import nl.privacybarometer.privacyvandaag.R;
@@ -59,6 +52,12 @@ import nl.privacybarometer.privacyvandaag.utils.UiUtils;
 
 import static nl.privacybarometer.privacyvandaag.utils.NetworkUtils.setupConnection;
 
+/**
+ * Shows background information about the app.
+ *
+ * An AsyncTask is included to check for update of the app and to download and install it.
+ * This is usefull for ditribution outside google play store
+ */
 public class AboutActivity extends BaseActivity {
 
     @Override
@@ -71,22 +70,20 @@ public class AboutActivity extends BaseActivity {
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
-        String title;
-        PackageManager manager = this.getPackageManager();
+        String title = getString(R.string.app_name);
         try {
+            PackageManager manager = this.getPackageManager();
             PackageInfo info = manager.getPackageInfo(this.getPackageName(), 0);
-            title = "Privacy Vandaag " + info.versionName;
-        } catch (NameNotFoundException unused) {
-            title = "Privacy Vandaag";
+            title += " " + info.versionName;
+        } catch (NameNotFoundException e) {
+            Log.e("Privacy Vandaag","Error while fetching app version: " + e);
         }
         TextView titleView = (TextView) findViewById(R.id.about_title);
         titleView.setText(title);
-
-        TextView content1View = (TextView) findViewById(R.id.about_copyright);
-        content1View.setText(Html.fromHtml(getString(R.string.about_us_copyright)));
-
-        TextView contentView = (TextView) findViewById(R.id.about_content);
-        contentView.setText(Html.fromHtml(getString(R.string.about_us_content)));
+        TextView copyrightView = (TextView) findViewById(R.id.about_copyright);
+        copyrightView.setText(Html.fromHtml(getString(R.string.about_us_copyright)));
+        TextView aboutContentView = (TextView) findViewById(R.id.about_content);
+        aboutContentView.setText(Html.fromHtml(getString(R.string.about_us_content)));
     }
 
     @Override
@@ -100,35 +97,28 @@ public class AboutActivity extends BaseActivity {
     }
 
 
-/**
- * ************************* update procedure outside google play store ****************************
- */
-
-    /* ModPrivacyVandaag: Added to check for updates of the app,
-    because this app will probably never see Google's Play Store
+    /**
+     * Update procedure for distribution of app outside google play store
+     *
      */
 
     // Called when the user touches the check_for_update button
-    public void checkForUpdate(View view) {  // Do something in response to button click
+    public void checkForUpdate(View view) {
         TextView contentView = (TextView) findViewById(R.id.update_feedback);
         contentView.setVisibility(View.VISIBLE);
-        contentView.setText("Controleren ...");
+        contentView.setText(getString(R.string.checking_for_update));
         int currentVersionCode = BuildConfig.VERSION_CODE;
-        new CheckLatestVersion().execute(currentVersionCode);   // Check if a newer release of the app is available
+        new CheckLatestVersion().execute(currentVersionCode);   // AsyncTask to check if a newer release of app is available.
     }
 
     // new AsyncTask to check if a newer release of the app is available
     private class CheckLatestVersion extends AsyncTask<Integer, Void, String> {
+
+        // Contact website and read response
         @Override
         protected String doInBackground(Integer... currentVersion) {
             String response = "";
             try {
- /* oud
-                URL url = new URL("https://www.privacybarometer.nl/app/checkmeestrecenteversie.php?c="+currentVersion[0]);
-                URLConnection connection = url.openConnection();
-                connection.connect();
-                InputStream input = new BufferedInputStream(url.openStream());
- */
                 URL url = new URL("https://www.privacybarometer.nl/app/checkmeestrecenteversie.php?c="+currentVersion[0]);
                 HttpURLConnection connection = setupConnection(url);
                 InputStream input = new BufferedInputStream(connection.getInputStream());
@@ -139,14 +129,14 @@ public class AboutActivity extends BaseActivity {
                 }
                 input.close();
            } catch (Exception e) {
-                Log.e("YourApp", "Well that didn't work out so well...");
-                Log.e("YourApp", e.getMessage());
+                Log.e("Privacy Vandaag","Error while checking for update: " + e.getMessage());
             }
             return response;
         }
 
+        // Handle response from website. If update is available, make button to update visible
         @Override
-        protected void onPostExecute(String result) {   // If new release available, make button to update visible
+        protected void onPostExecute(String result) {
             TextView contentView = (TextView) findViewById(R.id.update_feedback);
             Button buttonCheck = (Button) findViewById(R.id.check_for_update);
             buttonCheck.setVisibility(View.GONE);
@@ -154,18 +144,17 @@ public class AboutActivity extends BaseActivity {
 
             if(strLength > 3 && strLength < 12) {  // Simple check if the return string is likely to be a newer version code.
                 contentView.setText("Versie " + result + " is nu beschikbaar!");
-                // Set and show update button
                 Button buttonUpdate = (Button) findViewById(R.id.do_update);
                 buttonUpdate.setText("Updaten naar versie " + result + ".");
                 buttonUpdate.setVisibility(View.VISIBLE);
             }
             else {
-                contentView.setText("U heeft de meest recente versie.");
+                contentView.setText(getString(R.string.already_latest_version));
             }
         }
     }
 
-    /** Called when the user touches the do_update button */
+    // If update is available, update button turns visible. When clicked, updateApp() starts */
     public void updateApp(View view) {  // Do something in response to button click
         TextView contentView = (TextView) findViewById(R.id.update_feedback);
         contentView.setText("Downloading meest recente versie...");
@@ -175,27 +164,16 @@ public class AboutActivity extends BaseActivity {
     // new AsyncTask to download and install new release
     private class DownloadFileAndInstall extends AsyncTask<String, Void, String> {
 
+        // Download update package and store in app's storage space.
         @Override
         protected String doInBackground(String... sUrl) {
             String fileName = "privacyvandaag.apk";
             String externalPath = "https://www.privacybarometer.nl/app/" + fileName;
-          //  String localPath = Environment.getExternalStorageDirectory().getPath() + "/" + fileName;
-            // String localPath = Context.getExternalFilesDir() + "/" + fileName;
-           // String state = Environment.getExternalStorageState();
-           // File extFiles = getExternalFilesDir(null);
-           // File locFiles = getFilesDir();
 
             // This is the directory connected to the app. As of api 19 no write permission for this directory is needed.
             String localPath = getExternalFilesDir(null) + "/" + fileName;
-             try {
-                // setup connection     //    URL url = new URL("https://www.privacybarometer.nl/app/privacyvandaag.apk");
+            try {    // This is the way to setup connection like the way the feeds are read. Check NetworkUtils for details.
                 URL url = new URL(externalPath);
-/* oud
-                URLConnection connection = url.openConnection();
-                connection.connect();
-                InputStream input = new BufferedInputStream(url.openStream());
-*/
-                // This is the way to setup connection like the way the feeds are read. Check NetworkUtils for details.
                 HttpURLConnection connection = setupConnection(url);
                 InputStream input = new BufferedInputStream(connection.getInputStream());
                 OutputStream output = new FileOutputStream(localPath);
@@ -215,14 +193,14 @@ public class AboutActivity extends BaseActivity {
             return localPath;
         }
 
-        // begin the installation by opening the resulting file
+        // After download, begin installation by opening the resulting file
         @Override
         protected void onPostExecute(String path) {
             TextView contentView = (TextView) findViewById(R.id.update_feedback);
             if (path.equals("")) {
-                contentView.setText("Download is niet gelukt. Controleer de verbinding en probeer opnieuw.");
+                contentView.setText(getString(R.string.download_failed));
             } else{
-                contentView.setText("Download is gereed. Installeren vanaf " + path);
+                contentView.setText(getString(R.string.installing_update) + " " + path);
                 File updatePackage = new File(path);
                 try {
                     Intent i = new Intent();
@@ -234,7 +212,7 @@ public class AboutActivity extends BaseActivity {
                 } catch (Exception e) {
                     Log.e("PrivacyVandaag", "Error trying to install the update package");
                     Log.e("PrivacyVandaag", e.getMessage());
-                    contentView.setText("Installeren is helaas niet gelukt. Probeer opnieuw of installeer de update handmatig. Kijk op https://www.privacybarometer.nl/app voor meer informatie.");
+                    contentView.setText(getString(R.string.installation_failed));
                 }
             }
         }

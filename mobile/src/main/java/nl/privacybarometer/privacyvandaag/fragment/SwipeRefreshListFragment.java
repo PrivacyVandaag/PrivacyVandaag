@@ -27,6 +27,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ListView;
 
+import nl.privacybarometer.privacyvandaag.R;
 import nl.privacybarometer.privacyvandaag.view.SwipeRefreshLayout;
 
 public abstract class SwipeRefreshListFragment extends ListFragment implements SwipeRefreshLayout.OnRefreshListener {
@@ -59,10 +60,11 @@ public abstract class SwipeRefreshListFragment extends ListFragment implements S
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        mRefreshLayout.setColorScheme(android.R.color.holo_blue_bright,
-                android.R.color.holo_blue_dark,
-                android.R.color.holo_blue_bright,
-                android.R.color.holo_blue_dark);
+        // Dit zijn de kleuren van de animatie als er op nieuwe artikelen wordt gecontroleerd.
+        mRefreshLayout.setColorScheme(R.color.light_theme_color_primary,
+                R.color.light_theme_color_primary_bright,
+                R.color.light_theme_color_primary,
+                R.color.light_theme_color_primary_bright);
         mRefreshLayout.setOnRefreshListener(this);
     }
 

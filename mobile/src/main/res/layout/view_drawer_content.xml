@@ -6,6 +6,10 @@
               android:orientation="vertical"
               tools:showIn="@layout/view_left_drawer">
 
+
+    <!-- Dit is het oude menu uit de left drawer.
+    De menuopties zijn naar de overflow in de toolbar verhuisd.
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -18,6 +22,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:onClick="onClickEditFeeds"
+            android:background="@drawable/bg_toolbar_buttons"
             android:src="@drawable/content_edit"/>
 
         <ImageButton
@@ -26,6 +31,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:onClick="onClickSearch"
+            android:background="@drawable/bg_toolbar_buttons"
             android:src="@drawable/action_search"/>
 
         <ImageButton
@@ -34,8 +40,10 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:onClick="onClickSettings"
+            android:background="@drawable/bg_toolbar_buttons"
             android:src="@drawable/action_settings"/>
     </LinearLayout>
+    -->
 
     <ListView
         android:id="@+id/drawer_list"

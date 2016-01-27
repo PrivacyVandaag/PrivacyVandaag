@@ -73,6 +73,9 @@ import nl.privacybarometer.privacyvandaag.view.EntryView;
 /**
  * This class shows an article to read and allows the reader to swype to the next article.
  * The article is displayed using > view > EntryView.java
+ * and uses XML fragment_entry.xml
+ *
+ * This class is part of the EntryActivity.java
  *
  */
 public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.OnFullScreenListener, LoaderManager.LoaderCallbacks<Cursor>, EntryView.EntryViewManager {

@@ -33,6 +33,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.widget.SearchView;
+import android.util.Log;
 import android.view.GestureDetector;
 import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.Gravity;
@@ -53,6 +54,8 @@ import com.melnykov.fab.FloatingActionButton;
 
 import nl.privacybarometer.privacyvandaag.Constants;
 import nl.privacybarometer.privacyvandaag.R;
+import nl.privacybarometer.privacyvandaag.activity.EditFeedsListActivity;
+import nl.privacybarometer.privacyvandaag.activity.GeneralPrefsActivity;
 import nl.privacybarometer.privacyvandaag.adapter.EntriesCursorAdapter;
 import nl.privacybarometer.privacyvandaag.provider.FeedData;
 import nl.privacybarometer.privacyvandaag.provider.FeedData.EntryColumns;
@@ -62,6 +65,24 @@ import nl.privacybarometer.privacyvandaag.utils.PrefUtils;
 import nl.privacybarometer.privacyvandaag.utils.UiUtils;
 
 import java.util.Date;
+
+/**
+ * Genereert de centrale lijst met artikelen op basis van de keuze in het menu.
+ * De keuze wordt doorgegeven vanuit HomeActivity.java line 377 (setData(Uri)) in de vorm van een Uri.
+ * De items in de lijst worden uit de database gehaald.
+ *
+ * Hiervoor de adapter > EntriesCursorAdapter line 174 gebruikt.
+ * - mEntriesCursorAdapter is de instance van de cursorAdapter voor het ophalen van de items uit de database
+ * - mUri is de keuze voor welke lijst weergegeven moet worden.
+ *
+ * De layout staat in layout > fragment_entry_list.xml
+ *
+ * Op basis van bijbehorende classes / bestanden:
+ * > fragment > SwipeRefreshFragment.java
+ * > fragment > SwipeRefreshListFragment.java
+ * > view > SwipeRefreshLayout.java
+ *
+ */
 
 public class EntriesListFragment extends SwipeRefreshListFragment {
 
@@ -102,13 +123,31 @@ public class EntriesListFragment extends SwipeRefreshListFragment {
             mEntriesCursorAdapter.swapCursor(Constants.EMPTY_CURSOR);
         }
     };
+
+    /**
+     *  Functie om te kijken of de 'voorkeuren' tijdens gebruik veranderen
+     *
+     *  1. Of de huidige lijst wordt ververst of juist niet. Als die stand verandert,
+     *  moet de 'ophaal'-animatie worden aan of uitgezet.
+     *
+     *  2. Als de knop voor het verbergen van gelezen berichten wordt ingedrukt:
+     *  Deze functie gebruiken we niet in Privacy Vandaag
+     *  De knop vind je in layout > view_hide_read_button.xml
+     *  en wordt aangeorpen in > fragment > EntriesListFragment.java regel 280.
+     *
+     *  Hulpfuncties vind je in > utils > UiUtils.java
+     *  (UiUtils.displayHideReadButtonAction() en UiUtils.updateHideReadButton())
+     *
+     * @param view
+     */
     private final OnSharedPreferenceChangeListener mPrefListener = new OnSharedPreferenceChangeListener() {
         @Override
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-            if (PrefUtils.SHOW_READ.equals(key)) {
+            /* if (PrefUtils.SHOW_READ.equals(key)) {
                 getLoaderManager().restartLoader(ENTRIES_LOADER_ID, null, mEntriesLoader);
                 UiUtils.updateHideReadButton(mHideReadButton);
-            } else if (PrefUtils.IS_REFRESHING.equals(key)) {
+            } else */
+            if (PrefUtils.IS_REFRESHING.equals(key)) {
                 refreshSwipeProgress();
             }
         }
@@ -209,33 +248,14 @@ public class EntriesListFragment extends SwipeRefreshListFragment {
             mListView.addHeaderView(header);
         }
 
-        /* ModPrivacyVandaag: Add another tip about how to use the floating hide read button */
-        if (PrefUtils.getBoolean(PrefUtils.DISPLAY_TIP_FLOATING, true)) {
-            final TextView headerfloat = new TextView(mListView.getContext());
-            headerfloat.setMinimumHeight(UiUtils.dpToPixel(70));
-            int footerPadding = UiUtils.dpToPixel(10);
-            headerfloat.setPadding(footerPadding, footerPadding, footerPadding, footerPadding);
-            headerfloat.setText(R.string.tip_sentence_float);
-            headerfloat.setGravity(Gravity.CENTER_VERTICAL);
-            headerfloat.setCompoundDrawablePadding(UiUtils.dpToPixel(5));
-            headerfloat.setCompoundDrawablesWithIntrinsicBounds(R.drawable.ic_action_about, 0, R.drawable.ic_action_cancel, 0);
-            headerfloat.setClickable(true);
-            headerfloat.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    mListView.removeHeaderView(headerfloat);
-                    PrefUtils.putBoolean(PrefUtils.DISPLAY_TIP_FLOATING, false);
-                }
-            });
-            mListView.addHeaderView(headerfloat);
-        }
-
-        /* end modifications by PrivacyVandaag */
-
-
-
         UiUtils.addEmptyFooterView(mListView, 90);
 
+
+        /**
+         *  Click action on the button to hide the read articles
+         *  Deze functie gebruiken we niet in het PrivacyVandaag.
+         */
+        /*
         mHideReadButton = (FloatingActionButton) rootView.findViewById(R.id.hide_read_button);
         mHideReadButton.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
@@ -245,7 +265,9 @@ public class EntriesListFragment extends SwipeRefreshListFragment {
             }
         });
         UiUtils.updateHideReadButton(mHideReadButton);
+        */
 
+        // set the button that is shown at the top of the listview when new articles are retrieved
         mRefreshListBtn = (Button) rootView.findViewById(R.id.refreshListBtn);
         mRefreshListBtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -378,6 +400,13 @@ public class EntriesListFragment extends SwipeRefreshListFragment {
                 }
                 return true;
             }
+
+
+
+
+
+
+
         }
         return super.onOptionsItemSelected(item);
     }
@@ -431,7 +460,7 @@ public class EntriesListFragment extends SwipeRefreshListFragment {
         }
 
         if (mNewEntriesNumber > 0) {
-            mRefreshListBtn.setText(getResources().getQuantityString(R.plurals.number_of_new_entries, mNewEntriesNumber, mNewEntriesNumber));
+            mRefreshListBtn.setText(getResources().getQuantityString(R.plurals.number_of_new_entries_button, mNewEntriesNumber, mNewEntriesNumber));
             mRefreshListBtn.setVisibility(View.VISIBLE);
         } else {
             mRefreshListBtn.setVisibility(View.GONE);

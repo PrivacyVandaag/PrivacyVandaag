@@ -53,6 +53,12 @@ import android.view.MenuItem;
 import nl.privacybarometer.privacyvandaag.R;
 import nl.privacybarometer.privacyvandaag.utils.UiUtils;
 
+/**
+ * This is where the preference settings are made and stored.
+ * It uses GeneralPrefsFragment.java in combination with general_preferences.xml
+ * to retrieve and display the stored settings.
+ */
+
 public class GeneralPrefsActivity extends BaseActivity {
 
     @Override

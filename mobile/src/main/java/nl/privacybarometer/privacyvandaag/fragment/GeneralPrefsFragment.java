@@ -62,6 +62,11 @@ import nl.privacybarometer.privacyvandaag.R;
 import nl.privacybarometer.privacyvandaag.service.RefreshService;
 import nl.privacybarometer.privacyvandaag.utils.PrefUtils;
 
+/**
+ *  This is where the preference settings are made and stored.
+ *  It uses general_preferences.xml and is part of the GenerealPrefsActivity.java
+ */
+
 public class GeneralPrefsFragment extends PreferenceFragment {
 
     @Override
