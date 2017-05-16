@@ -1,10 +1,8 @@
 apply plugin: 'com.android.application'
-apply plugin: 'com.droidtitan.lintcleaner'
 
 android {
-    compileSdkVersion 23
-    //buildToolsVersion "22.0.1"
-    buildToolsVersion "23.0.1"
+    compileSdkVersion 25
+    buildToolsVersion "25.0.2"
 
     signingConfigs {
         release {
@@ -13,57 +11,62 @@ android {
                 storePassword KEYSTORE_PASSWORD
                 keyAlias KEY_ALIAS
                 keyPassword KEY_PASSWORD
+                // v2SigningEnabled false
             }
         }
     }
+    defaultConfig {
+        applicationId "nl.privacybarometer.privacyvandaag"
+        minSdkVersion 14
+        targetSdkVersion 25
+        versionCode 126
+        versionName "2.1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
     buildTypes {
         release {
-            signingConfig signingConfigs.release
-
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            zipAlignEnabled true
         }
     }
-
-
-    defaultConfig {
-        applicationId 'nl.privacybarometer.privacyvandaag'
-        minSdkVersion 14
-        targetSdkVersion 23
-        versionCode 94
-        versionName "1.0.0"
-    }
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_7
-        targetCompatibility JavaVersion.VERSION_1_7
-    }
-
-
     productFlavors {
+        // This is the build variant for distibution outside Google Play store
+        // The only difference is that is has an built-in update function in the AboutActivity class.
         floss {
-            /* We don't need a build variant at this time, so the applicationId is made identical. */
-            /* applicationId 'nl.privacybarometer.privacyvandaag.floss' */
             applicationId 'nl.privacybarometer.privacyvandaag'
+            buildConfigField "String", "PRODUCT_FLAVOR", "\"floss\""
         }
+        // This is the build variant for the distibution through Google Play Store
+        // Since apps are updated through Google App, this variant has no update function in AboutActivity class
         gplay {
-            applicationId 'nl.privacybarometer.privacyvandaag'
+            applicationId 'nl.privacybarometer.privacyvandaag.gplay'
+            buildConfigField "String", "PRODUCT_FLAVOR", "\"gplay\""
         }
-    }
-}
-
-repositories {
-    maven {
-        url 'http://dl.bintray.com/amulyakhare/maven'
     }
 }
 
 dependencies {
-    compile fileTree(include: ['*.jar'], dir: 'libs')
-    compile 'com.android.support:appcompat-v7:23.+'
-    compile 'com.melnykov:floatingactionbutton:+' // TODO: Deze kan weg, want we gebruiken die knop niet meer
-    compile 'org.jsoup:jsoup:+'
-  //  compile 'com.squareup.picasso:picasso:+'
-  //  compile 'com.amulyakhare:com.amulyakhare.textdrawable:+'
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    compile 'com.android.support:appcompat-v7:25.3.0'
+    compile 'com.android.support.constraint:constraint-layout:1.0.1'
+    compile 'com.android.support:design:25.3.0'
+
+    compile 'com.google.android.gms:play-services-gcm:10.2.0'
+
+
+
+
+    // compile 'com.melnykov:floatingactionbutton:+' // We gebruiken de FloatingActionButton niet
+    // compile 'org.jsoup:jsoup:+'     // De + wordt afgeraden.
+    // compile 'com.squareup.picasso:picasso:+'    // De + wordt afgeraden omdat je niet weet of er ineens een nieuwe update gepakt wordt.
+
+    // Zoek op de package naam en kijk wat de laatste versie is en gebruik die versie nummers.
+    compile 'org.jsoup:jsoup:1.10.2'     // is nodig om de DOM van de ingelezen webpagina te knippen en scheren
+    compile 'com.squareup.picasso:picasso:2.5.2'    // hiermee kan je afbeeldingen downloaden en bijsnijden
+
+    testCompile 'junit:junit:4.12'
 }
