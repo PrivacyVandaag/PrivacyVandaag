@@ -36,9 +36,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
-//import android.support.design.widget.FloatingActionButton;
-import android.preference.Preference;
-import android.preference.PreferenceManager;
+
 import android.support.design.widget.CoordinatorLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -52,27 +50,21 @@ import android.support.v7.widget.Toolbar;
 
 import android.support.design.widget.FloatingActionButton;
 
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.ContextMenu;
-import android.view.Display;
 import android.view.Gravity;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
-import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
 
 import nl.privacybarometer.privacyvandaag.BuildConfig;
 import nl.privacybarometer.privacyvandaag.Constants;
-import nl.privacybarometer.privacyvandaag.MainApplication;
-import nl.privacybarometer.privacyvandaag.MenuPrivacyVandaag;
 import nl.privacybarometer.privacyvandaag.R;
 
 import nl.privacybarometer.privacyvandaag.adapter.DrawerAdapter;
@@ -87,8 +79,6 @@ import nl.privacybarometer.privacyvandaag.utils.PrefUtils;
 import nl.privacybarometer.privacyvandaag.utils.UpgradeActions;
 import nl.privacybarometer.privacyvandaag.utils.UiUtils;
 
-import static nl.privacybarometer.privacyvandaag.Constants.FETCHMODE_DO_NOT_FETCH;
-import static nl.privacybarometer.privacyvandaag.MenuPrivacyVandaag.menuItemsArray;
 import static nl.privacybarometer.privacyvandaag.service.FetcherService.NOTIFICATION_FEED_ID;
 
 
@@ -130,6 +120,7 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
 
     private CharSequence mTitle;
     private int mCurrentDrawerPos = 1;  // Set this to the page the app shouold go to on opening.
+    private int mCurrentViewPagerPos = 1;  // Set this to the page the app shouold go to on opening.
     private boolean isPageSelectionFromViewPager = true;
 
 
@@ -159,9 +150,6 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
         UiUtils.setPreferenceTheme(this);
         super.onCreate(savedInstanceState);
 
-
-
-
         //*** Check whether upgrade took place and perform upgrade actions if necessary
         final int versionCode = BuildConfig.VERSION_CODE;
         // Perform upgrade actions only if not fresh install
@@ -182,18 +170,15 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
             // Add the sources for the newsfeeds to the database
             FeedData.addPredefinedFeeds(this);
 
-            // Om een welkomstbericht  bij het opstarten in de database te zetten
+            // To add a welcome message to one of the feeds in the database
             // FeedData.addPredefinedMessages();
         }
 
-        // Vul hier de array met menu items, anders zijn de gegevens niet op tijd beschikbaar!!!!
-        MenuPrivacyVandaag.makeMenuItems();
-
-        // Stel de View voor de Activity in.
+        // Set the View for this Activity.
         setContentView(R.layout.activity_home);
 
         //*** ViewPager *** ViewPager *** ViewPager *** ViewPager ***
-        // Hier wordt de view ID voor ViewPager container gekoppeld
+        // Get the view ID for the ViewPager
         mPager = (ViewPager) findViewById(R.id.pager_container_home);
         // De ViewPager wordt verder gevuld als in onLoadFinished() bij regel 550 als de database geladen zijn.
         // Daar wordt dus de adapter aan de ViewPager gekoppeld.
@@ -201,12 +186,14 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
         // Start de loaders voor de gegevens uit de database voor de ViewPager.
         getLoaderManager().initLoader(VIEWPAGER_LOADER_ID, null, this);
 
-        // Stel de listener voor de ViewPager in die kijkt of gebruiker naar andere pagina swypet.
+        // Create the listener for page swipes in the ViewPager.
         mPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
             public void onPageSelected(int position) {
                 Log.e(TAG, "listening!!! > Page Swipe.");
+                mCurrentViewPagerPos = position;
                 if (isPageSelectionFromViewPager) {  // Als de paginakeuze uit left drawer komt, is dit al ingesteld.
-                    int menuPosition = MenuPrivacyVandaag.getMenuPositionFromPageNumber(position);
+
+                    int menuPosition = mDrawerAdapter.getMenuPositionFromPagePosition(position);
                     // Log.e(TAG,"selectDrawerItem wordt vanuit addOnPageChangeListener gestart.");
                     selectDrawerItem(menuPosition, true);
                 } else {
@@ -235,23 +222,23 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
         mDrawerList.setOnItemClickListener(new ListView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                // Wordt het de feed wel gevolgd en heeft het dus een pagina in de ViewPager?
-                if (MenuPrivacyVandaag.hasViewPagerPage(position)) {
-                    // false geeft aan dat de pagina-keuze niet van de ViewPager, maar vanuit het menu komt.
-                    selectDrawerItem(position, false);
-                    if (mDrawerLayout != null) {
-                        mDrawerLayout.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                mDrawerLayout.closeDrawer(mLeftDrawer);
-                            }
-                        }, 50);
-                    }
-                } else {    // Voor de menu-items zonder pagina, halen we alleen de focus van het item.
-                    mDrawerList.clearChoices();
-                    mDrawerList.requestLayout();
-                    mDrawerList.setItemChecked(mCurrentDrawerPos, true);
+            // Wordt het de feed wel gevolgd en heeft het dus een pagina in de ViewPager?
+            if (mDrawerAdapter.hasPage(position)) {
+                // false geeft aan dat de pagina-keuze niet van de ViewPager, maar vanuit het menu komt.
+                selectDrawerItem(position, false);
+                if (mDrawerLayout != null) {
+                    mDrawerLayout.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            mDrawerLayout.closeDrawer(mLeftDrawer);
+                        }
+                    }, 50);
                 }
+            } else {    // Voor de menu-items zonder pagina, halen we alleen de focus van het item.
+                mDrawerList.clearChoices();
+                mDrawerList.requestLayout();
+                mDrawerList.setItemChecked(mCurrentDrawerPos, true);
+            }
             }
         });
 
@@ -376,17 +363,17 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
         if (v.getId()==R.id.drawer_list) {
             AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
             int pos = info.position;    // the position of the item in the menu.
-            if (MenuPrivacyVandaag.hasContextMenu(pos)) {
-                menu.setHeaderTitle(mDrawerAdapter.getItemName(pos));
+            if (mDrawerAdapter.hasContextMenu(pos)) {
+                menu.setHeaderTitle(mDrawerAdapter.getTitle(pos));
                 // Bepaal de inhoud van het context menu afhankelijk van de volg-status van de feed.
-                if (mDrawerAdapter.getFetchMode(info.position)) {
+                if (mDrawerAdapter.hasActiveFetchMode(info.position)) {
                     if (mDrawerAdapter.getNotifyMode(info.position)) menu.add(0, 1, 1, R.string.turn_notification_off);
                     else menu.add(0, 2, 1, R.string.turn_notification_on);
                     menu.add(0, 3, 2, R.string.unfollow_this_feed);
                 } else {
                     menu.add(0, 4, 2, R.string.follow_this_feed);
                 }
-                if (MenuPrivacyVandaag.hasWebsite(info.position)) {
+                if (mDrawerAdapter.hasWebsite(info.position)) {
                     menu.add(0, 5, 3, R.string.goto_website);
                 }
             }
@@ -401,23 +388,23 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
         final boolean success;
         switch (item.getItemId()) {
             case 1: // zet meldingen uit
-                success = mDrawerAdapter.setNotifyMode(this,info.position,false);
+                success = mDrawerAdapter.setNotifyMode(info.position,false);
                 if (!success) Toast.makeText(this, R.string.error_option_execute, Toast.LENGTH_SHORT).show();
                 break;
             case 2: // zet meldingen aan
-                success = mDrawerAdapter.setNotifyMode(this,info.position,true);
+                success = mDrawerAdapter.setNotifyMode(info.position,true);
                 if (!success) Toast.makeText(this, R.string.error_option_execute, Toast.LENGTH_SHORT).show();
                 break;
             case 3: // Stop met volgen
-                success = mDrawerAdapter.setFetchMode(this,info.position,false);
+                success = mDrawerAdapter.setFetchMode(info.position,false);
                 if (success) {  // Vernieuw de ViewPager en haal de bewuste pagina weg.
-                    getLoaderManager().restartLoader(VIEWPAGER_LOADER_ID, null, this);
+                    getLoaderManager().restartLoader(DRAWER_LOADER_ID, null, this);
                } else Toast.makeText(this, R.string.error_option_execute, Toast.LENGTH_SHORT).show();
                 break;
             case 4: // Begin met volgen
-                success = mDrawerAdapter.setFetchMode(this,info.position,true);
+                success = mDrawerAdapter.setFetchMode(info.position,true);
                 if (success) {  // Vernieuw de ViewPager en voeg een pagina toe.
-                    getLoaderManager().restartLoader(VIEWPAGER_LOADER_ID, null, this);
+                    getLoaderManager().restartLoader(DRAWER_LOADER_ID, null, this);
                 } else Toast.makeText(this, R.string.error_option_execute, Toast.LENGTH_SHORT).show();
                 break;
             case 5: // Start een intent naar de browser en ga naar de website.
@@ -436,9 +423,9 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
 
 
     /**
-     * *** START VANUIT NOTIFICATIE OF ANDERE APP *** START VANUIT NOTIFICATIE OF ANDERE APP ***
-     * Als de app vanuit een notificatie wordt geopend,
-     * moet er gelijk naar de juiste categorie worden geschakeld.
+     * *** START FROM NOTIFICATIE OR DIFFERENT APP ***
+     * If app is openend from notification,
+     * select the right menu item and the right page in the ViewPager.
      *
      * @param extras
      * @return
@@ -465,7 +452,7 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
                 }
             }
         }
-        return MenuPrivacyVandaag.getMenuPositionFromFeedId(mFeedId);
+        return mDrawerAdapter.getMenuPositionFromFeedId(mFeedId);
     }
 
 
@@ -540,6 +527,10 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
                 startActivity(new Intent(this, GeneralPrefsActivity.class));
                 return true;
             }
+            case R.id.edit_feeds: { // Start activity to sort or edit feeds drawerMenuList.
+                startActivity(new Intent(this, EditFeedsListActivity.class));
+                return true;
+            }
             case R.id.about_this_app: {
                 // 'Floss' is the build variant for distibution outside Google Play Store
                 // The only difference is that is has an built-in update function in the AboutActivity class.
@@ -600,15 +591,17 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
             cursorLoader = new CursorLoader(this, FeedColumns.GROUPED_FEEDS_CONTENT_URI,
                     new String[]{FeedColumns._ID, FeedColumns.URL, FeedColumns.NAME,
                             FeedColumns.IS_GROUP, FeedColumns.ICON, FeedColumns.LAST_UPDATE,
-                            FeedColumns.ERROR, FEED_UNREAD_NUMBER, FeedColumns.FETCH_MODE, FeedColumns.ICON_DRAWABLE, FeedColumns.NOTIFY},
+                            FeedColumns.ERROR, FEED_UNREAD_NUMBER, FeedColumns.FETCH_MODE,
+                            FeedColumns.ICON_DRAWABLE, FeedColumns.NOTIFY},
                     PrefUtils.getBoolean(PrefUtils.SHOW_READ, true) ? "" : WHERE_UNREAD_ONLY, null, null
             );
             // Keep minimum interval of UPDATE_THROTTLE_DELAY (500 ms) between updates of the loader
             cursorLoader.setUpdateThrottle(Constants.UPDATE_THROTTLE_DELAY);
             return cursorLoader;
         }
+        /*
         else if (loaderId== VIEWPAGER_LOADER_ID) {
-            // Log.e(TAG, "CreateLoader Viewpager");
+             Log.e(TAG, "CreateLoader Viewpager");
             cursorLoader = new CursorLoader(this,   // context
                     FeedColumns.CONTENT_URI, // table
                     new String[]{FeedData.FeedColumns.FETCH_MODE}, // columns
@@ -619,7 +612,9 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
             // Keep minimum interval of UPDATE_THROTTLE_DELAY (500 ms) between updates of the loader
             cursorLoader.setUpdateThrottle(Constants.UPDATE_THROTTLE_DELAY);
             return cursorLoader;
-        } else return null;
+        }
+        */
+        else return null;
     }
 
     // If feeds are loaded from the database start displaying them. ZIE HIERBOVEN!
@@ -628,48 +623,50 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
         Log.e(TAG, "onLoadFinished");
         int mLoaderId = cursorLoader.getId();
         if (mLoaderId== DRAWER_LOADER_ID) {
-            Log.e(TAG,"Cursor available for LeftDrawer");
-           // Log.e (TAG, DatabaseUtils.dumpCursorToString(cursor));
-           if (mDrawerAdapter != null) {
-                mDrawerAdapter.setCursor(cursor);
-            } else {
-                mDrawerAdapter = new DrawerAdapter(this, cursor);
-                mDrawerList.setAdapter(mDrawerAdapter);
-                // We don't have any menu yet, we need to display it
-                mDrawerList.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        // Stel de menukeuze in met de laatst bekende menukeuze
-                        selectDrawerItem(mCurrentDrawerPos, true);
-                    }
-                });
-            }
-        }
-        else if (mLoaderId== VIEWPAGER_LOADER_ID) {
-             Log.e(TAG,"Cursor available for ViewPager");
-             Log.e (TAG, DatabaseUtils.dumpCursorToString(cursor));
-            if (mPagerAdapter != null) {
-                mPagerAdapter.setCursor(cursor);
-            } else {
-                mPagerAdapter = new EntriesListPagerAdapter(getSupportFragmentManager(), cursor);
-                mPager.setAdapter(mPagerAdapter);
+            if (cursor.moveToFirst()) { // Do we have a non-empty cursor?
+                cursor.moveToPosition(-1);  // Reset cursor position.
 
-                int mPagePosition = MenuPrivacyVandaag.getPageNumberFromMenuPosition(mCurrentDrawerPos);
-                mPager.setCurrentItem(mPagePosition);
+                Log.e(TAG, "Loader finished. > Create LeftDrawer");
+                // Log.e (TAG, DatabaseUtils.dumpCursorToString(cursor));
+                if (mDrawerAdapter != null) {
+                    mDrawerAdapter.setCursor(cursor);
+                } else {
+                    mDrawerAdapter = new DrawerAdapter(this, cursor);
+                    mDrawerList.setAdapter(mDrawerAdapter);
+                    // We don't have any menu yet, we need to display it
+                    mDrawerList.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            // Stel de menukeuze in met de laatst bekende menukeuze
+                            selectDrawerItem(mCurrentDrawerPos, true);
+                        }
+                    });
+                }
+
+                Log.e(TAG, "Loader finished. > Create ViewPager");
+                if (mPagerAdapter != null) {
+                    mPagerAdapter.updateViewPager();
+                } else {
+                    mPagerAdapter = new EntriesListPagerAdapter(getSupportFragmentManager());
+                    mPager.setAdapter(mPagerAdapter);
+
+                    int mPagePosition = mDrawerAdapter.getViewPagerPagePosition(mCurrentDrawerPos);
+                    mPager.setCurrentItem(mPagePosition);
+                }
+
             }
         }
     }
 
     @Override
     public void onLoaderReset(Loader<Cursor> cursorLoader) {
-        // Should whe also reset the VIEWPAGER_LOADER?
         int mLoaderId = cursorLoader.getId();
         // Log.e (TAG, "onLoaderReset: " + mLoaderId);
         if (mLoaderId == DRAWER_LOADER_ID) {
             mDrawerAdapter.setCursor(null);
         }
     }
-    //*** Einde Loaders voor Left Drawer en ViewPager
+    //*** End loader for Left Drawer
 
 
 
@@ -677,11 +674,10 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
 
 
     /**
-     * Bepaal welke feed is geselecteerd in de left drawer.
-     * Afhanekelijk hiervan wordt ingesteld welke query naar de database moet om de artikelen op te halen.
-     * isFromViewPager geeft aan of de keuze vanuit het menu of door te swipen vanuit de ViewPager wordt gedaan
-     *
-     * @param menuPosition
+     *  The user has selected a new page with a list of entries (articles).
+     *  This can be done by clicking in the LeftDrawer menu
+     *  or by swiping through the ViewPager pages.
+     * @param menuPosition  The reference to the menu item or page that has been selected
      */
     private void selectDrawerItem(int menuPosition, boolean isFromViewPager) {
         // Log.e(TAG, "SELECT DRAWER");
@@ -693,7 +689,7 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
        int bitmapSize = (int) screenDensity * 32; // Scale toolbar logo's to right size. Convert 32 normal px to 32 density pixels.
         BitmapDrawable mIcon = null;
 
-        // Alleen als de app voor de eerste keer wordt geopend!!
+        // Only onFirstOpen of the app.
         if (PrefUtils.getBoolean(PrefUtils.FIRST_OPEN, true)) {
             PrefUtils.putBoolean(PrefUtils.FIRST_OPEN, false);
 
@@ -715,52 +711,25 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
             builder.show();
 
 
-        }
+        } //*** end onFirstOpen ***
 
 
-        // Bepaal de titel en logo voor de geselecteerde feed.
+        // Get title and icon for selected menu-item / page.
         assert getSupportActionBar() != null;   // trucje om de foutmelder in de editor uit te zetten. Niet nodig.
         Drawable mIconDrawable = null;
-        if (MenuPrivacyVandaag.isAllEntries(mCurrentDrawerPos)) {
-           // getSupportActionBar().setTitle(R.string.all);
-           // getSupportActionBar().setIcon(R.drawable.ic_statusbar_rss);
-            mTitle = getResources().getString(R.string.all);
-            mIconDrawable = ContextCompat.getDrawable(this, R.drawable.ic_statusbar_rss);
-        } else if (MenuPrivacyVandaag.isFavorites(mCurrentDrawerPos)) {
-            mTitle = getResources().getString(R.string.favorites);
-            mIconDrawable = ContextCompat.getDrawable(this, R.drawable.rating_important);
-        } else if (MenuPrivacyVandaag.isSearch(mCurrentDrawerPos)) {
-            mTitle = getResources().getString(R.string.search);
-            mIconDrawable = ContextCompat.getDrawable(this, R.drawable.action_search);
-        } else {
-            // Log.e(TAG, "mCurrentDrawerPos = " + mCurrentDrawerPos);
-            if (mDrawerAdapter == null) Log.e(TAG, "Let op: mDrawerAdapter == null!");
-            else {
-                long feedId = mDrawerAdapter.getItemId(mCurrentDrawerPos);
-                if (feedId != -1) {
-                    mTitle = mDrawerAdapter.getItemName(mCurrentDrawerPos);
-                    /*
-                    // Code for using logo with white background for AP in toolbar. Doesn't look much better. :-s
-                    if (mTitle.indexOf("toriteit") > 0) { // Exception for feedchannel AP, because the main logo is not visible in dark background
-                        Log.e(TAG,"Het is de Autoriteit Persoonsgegevens!");
-                        mIconDrawable = ContextCompat.getDrawable(this, R.drawable.logo_icon_ap_witte_achtergrond);
-                    } else {
-                    */
-                        int mIconResourceId = mDrawerAdapter.getIconResourceId(mCurrentDrawerPos);
-                        if (mIconResourceId > 0) {
-                            mIconDrawable = ContextCompat.getDrawable(this, mIconResourceId);
-                    //    }
+        mTitle = mDrawerAdapter.getTitle(mCurrentDrawerPos);
+        int mIconResourceId = mDrawerAdapter.getIconDrawable(mCurrentDrawerPos);
+        long feedId  = mDrawerAdapter.getFeedId(mCurrentDrawerPos);
 
-                    }
-                }
+        // If a notification is set for this feed, it can be removed now
+        CancelPossibleNotification mCancelNotification = new CancelPossibleNotification((int) feedId);
+        mCancelNotification.run();
 
-                // If a notification is set for this feed, it can be removed now
-                CancelPossibleNotification mCancelNotification = new CancelPossibleNotification((int) feedId);
-                mCancelNotification.run();
-            }
+        // Set title and icon in toolbar
+        getSupportActionBar().setTitle(TITLE_SPACES + mTitle);  // TITLE_SPACES because margin cannot be set easily to icon.
+        if (mIconResourceId > 0) {
+            mIconDrawable = ContextCompat.getDrawable(this, mIconResourceId);
         }
-        // Stel daadwerkelijk de titel en het logo in voor de toolbar
-        getSupportActionBar().setTitle(TITLE_SPACES + mTitle);  // TITLE_SPACES omdat je de margin hier niet in kan stellen.
         if (mIconDrawable != null) bitmap = ((BitmapDrawable) mIconDrawable).getBitmap();
         if (bitmap != null) {
             mIcon = new BitmapDrawable(getResources(), Bitmap.createScaledBitmap(bitmap, bitmapSize, bitmapSize, true));  // set filter 'true' for smoother image if scaling up
@@ -770,22 +739,19 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
         }
 
         // set the selected item in left drawer to 'checked'
-        mDrawerList.setItemChecked(menuPosition, true);
+        mDrawerList.setItemChecked(mCurrentDrawerPos, true);
 
-        // Als de menukeuze niet door het bladeren in de ViewPager, komt, moet de goede pagina nog ingesteld worden.
-        if (!isFromViewPager) {
+        // If a item is selected by clicking a menu item, the right page in the ViewPager has to be set.
+        if ( ! isFromViewPager) {
             // Bij het wijzigen van de pagina, moet de onPageChangelistener niet weer hier terugkomen.
             // Zet daarom isPageSelectionFromViewPager op false.
             isPageSelectionFromViewPager = false;
-            int mPagePosition = MenuPrivacyVandaag.getPageNumberFromMenuPosition(menuPosition);
-            mPager.setCurrentItem(mPagePosition);
+            int mPagePosition = mDrawerAdapter.getViewPagerPagePosition(menuPosition);
+            if (mPagePosition > -1) mPager.setCurrentItem(mPagePosition);
         }
-
         // Geef aan dat de instellingen zijn aangepast en het menu opnieuw gemaakt moet worden.
         invalidateOptionsMenu();
     }
-
-
 
 
 
@@ -822,27 +788,27 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
      */
     public class EntriesListPagerAdapter extends FragmentStatePagerAdapter {
         private int mNumberOfPages = 0;
-        private Cursor mPagesCursor;
         private int mOldNumberOfPages = 0;
         private ArrayList<Integer> viewPagerPageFeedId = new ArrayList<>(); // lijst van pagina's met behorend feedId.
 
-        // Initialiseer de Page Adapter. Hier komen we maar één keer.
-        private EntriesListPagerAdapter(FragmentManager fm, final Cursor cursor) {
+        // Initialise PageAdapter. We only get here once.
+        private EntriesListPagerAdapter(FragmentManager fm) {
             super(fm);
-            mPagesCursor = cursor;
             initItemsForViewPager();  // Initialiseer de gegevens voor de ViewPager.
         }
 
-        // TODO: The loader is called on refresh for new articles. That is not necessary so find out where or why
-        // TODO: it is called and call only the drawer loader to update the numer of unread articles and not all loaders
-        private void setCursor (Cursor cursor) {
-            mPagesCursor = cursor;
-            initItemsForViewPager();  // New cursor, so make or remake menu-items.
+        // The cursor with feeds inofmration is updated. Maybe it has consequences for the ViewPager
+        private void updateViewPager() {
+            initItemsForViewPager();  // Check if ViewPager needs an update
             // Update view only if number of pages has changed.
-            if (mOldNumberOfPages != mNumberOfPages ) notifyDataSetChanged();
-
+            if (mOldNumberOfPages != mNumberOfPages ) {
+                notifyDataSetChanged();
+                // If the ViewPager  has changed, the title and logo in toolbar needs to change with it
+                // mCurrentDrawerPos = mDrawerAdapter.getMenuPositionFromPagePosition(mCurrentViewPagerPos);
+                // Go to first page to prevent confusing page selection when p[ages are removed or added.
+                selectDrawerItem(1, false);
+            }
         }
-
 
         /**
          * Initialiseer de ViewPager. Deze wordt aangeroepen bij het starten van de app,
@@ -851,61 +817,41 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
          */
         private void initItemsForViewPager() {
             Log.e(TAG, "Menu opnieuw opbouwen: HomeActivity.EntriesListPagerAdapter.initItemsForViewPager()");
-            final int POS_FETCH_MODE = 0;
             mOldNumberOfPages = mNumberOfPages;
             mNumberOfPages = 0; // mNumberOfPages is het aantal pagina's dat de ViewPager krijgt.
             viewPagerPageFeedId.clear(); // reset all the viewPagerPages and feedIds
 
-            if (mPagesCursor != null && mPagesCursor.moveToFirst() ) {
-                // Loop het menuItemArray af en check bij de relevante items wat de query (cursor) zegt.
-                // Tel tegelijk het aantal pagina's en stop dat in mNumberOfPages zodat dat ook geregeld is.
-                // Log.e (TAG, DatabaseUtils.dumpCursorToString(mPagesCursor));
+                mNumberOfPages = 0; // mNumberOfPages is number of pages the ViewPager gets.
 
-                int cursPos;
-                for ( int i=0; i<menuItemsArray.length; i++) {  // Loop door alle menu-items
-                    if (menuItemsArray[i].feedId > 0 && menuItemsArray[i].feedId < MenuPrivacyVandaag.MAX_FEED_ID) { // Is het een feed?
-                        cursPos = menuItemsArray[i].feedId - 1; // Door de vaste indeling van het menu en de query weten we relatie feedId en Cursor
-                        // Log.e (TAG,"Cursor Postion cursPos = " + cursPos);
-                        mPagesCursor.moveToPosition(cursPos);
-                        // Staat de feed op volgen of niet?
-                        if (mPagesCursor.getInt(POS_FETCH_MODE) != FETCHMODE_DO_NOT_FETCH) {
-                            //Log.e (TAG, menuItemsArray[i].name + " krijgt een pagina. ");
-                            menuItemsArray[i].hasViewPagerPage = true;
-                            // Omdat de menuItems in de juiste volgorde in de array staan, krijgen ze
-                            // automatisch ook het eerstvolgende paginanummer in de viewPager
-                            viewPagerPageFeedId.add(menuItemsArray[i].feedId);
-                            // In het menuItemArray slaan we ook het bijbehorende paginanummer op. Dat is soms
-                            // handiger bij het terugzoeken.
-                            // Je kan daarvoor de index terugvragen van viewPagerPageFeedId :
-                            // menuItemsArray[i].viewPagerPagePosition = viewPagerPageFeedId.indexOf(menuItemsArray[i].feedId);
-                            // Maar de index is gelijk aan het aantal pagina's - 1, dus we doen dit voor mNumberOfPages++;
-                            menuItemsArray[i].viewPagerPagePosition = mNumberOfPages;
-                            mNumberOfPages++;
-
-                        } else {    // Deze feed staat op "niet volgen" dus krijgt ook geen pagina.
-                            // Log.e (TAG, menuItemsArray[i].name + " krijgt GEEN pagina. ");
-                            menuItemsArray[i].hasViewPagerPage = false;
-                            menuItemsArray[i].viewPagerPagePosition = -1;
-                        }
-                    }
-                    // Deze vaste items krijgen ook een eigen pagina.
-                    else if (menuItemsArray[i].feedId > MenuPrivacyVandaag.MAX_FEED_ID) {
-                        // Log.e (TAG, menuItemsArray[i].name + " krijgt een pagina. ");
-                        menuItemsArray[i].hasViewPagerPage = true;  // is een vaste pagina: alle artikelen, zoeken of favorieten
-                        viewPagerPageFeedId.add(menuItemsArray[i].feedId);
-                        menuItemsArray[i].viewPagerPagePosition = mNumberOfPages;
-                        mNumberOfPages++;
-                    } else {    // is een sectie header dus krijgt geen pagina.
-                        menuItemsArray[i].hasViewPagerPage = false;
-                        menuItemsArray[i].viewPagerPagePosition = -1;
-                    }
+                /* For debugging only
+                for (MenuListAdapter.MenuItemObject mObject : mMenuListAdapter.drawerMenuList()) {
+                    // Log.e(TAG, "Menu item :  " +  mObject.sectionTitle);
+                    Log.e(TAG, "Menu item from the viewpager:  " + mObject.feedId);
+                    Log.e(TAG, "Menu fetchmode:  " + mObject.fetchMode);
+                    Log.e(TAG, "Menu hasViewPagerPage:  " + mObject.hasViewPagerPage);
                 }
-                // mPagesCursor.close();  // Do not close the cursor as it is needed again on configuration changes, like rotate!!
-            } else Log.e (TAG,"Cursor == null or empty.");
+                */
+
+                // Iterate through whole MenuList to see which MenuItem gets a page in the ViewPager
+                // If the menuitem gest a page, link the feedId to it to display the entries drawerMenuList of that feed on the page
+                // The MenuList is in the right order top to bottom in the left drawer and left to right in the ViewPager
+                for (DrawerAdapter.MenuItemObject menuItem : mDrawerAdapter.drawerMenuList()) {
+                    if (menuItem.hasViewPagerPage) {
+                        viewPagerPageFeedId.add(menuItem.feedId);
+                        // In het menuItemArray slaan we ook het bijbehorende paginanummer op. Dat is soms
+                        // handiger bij het terugzoeken.
+                        // Je kan daarvoor de index terugvragen van viewPagerPageFeedId :
+                        // menuItemsArray[i].viewPagerPagePosition = viewPagerPageFeedId.indexOf(menuItemsArray[i].feedId);
+                        // Maar de index is gelijk aan het aantal pagina's - 1, dus we doen dit voor mNumberOfPages++;
+                        menuItem.viewPagerPagePosition = mNumberOfPages;
+                        mNumberOfPages++;
+                    } else {    // This item gets no page
+                        // Log.e (TAG, menuItemsArray[i].name + " krijgt GEEN pagina. ");
+                        menuItem.viewPagerPagePosition = -1;
+                    }
+            }
             // Log.e(TAG, "Aantal pagina's is " + mNumberOfPages);
         }
-
-
 
         @Override
         public int getCount() {
@@ -937,13 +883,6 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
             // Log.e (TAG, "Het fragmentNummer = " + f.mEntriesListFragmentNumber + " met feedId = " + f.mFeedId + " is verwijderd en wordt vernieuwd.");
             return POSITION_NONE;
         }
-
-
-
-
-
-
-
     }
     //*** EINDE VIEWPAGER *** EINDE VIEWPAGER *** EINDE VIEWPAGER *** EINDE VIEWPAGER *** EINDE VIEWPAGER ***
 

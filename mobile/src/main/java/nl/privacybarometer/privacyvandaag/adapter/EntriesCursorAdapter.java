@@ -73,8 +73,8 @@ import nl.privacybarometer.privacyvandaag.utils.PrefUtils;
 import nl.privacybarometer.privacyvandaag.utils.StringUtils;
 
 /**
- *      De basislijst met artikelen voor de Home Activity
- *      Dit wordt gebruikt vanuit > fragment > EntriesListFragment.java
+ *      Main list with entries / articles for the Home Activity
+ *      Is used in > fragment > EntriesListFragment.java
  *
  *     Cursor for this view is loaded in
  *     fragment > EntriesListFragment.java line 386 FeedDataContentProvider.URI_ENTRIES_FOR_FEED.
@@ -92,7 +92,7 @@ public class EntriesCursorAdapter extends ResourceCursorAdapter {
     private final boolean mShowFeedInfo;
     private final NiceImageTransform mNiceImageTransform = new NiceImageTransform();
     private int mIdPos, mTitlePos, mMainImgPos, mDatePos, mIsReadPos, mFavoritePos, mFeedIdPos, mFeedIconPos, mFeedNamePos;
-    private int mIconIdPos;    // ModPrivacyVandaag: Added to find reference to logo drawable resource
+    private int mIconIdPos;    // Added to find reference to logo drawable resource
     private final long mYesterdayMidnight;
     private final long mLastMidnight;
     private final long mComingMidnight;
@@ -159,11 +159,10 @@ public class EntriesCursorAdapter extends ResourceCursorAdapter {
             Picasso.with(context).cancelRequest(holder.mainImgView);
             int mIconResourceId = cursor.getInt(mIconIdPos);
             if (mIconResourceId > 0) {
-                if ( feedId == FeedData.SERVICE_CHANNEL_ID ) {
-                    holder.mainImgView.setImageResource(R.drawable.logo_icon_serviceberichten);
-                }
-                // Use logo with white background for AP in Dark Theme
-                else if ( feedId == FeedData.AUTORITEIT_PERSOONSGEGEVENS_CHANNEL_ID && ( ! PrefUtils.getBoolean(PrefUtils.LIGHT_THEME, true))) {
+                // Use special icon for the service messages channel?
+                   // holder.mainImgView.setImageResource(R.drawable.logo_icon_serviceberichten);
+                // Use a different logo with white background for Autoriteit Persooonsgegevens in Dark Theme
+                if ( feedName.contains("riteit persoons") && ( ! PrefUtils.getBoolean(PrefUtils.LIGHT_THEME, true))) {
                     holder.mainImgView.setImageResource(R.drawable.logo_icon_ap_witte_achtergrond);
                 } else {
                     holder.mainImgView.setImageResource(mIconResourceId);

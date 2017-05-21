@@ -61,10 +61,8 @@ import nl.privacybarometer.privacyvandaag.utils.PrefUtils;
 import static nl.privacybarometer.privacyvandaag.Constants.FETCHMODE_DO_NOT_FETCH;
 
 /**
- * Dit is de centrale interface voor het inrichten en uitvragen van de database
+ * Main data for communicating with and using the database
  */
-
-
 
 public class FeedData {
     public static final String CONTENT = "content://";
@@ -91,7 +89,6 @@ public class FeedData {
         // Zet de bewaartermijn per feed in dagen. 0 = oneindig.
         // Laat de algemene instellingen bepalen hoe lang artikelen (behalve de evenementen) bewaard worden.
     static final int STANDAARD_BEWAARTERMIJNEN_ARTIKELEN = 0; // In dagen, bewaartermijn van artikelen
-    static final int STANDAARD_BEWAARTERMIJNEN_EVENEMENTEN = 1; // In dagen, bewaartermnijn van evenementen
 
 
 
@@ -303,60 +300,26 @@ public class FeedData {
 
         public static final Uri CONTENT_URI = Uri.parse(CONTENT_AUTHORITY + "/tasks");
 
-
     }
 
 
 
-
-    // Define ID's of feed in database. These ID's are the ID's the feeds got in the database table FeedColumns
-    // Is used to connect the menu-items to the feeds in database
-    // TODO: This should be done dynammically
-    public static final long PRIVACYBAROMETER_CHANNEL_ID = 1;
-    public static final long BITS_OF_FREEDOM_CHANNEL_ID = 2;
-    public static final long PRIVACY_FIRST_CHANNEL_ID = 3;
-    public static final long VRIJBIT_CHANNEL_ID = 4;
-    public static final long KDVP_CHANNEL_ID = 5;
-    public static final long AUTORITEIT_PERSOONSGEGEVENS_CHANNEL_ID = 6;
-    // public static final long ALGEMEEN_PRIVACYNIEUWS_CHANNEL_ID = 7;
-    public static final long PB_TWITTER_CHANNEL_ID = 7;
-    // public static final long AD_TWITTER_CHANNEL_ID = 9;
-    public static final long SERVICE_CHANNEL_ID = 8;
-
-
     /**
-     * Add predefined feeds on first run of the app. Put them in order of first appearance in left drawer menu.
-     * params:
-     * context, URL of the feed, name of the feed,
-     * true or false > boolean if full article should be retrieved,
-     * two params for cookie settings, number of days that articles should be kept in database, name of icon resource.
-     *
-     * LET OP! Aanpassingen in de feeds kunnen invloed hebben op het leftdrawer menu!!!
-     * Alles over de menu-indeling staat in DrawerAdapter.java onderaan.
+     * Add predefined Rss-feeds to the database.
      */
 
-
-    /**
-     * Add the standaard Rss- feeds to the database.
-     */
-
-    public static void addPredefinedFeeds (Context context) {                            // %2C is a comma
+    public static void addPredefinedFeeds (Context context) {        // %2C is a comma
         /*
          * FeedDataContentProvider.addFeed(
          *      > context,
-         *      > URL van de feed,
-         *      > titel van de feed,
-         *      > moet op de website het gehele artikel worden opgehaald? (true/false)
-         *      > cookienaam,
-         *      > cookiewaarde,
-         *      > bewaartermijn van de artikelen voordat ze automatisch weer worden verwijderd,
-         *      > logo of icon van de feed
+         *      > feed URL,
+         *      > feed title,
+         *      > retrieve full article or stick to RSS excerpt (true/false)
+         *      > cookiename,
+         *      > cookievalue,
+         *      > time to keep articles before they are automatically deleted,
+         *      > feed icon file name (without the .png extension)
          *  ");
-         *  Maar er is ook een verkorte addFeed waarbij sommige niet opgegeven waarden op default worden gezet.
-         *  Zie FeedDataContentProvider regel 136 e.v.
-         *
-         * LET OP!! Bij evenementen ind e toekomst kan de weergave volgorde omgedraaid worden (recent onderaan ipv bovenaan).
-         * Dit gebeurt in fragment > EntriesListFragment.java regel 100
          */
         FeedDataContentProvider.addFeed(context, "https://www.privacybarometer.nl/feed/", "Privacy Barometer", true, "logo_icon_pb");
         FeedDataContentProvider.addFeed(context, "https://www.bof.nl/feed/", "Bits of Freedom", true, "logo_icon_bof");
@@ -364,10 +327,7 @@ public class FeedData {
         FeedDataContentProvider.addFeed(context, "https://www.vrijbit.nl/index.php?option=com_k2&view=itemlist&format=feed", "Vrijbit",  true, "logo_icon_vrijbit");
         FeedDataContentProvider.addFeed(context, "http://www.kdvp.nl/?format=feed&type=rss", "KDVP",  true, "logo_icon_kdvp");
         FeedDataContentProvider.addFeed(context, "https://autoriteitpersoonsgegevens.nl/nl/rss", "Autoriteit Persoonsgegevens",  false, "logo_icon_ap");
-       // FeedDataContentProvider.addFeed(context, "https://www.privacynieuws.nl/?format=feed&type=rss", "Algemeen Nieuws", true, "", "", STANDAARD_BEWAARTERMIJNEN_ARTIKELEN, "group_collapsed");
         FeedDataContentProvider.addFeed(context, "https://www.privacybarometer.nl/app/privacy_vandaag_tweetselectie_to_rss.php", "Privacy in het nieuws", false, "logo_icon_privacy_in_het_nieuws");
-       // FeedDataContentProvider.addFeed(context, "https://queryfeed.net/twitter?q=%23pv+from%3APrivacyBaro&title-type=user-name-both&geocode=", "PB Tweets", false, "", "", STANDAARD_BEWAARTERMIJNEN_ARTIKELEN, "action_twitter");
-       // FeedDataContentProvider.addFeed(context, "https://queryfeed.net/twitter?q=%23pv+from%3AAnneDijvie&title-type=user-name-both&geocode=", "AD Tweets", false, "", "", STANDAARD_BEWAARTERMIJNEN_ARTIKELEN, "action_twitter");
         FeedDataContentProvider.addFeed(context, "https://www.privacybarometer.nl/app/feed/" + BuildConfig.PRODUCT_FLAVOR, "Serviceberichten",  false, "logo_icon_serviceberichten_inverse"); // 61 is het aantal dagen dat items bewaard moeten worden.
    }
 

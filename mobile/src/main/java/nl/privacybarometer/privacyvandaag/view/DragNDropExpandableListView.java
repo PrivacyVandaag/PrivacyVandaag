@@ -33,7 +33,7 @@ import android.widget.ExpandableListView;
 import android.widget.ImageView;
 
 /**
- * Utility to make it possible to drag & drop items in a list to change the order of the items.
+ * Utility to make it possible to drag & drop items in a drawerMenuList to change the order of the items.
  */
 public class DragNDropExpandableListView extends ExpandableListView {
 
@@ -140,7 +140,7 @@ public class DragNDropExpandableListView extends ExpandableListView {
         Context context = getContext();
 
         // Create a copy of the drawing cache so that it does not get recycled
-        // by the framework when the list tries to clean up memory
+        // by the framework when the drawerMenuList tries to clean up memory
         ImageView v = new ImageView(context);
         item.setDrawingCacheEnabled(true);
         Bitmap bitmap = Bitmap.createBitmap(item.getDrawingCache());

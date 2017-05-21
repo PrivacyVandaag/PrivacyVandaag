@@ -116,7 +116,7 @@ public class EditFeedsListFragment extends ListFragment {
         mListView.setFastScrollEnabled(true);
         mListView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 
-        // When a feed in the list is clicked, toggle the feed between "do-not-refresh" (99) and active (0).
+        // When a feed in the drawerMenuList is clicked, toggle the feed between "do-not-refresh" (99) and active (0).
         mListView.setOnGroupClickListener(new ExpandableListView.OnGroupClickListener() {
 
             @Override
@@ -146,7 +146,7 @@ public class EditFeedsListFragment extends ListFragment {
             }
         }); // end setOnGroupClickListener
 
-        // Adding a tip at the top of the screen about using this list and what your options are.
+        // Adding a tip at the top of the screen about using this drawerMenuList and what your options are.
         if (PrefUtils.getBoolean(PrefUtils.DISPLAY_TIP_FEEDS, true)) {
             final TextView header = new TextView(mListView.getContext());
             header.setMinimumHeight(UiUtils.dpToPixel(70));
@@ -170,7 +170,7 @@ public class EditFeedsListFragment extends ListFragment {
         // Add database adapter to the listview
         mListView.setAdapter(new FeedsCursorAdapter(getActivity(), FeedColumns.GROUPS_CONTENT_URI));
 
-        // Add the Drag & Drop listener to the listview to change the order of items in the list
+        // Add the Drag & Drop listener to the listview to change the order of items in the drawerMenuList
         mListView.setDragNDropListener(new DragNDropListener() {
             boolean fromHasGroupIndicator = false;
 

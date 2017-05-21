@@ -34,17 +34,14 @@
         android:icon="@drawable/action_settings"
         android:title="@string/menu_settings"
         app:showAsAction="never"/>
-
-    <!-- edit feeds, always in the overflow menu -->
-    <!-- Voorlopig maar even niet!!!   -->
-    <!-- Deze knop hoort bij case R.id.edit_feeds in HomeActivity op regel 298. Die staat dus ook uit!!
+    <!-- sort / edit feeds, always in the overflow menu -->
+    <!-- This item belongs to option R.id.edit_feeds in HomeActivity on line 538. -->
     <item
         android:id="@+id/edit_feeds"
         android:icon="@drawable/content_edit"
         android:title="@string/menu_edit_feeds"
         app:showAsAction="never"
        />
-    -->
 
     <item
         android:id="@+id/about_this_app"

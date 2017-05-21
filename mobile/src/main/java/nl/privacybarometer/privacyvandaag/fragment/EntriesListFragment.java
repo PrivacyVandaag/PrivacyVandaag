@@ -62,8 +62,6 @@ import android.widget.Toast;
 
 import nl.privacybarometer.privacyvandaag.Constants;
 import nl.privacybarometer.privacyvandaag.R;
-import nl.privacybarometer.privacyvandaag.MenuPrivacyVandaag;
-import nl.privacybarometer.privacyvandaag.activity.HomeActivity;
 import nl.privacybarometer.privacyvandaag.adapter.DrawerAdapter;
 import nl.privacybarometer.privacyvandaag.adapter.EntriesCursorAdapter;
 import nl.privacybarometer.privacyvandaag.provider.FeedData;
@@ -319,7 +317,7 @@ public class EntriesListFragment extends SwipeRefreshListFragment {
         mListView = (ListView) rootView.findViewById(android.R.id.list);
 
         // Tip bij het zoekscherm
-        if (PrefUtils.getBoolean(PrefUtils.DISPLAY_TIP, true) && mEntriesListFragmentNumber== MenuPrivacyVandaag.PAGE_POSITION_SEARCH) { // Alleen bij zoekscherm!
+        if (PrefUtils.getBoolean(PrefUtils.DISPLAY_TIP, true) && (mUri.getPath().contains("search")) ) { // Alleen bij zoekscherm!
             final TextView header = new TextView(mListView.getContext());
             header.setMinimumHeight(UiUtils.dpToPixel(70));
             int footerPadding = UiUtils.dpToPixel(10);
@@ -435,13 +433,13 @@ public class EntriesListFragment extends SwipeRefreshListFragment {
 
         // Log.e(TAG,"Dit mEntriesListFragmentNumber " + mEntriesListFragmentNumber + " krijgt feedID " + mFeedId);
         switch (mFeedId) {
-            case MenuPrivacyVandaag.FAKE_FEED_ID_MEANING_SEARCH :
+            case DrawerAdapter.PSEUDO_FEED_ID_MEANING_SEARCH :
                 mUri = EntryColumns.SEARCH_URI(getCurrentSearch());
                 break;
-            case MenuPrivacyVandaag.FAKE_FEED_ID_MEANING_FAVORITES :
+            case DrawerAdapter.PSEUDO_FEED_ID_MEANING_FAVORITES :
                 mUri = EntryColumns.FAVORITES_CONTENT_URI;
                 break;
-            case MenuPrivacyVandaag.FAKE_FEED_ID_MEANING_ALL_ENTRIES :
+            case DrawerAdapter.PSEUDO_FEED_ID_MEANING_ALL_ENTRIES :
                 mUri = EntryColumns.ALL_ENTRIES_CONTENT_URI;
                 break;
             default:
@@ -476,7 +474,7 @@ public class EntriesListFragment extends SwipeRefreshListFragment {
 
 
     /**
-     * Koppel de adapter en haal de gegevens op voor de lijst op basis van de URI (= query)
+     * Set the adapter and get the data for the list using the URI to select (= query).
      */
      public void setData(Uri uri, boolean showFeedInfo) {
         mUri = uri;
@@ -535,11 +533,11 @@ public class EntriesListFragment extends SwipeRefreshListFragment {
         PrefUtils.registerOnPrefChangeListener(mPrefListener);
 
         if (mUri != null) {
-            // If the list is empty when we are going back here, try with the last display date
+            // If the drawerMenuList is empty when we are going back here, try with the last display date
             if (mNewEntriesNumber != 0 && mOldUnreadEntriesNumber == 0) {
                 mListDisplayDate = new Date().getTime();
             } else {
-                mAutoRefreshDisplayDate = true; // We will try to update the list after if necessary
+                mAutoRefreshDisplayDate = true; // We will try to update the drawerMenuList after if necessary
             }
 
             restartLoaders();
@@ -584,7 +582,7 @@ public class EntriesListFragment extends SwipeRefreshListFragment {
             menu.findItem(R.id.menu_share_starred).setVisible(false);
         }
         // Maak de optie artikelen te herladen onzichtbaar bij favorieten en zoeken
-        if (MenuPrivacyVandaag.isSearchPage(mEntriesListFragmentNumber) || (MenuPrivacyVandaag.isFavoritesPage(mEntriesListFragmentNumber))) {
+        if ((mUri.getPath().contains("search")) || ( EntryColumns.FAVORITES_CONTENT_URI.equals(mUri))) {
             menu.findItem(R.id.reset_app).setVisible(false);
         }
 
@@ -783,7 +781,7 @@ private void startRefresh() {
         if (mUri != null && FeedDataContentProvider.URI_MATCHER.match(mUri) == FeedDataContentProvider.URI_FAVORITES) {
            disableSwipe();
         }
-        // If newly fetched articles are found in the database, this button is shown at the top of the list.
+        // If newly fetched articles are found in the database, this button is shown at the top of the drawerMenuList.
         // mNewEntriesNumber is the result of the query performed by Loader 2: mEntriesNumberLoader
         if (mNewEntriesNumber > 0) {
             mRefreshListBtn.setText(getResources().getQuantityString(R.plurals.number_of_new_entries_refresh_button, mNewEntriesNumber, mNewEntriesNumber));

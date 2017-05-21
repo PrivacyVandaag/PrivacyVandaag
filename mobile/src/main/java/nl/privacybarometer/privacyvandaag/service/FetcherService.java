@@ -71,7 +71,6 @@ import android.widget.Toast;
 
 import nl.privacybarometer.privacyvandaag.Constants;
 import nl.privacybarometer.privacyvandaag.MainApplication;
-import nl.privacybarometer.privacyvandaag.MenuPrivacyVandaag;
 import nl.privacybarometer.privacyvandaag.R;
 import nl.privacybarometer.privacyvandaag.activity.HomeActivity;
 import nl.privacybarometer.privacyvandaag.parser.RssAtomParser;
@@ -104,7 +103,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static nl.privacybarometer.privacyvandaag.provider.FeedData.PB_TWITTER_CHANNEL_ID;
 
 public class FetcherService extends IntentService {
     private static final String TAG = FetcherService.class.getSimpleName() + " ~> ";

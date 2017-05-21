@@ -19,8 +19,8 @@ android {
         applicationId "nl.privacybarometer.privacyvandaag"
         minSdkVersion 14
         targetSdkVersion 25
-        versionCode 126
-        versionName "2.1.0"
+        versionCode 128
+        versionName "2.3.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {

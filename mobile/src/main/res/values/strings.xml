@@ -28,7 +28,7 @@
         Oudere artikelen die niet als favoriet zijn gemarkeerd verdwijnen definitief uit de app.</p>
         <p>Alle artikelen blijven uiteraard gewoon op de website te lezen.</p>
     ]]></string>
-    <string name="menu_edit_feeds">Instellingen nieuwsbronnen</string>
+    <string name="menu_edit_feeds">Sorteer het menu</string>
     <string name="menu_refresh">Verversen</string>
     <string name="menu_all_read">Markeer alles als gelezen</string>
     <string name="menu_section_news">nieuws</string>
@@ -100,7 +100,7 @@
     <string name="menu_copy_clipboard">Kopieer link</string>
     <string name="menu_mark_as_unread">Markeer als ongelezen</string>
     <string name="menu_reload_article">Herlaad dit artikel</string>
-    <string name="share_favorites_title">PrivacyVandaag Favorieten</string>
+    <string name="share_favorites_title">Privacy Vandaag Favorieten</string>
     <string name="copied_clipboard">Link gekopieerd</string>
     <string name="get_full_text">Toon het volledige artikel</string>
     <string name="original_text">Laat de originele tekst zien</string>
@@ -111,19 +111,22 @@
     <string name="file">Bestand</string>
     <string name="download_and_save">Download en opslaan</string>
     <string name="open_link">Open link</string>
-    <string name="tip_sentence">Tip: zoek binnen de artikelen die in de app geladen zijn. Ga voor het doorzoeken van het gehele archief naar de website.</string>
-    <string name="tip_sentence_float">Tip: druk op knop rechtsonder om gelezen artikelen te verbergen of weer zichtbaar te maken.</string>
-    <string name="tip_sentence_feeds">Tip: druk op een organisatie om deze wel/niet te volgen.</string>
+    <string name="tip_sentence">Tip: zoek binnen de artikelen die in de app geladen zijn. Ga voor
+        het doorzoeken van het gehele archief naar de website.</string>
+    <string name="tip_sentence_float">Tip: druk op knop rechtsonder om gelezen artikelen te
+        verbergen of weer zichtbaar te maken.</string>
+    <string name="tip_sentence_feeds">Tip: druk op een organisatie om deze wel/niet te volgen.
+        Dit kunt u ook instellen door lang op de organisatie in het menu zelf te drukken.</string>
 
     <!-- SETTINGS -->
     <string name="settings_category_refresh">Automatisch verversen</string>
     <string name="settings_refresh_enabled">Automatisch verversen</string>
-    <string name="settings_refresh_enabled_description">Haal automatisch de nieuwste artikelen op.
-    </string>
+    <string name="settings_refresh_enabled_description">Haal automatisch de nieuwste artikelen op.</string>
     <string name="settings_refresh_interval">Tijdsinterval</string>
     <string name="settings_category_notifications">Meldingen</string>
     <string name="settings_notifications_enabled">Meldingen aan</string>
-    <string name="settings_notifications_enabled_description">Geef een melding als er een nieuw artikel is</string>
+    <string name="settings_notifications_enabled_description">Geef een melding als er een nieuw
+        artikel is</string>
 
     <string name="settings_notifications_enabled_privacyVandaag">> bij nieuw privacyVandaag</string>
     <string name="settings_notifications_enabled_stadsnieuws">> bij nieuw stadsnieuws</string>
@@ -133,9 +136,11 @@
     <string name="settings_notifications_ringtone">Meldingstoon</string>
     <string name="settings_notifications_ringtone_none">Geen</string>
     <string name="settings_notifications_vibrate">Trillen</string>
-    <string name="settings_notifications_vibrate_description">Trilstand aan als er een nieuw artikel is</string>
+    <string name="settings_notifications_vibrate_description">Trilstand aan als er een nieuw
+        artikel is</string>
     <string name="settings_notifications_light">Licht</string>
-    <string name="settings_notifications_light_description">Zet meldingslampje aan als er een nieuw artikel is</string>
+    <string name="settings_notifications_light_description">Zet meldingslampje aan als er een nieuw
+        artikel is</string>
     <string name="settings_category_content_presentation">Weergave</string>
     <string name="settings_light_theme">Licht thema</string>
     <string name="settings_light_theme_description">Gebruik het lichte thema</string>
@@ -143,22 +148,28 @@
     <string name="settings_left_panel_description">Laat links het uitschuifmenu zien na het opstarten</string>
     <string name="settings_keep_time">Bewaartijd van artikelen</string>
     <string name="settings_display_images">Toon afbeeldingen</string>
-    <string name="settings_display_images_description">Laat eventuele afbeeldingen bij de artikelen zien</string>
+    <string name="settings_display_images_description">Laat eventuele afbeeldingen bij de
+        artikelen zien</string>
     <string name="settings_preload_image_mode">Haal afbeeldingen vooraf op</string>
     <string name="settings_font_size">Lettergrootte artikelen</string>
     <string name="settings_display_oldest_first">Volgorde van artikelen</string>
     <string name="settings_display_oldest_first_description">Oudste bovenaan</string>
     <string name="settings_display_entries_fullscreen">Volledig scherm</string>
-    <string name="settings_display_entries_fullscreen_description">Laat artikelen automatisch in het volledige scherm zien</string>
+    <string name="settings_display_entries_fullscreen_description">Laat artikelen automatisch in het
+        volledige scherm zien</string>
     <string name="position_floating_button">Plaats menuknop links</string>
-    <string name="position_floating_button_description">Positioneer de knop om het menu te openen of te sluiten linksonder in het scherm.</string>
+    <string name="position_floating_button_description">Positioneer de knop om het menu te openen of
+        te sluiten linksonder in het scherm.</string>
     <string name="settings_refresh_on_open">Ververs bij opstarten</string>
-    <string name="settings_refresh_on_open_description">Controleer automatisch op nieuwe artikelen bij opstarten</string>
+    <string name="settings_refresh_on_open_description">Controleer automatisch op nieuwe artikelen
+        bij opstarten</string>
     <string name="settings_refresh_wifi_only">Ververs alleen over WiFi</string>
-    <string name="settings_refresh_wifi_only_description">Automatisch controleren op nieuwe artikelen gebeurt alleen over een WiFi verbinding.</string>
+    <string name="settings_refresh_wifi_only_description">Automatisch controleren op nieuwe
+        artikelen gebeurt alleen over een WiFi verbinding.</string>
     <string name="settings_visible_feeds">Zichtbare feeds</string>
     <string name="settings_widget_background">Achtergrond</string>
-    <string name="settings_widget_background_description">Color and transparency of the widget background</string>
+    <string name="settings_widget_background_description">Color and transparency of the widget
+        background</string>
     <string name="all_feeds_widget">All feeds (incl. future)</string>
     <string name="settings_screen_proxy">Proxy</string>
     <string name="settings_category_network">Netwerk</string>

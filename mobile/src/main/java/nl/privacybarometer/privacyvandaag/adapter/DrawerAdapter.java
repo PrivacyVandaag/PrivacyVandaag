@@ -35,12 +35,12 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import nl.privacybarometer.privacyvandaag.MainApplication;
-import nl.privacybarometer.privacyvandaag.MenuPrivacyVandaag;
 import nl.privacybarometer.privacyvandaag.R;
 import nl.privacybarometer.privacyvandaag.provider.FeedData;
 import nl.privacybarometer.privacyvandaag.provider.FeedData.EntryColumns;
 import nl.privacybarometer.privacyvandaag.utils.StringUtils;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -72,15 +72,37 @@ public class DrawerAdapter extends BaseAdapter {
     private static final int POS_NOTIFY = 10;    // To get the right icon of the feed from the resources.
 
 
+    private static final int EMPTY_FEED_ID_FOR_SECTION_HEADERS = -1;
+    // These values should be larger than MAX_REAL_FEED_ID. Max_FEED_ID seperates the real feeds from other items/pages.
+    public static final int PSEUDO_FEED_ID_MEANING_FAVORITES = 99;
+    public static final int PSEUDO_FEED_ID_MEANING_SEARCH = 98;
+    public static final int PSEUDO_FEED_ID_MEANING_ALL_ENTRIES = 97;
+    // All feeds in the app have a feedId. These are the feedId's in the database in the table that gholds the feeds.
+    // Some menu-items behave like feeds but do not have articles of themselves, so they do not exist in the database.
+    // These items get fake Id's to make them behave like feeds with a page in the ViewPager and a menuItem in the LeftDrawer
+    // They also have a query to select and display articles from the database in a drawerMenuList.
+    // Items like this are 'Favorites', 'Search' and 'All Articles'.
+    // To distinguish these fake feeds from the real thing, they get Id's higer than MAX_REAL_FEED_ID.
+    public final static int MAX_REAL_FEED_ID = 90; // values higer than MAX_REAL_FEED_ID are fake ID's for special pages like favorites and search
+
+
+
+
+    private static final int EMPTY_CURSOR_POSITION = -1;
+    private static final int START_FEEDS_ITEMS = 3; // First 3 menu items are non-newsfeed items
+    private static final int END_FEEDS_ITEMS = 3;   // Last 3 menu items are non-newsfeed items
+
+
     private static final int FETCHMODE_DO_NOT_FETCH = 99;   // 99 means 'Do not refresh feed'. Predefined feed is inactive.
-    // Color settings for feeds in the menulist to account for inactive feeds. // TODO: Put it with other style-settings. Include preferences.
+
+    // Color settings for feeds in the menulist to account for inactive feeds.
+    // TODO: Put it with other style-settings. Include preferences.
     private static final int DO_NOT_FETCH_TEXT_COLOR_LIGHT_THEME = Color.parseColor("#FF4c4c4c");
     private static final int DO_NOT_FETCH_STATE_TEXT_COLOR_LIGHT_THEME = Color.parseColor("#808080");
     private static final int DO_NOT_FETCH_TEXT_COLOR_DARK_THEME = Color.parseColor("#FFb2b2b2");
     private static final int NORMAL_STATE_TEXT_COLOR_LIGHT_THEME = Color.parseColor("#FFFFFF");
     private static final int NORMAL_TEXT_COLOR = Color.parseColor("#EEEEEE");
     private static final int GROUP_TEXT_COLOR = Color.parseColor("#BBBBBB");
-
 
     private static final String COLON = MainApplication.getContext().getString(R.string.colon);
 
@@ -96,17 +118,46 @@ public class DrawerAdapter extends BaseAdapter {
     private Cursor mFeedsCursor;
     private int mAllUnreadNumber, mFavoritesNumber;
 
+    private ArrayList<MenuItemObject> mMenuList;
+    private int serviceChannelCursorPosition= EMPTY_CURSOR_POSITION;
 
 
-    // Create left drawer menu
+    // Create the main list of menu items for the left drawer
     public DrawerAdapter(Context context, Cursor feedCursor) {
+        mMenuList = new ArrayList<MenuItemObject>();
         mContext = context;
         mFeedsCursor = feedCursor;
+        // Log.e (TAG, DatabaseUtils.dumpCursorToString(mFeedsCursor)); // See what's in the cursor
+
+        // Create menuList that holds all the menu items and positions
+        addFixedTopItems();
+        addRssFeedItems();
+        addFixedBottomItems ();
+
+        // Update the numbers for the unread counters in Left Drawer Menu
         updateNumbers();
     }
 
+    /**
+     * Dataset in database has changed. New cursor is available.
+     */
     public void setCursor(Cursor feedCursor) {
+        Log.e (TAG, "New cursor for Left Drawer");
         mFeedsCursor = feedCursor;
+
+        // Update MenuList
+        // The items at the top and at the bottom are fixed, so no need to update them.
+        // We only have to update the RSS feeds.
+        // So we start with item 4 and end with item getCount - 3;
+        updateRssFeedItems(START_FEEDS_ITEMS, mMenuList.size()- END_FEEDS_ITEMS);
+        /* For debugging only
+        for (MenuItemObject mObject : mMenuList){
+            Log.e(TAG, "UPDATE Menu item :  " +  mObject.title);
+            Log.e(TAG, "UPDATE Menu item :  " + mObject.feedId);
+        }
+        */
+
+        // Update the numbers for the unread counters in Left Drawer Menu
         updateNumbers();
         notifyDataSetChanged();
     }
@@ -116,9 +167,9 @@ public class DrawerAdapter extends BaseAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         View view;
-        if (MenuPrivacyVandaag.isSectionHeader(position)) {  // het gaat om een header
+        if (mMenuList.get(position).isSectionHeader) {  // It's a header
             view = getSectionHeaderView(position, convertView, parent);
-        } else {    // Het gaat om een menu item
+        } else {    // It's a menu item
             view = getItemView(position, convertView, parent);
         }
         return view;
@@ -129,7 +180,7 @@ public class DrawerAdapter extends BaseAdapter {
      * *****   MENU SECTION HEADER   ******   MENU SECTION HEADER  ******   MENU SECTION HEADER  ******
      */
     private View getSectionHeaderView(int menuPosition, View convertView, ViewGroup parent) {
-        // Inflate view - No use using convertView, because a header is always on its own
+        // If we already have a View, use it. Inflating new ones is expensive.
         if (convertView == null || convertView.getTag(R.id.holder_header) == null) {
             LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             convertView = inflater.inflate(R.layout.section_header_drawer_list, parent, false);
@@ -142,12 +193,12 @@ public class DrawerAdapter extends BaseAdapter {
         ViewHolder holderHeader = (ViewHolder) convertView.getTag(R.id.holder_header);
 
         // Set the title
-        holderHeader.titleTxt.setText(MenuPrivacyVandaag.sectionTitle(menuPosition));
+        holderHeader.titleTxt.setText(mMenuList.get(menuPosition).title);
         holderHeader.titleTxt.setTextColor(NORMAL_TEXT_COLOR);
         holderHeader.titleTxt.setAllCaps(true);
         convertView.setPadding(0, 0, 0, 0);
         holderHeader.separator.setVisibility(View.VISIBLE);
-        return convertView;  // No need to return the convertView, because the next element is always an item, so convertView is useless
+        return convertView;
     }
 
 
@@ -156,7 +207,7 @@ public class DrawerAdapter extends BaseAdapter {
      */
 
     private View getItemView(int menuPosition, View convertView, ViewGroup parent) {
-        // Als er nog geen view in de ViewHolder zit, maak het object dan aan.
+        // If we already have a View, use it. Inflating new ones is expensive.
         if (convertView == null || convertView.getTag(R.id.holder) == null) {
             LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
             convertView = inflater.inflate(R.layout.item_drawer_list, parent, false);
@@ -183,71 +234,58 @@ public class DrawerAdapter extends BaseAdapter {
         convertView.setPadding(0, 0, 0, 0);
         holder.separator.setVisibility(View.GONE);
 
-        // retrieve the cursorPosition for the feed by looking at the menuPosition
-        int cursorPosition = MenuPrivacyVandaag.getCursorPosition(menuPosition);   // cursor positie is het nummer van de rij in de feeds Tabel.
         // Start displaying the feeds in left drawer menu
-        if (MenuPrivacyVandaag.isFavorites(menuPosition)) { // het gaat om de favorieten
-            holder.titleTxt.setText(R.string.favorites);
-            holder.iconView.setImageResource(R.drawable.rating_important);
-            int unread = mFavoritesNumber;
-            if (unread != 0) {
-                holder.unreadTxt.setText(String.valueOf(unread));
+        holder.titleTxt.setText(mMenuList.get(menuPosition).title);
+        holder.iconView.setImageResource(mMenuList.get(menuPosition).iconDrawable);
+
+        // Set number of favorites for favorites channel
+        if (mMenuList.get(menuPosition).feedId == PSEUDO_FEED_ID_MEANING_FAVORITES)
+        {
+            if (mFavoritesNumber != 0) {
+                holder.unreadTxt.setText(String.valueOf(mFavoritesNumber));
             }
-        } else if (MenuPrivacyVandaag.isSearch(menuPosition)) { // het gaat om zoeken
-            holder.titleTxt.setText(R.string.search);
-            holder.iconView.setImageResource(R.drawable.action_search);
+        }
 
-        } else if (MenuPrivacyVandaag.isAllEntries(menuPosition)) { // het gaat om de verzamelde stroom artikelen
-            holder.titleTxt.setText(R.string.all);
-            holder.iconView.setImageResource(R.drawable.ic_statusbar_rss);
-
-        } else if (mFeedsCursor != null && mFeedsCursor.moveToPosition(cursorPosition)) {
-            // cursorPosition is the specific row in the query results table where the
-            // data concerning the current item can be found.
-            String feedName = (mFeedsCursor.isNull(POS_NAME) ? mFeedsCursor.getString(POS_URL) : mFeedsCursor.getString(POS_NAME));
-            holder.titleTxt.setText(feedName);
-            // If it is a group of feeds // TODO: remove the group function. We do not use this.
-            if (mFeedsCursor.getInt(POS_IS_GROUP) == 1) {
-                holder.titleTxt.setTextColor(GROUP_TEXT_COLOR);
-                holder.titleTxt.setAllCaps(true);
-                holder.separator.setVisibility(View.VISIBLE);
-            }
-            // else it is a single feed
-            else {
-                if (!MenuPrivacyVandaag.isServiceChannel(menuPosition)) { // if not the channel with app related service messages
-                    holder.stateTxt.setVisibility(View.VISIBLE);
-                    // Check whether this is an active feed or one that is not to be refreshed.
-                    if (!(mFeedsCursor.getInt(POS_FETCH_MODE) == FETCHMODE_DO_NOT_FETCH)) {
-                        if (mFeedsCursor.isNull(POS_ERROR)) { // if it is an active feed and no error
-                            long timestamp = mFeedsCursor.getLong(POS_LAST_UPDATE);
-                            // Date formatting is expensive, look at the cache
-                            String formattedDate = mFormattedDateCache.get(timestamp);
-                            if (formattedDate == null) {
-                                formattedDate = mContext.getString(R.string.update) + COLON;
-                                if (timestamp == 0) {
-                                    formattedDate += mContext.getString(R.string.never);
-                                } else {
-                                    formattedDate += StringUtils.getDateTimeStringSimple(timestamp);
-                                }
-                                mFormattedDateCache.put(timestamp, formattedDate);
+        // retrieve the cursorPosition for the feed by looking at the menuPosition
+        // cursorPosition is the specific row in the query results table where the
+        // data concerning the current item can be found.
+        int cursorPosition = mMenuList.get(menuPosition).cursorPosition;   // cursor positie is het nummer van de rij in de feeds Tabel.
+        if (mFeedsCursor != null && mFeedsCursor.moveToPosition(cursorPosition)) {
+            if (cursorPosition != serviceChannelCursorPosition) { // if not the channel with app related service messages
+                holder.stateTxt.setVisibility(View.VISIBLE);
+                // Check whether this is an active feed or one that is not to be refreshed.
+                if (!(mFeedsCursor.getInt(POS_FETCH_MODE) == FETCHMODE_DO_NOT_FETCH)) {
+                    if (mFeedsCursor.isNull(POS_ERROR)) { // if it is an active feed and no error
+                        long timestamp = mFeedsCursor.getLong(POS_LAST_UPDATE);
+                        // Date formatting is expensive, look at the cache
+                        String formattedDate = mFormattedDateCache.get(timestamp);
+                        if (formattedDate == null) {
+                            formattedDate = mContext.getString(R.string.update) + COLON;
+                            if (timestamp == 0) {
+                                formattedDate += mContext.getString(R.string.never);
+                            } else {
+                                formattedDate += StringUtils.getDateTimeStringSimple(timestamp);
                             }
-                            holder.stateTxt.setText(formattedDate);
-                            holder.stateTxt.setTextColor(NORMAL_STATE_TEXT_COLOR_LIGHT_THEME);
-                            // Get and display number of unread articles
-                            int unread = mFeedsCursor.getInt(POS_UNREAD);
-                            if (unread != 0) {
-                                holder.unreadTxt.setText(String.valueOf(unread));
-                            }
-
+                            mFormattedDateCache.put(timestamp, formattedDate);
                         }
+                        holder.stateTxt.setText(formattedDate);
+                        holder.stateTxt.setTextColor(NORMAL_STATE_TEXT_COLOR_LIGHT_THEME);
+
+
+                        // Get and display number of unread articles
+                        int unread = mFeedsCursor.getInt(POS_UNREAD);
+                        if (unread != 0) {
+                            holder.unreadTxt.setText(String.valueOf(unread));
+                        }
+
                         // else there is an error reading the feed. Most likely it is a format error in the
                         // RSS feed itself. Check the original rss feed with a feed-validator on the internet.
-                        else {
+                    } else {
                             //holder.stateTxt.setText(new StringBuilder(mContext.getString(R.string.error)).append(COLON).append(mFeedsCursor.getString(POS_ERROR)));
                             holder.stateTxt.setText(new StringBuilder(mContext.getString(R.string.error_fetching_feed)));
-                            Log.e("PrivacyVandaag", mContext.getString(R.string.error_fetching_feed));
-                            Log.e("PrivacyVandaag", "refresh fout: " + mFeedsCursor.getString(POS_ERROR));
-                        }
+                            Log.e("Privacy Vandaag", mContext.getString(R.string.error_fetching_feed));
+                            Log.e("Privacy Vandaag", "refresh fout: " + mFeedsCursor.getString(POS_ERROR));
+                    }
 
                         // Check of de meldingen aan of uitstaan
                         // If the article is favorited, show the favorite image over the title.
@@ -267,26 +305,15 @@ public class DrawerAdapter extends BaseAdapter {
                 }
 
                 // Do not get favicons from internet, get icons from package instead
-                int mIconResourceId = mFeedsCursor.getInt(POS_ICON_DRAWABLE);
-                if (feedName.indexOf("toriteit") > 0) { // Exception for feedchannel AP, because the main logo is not visible in dark background
+                int mIconResourceId = mMenuList.get(menuPosition).iconDrawable;
+                if (mMenuList.get(menuPosition).title.indexOf("toriteit") > 0) { // Exception for feedchannel AP, because the main logo is not visible in dark background
                     holder.iconView.setImageResource(R.drawable.logo_icon_ap_witte_achtergrond);
                 } else if (mIconResourceId > 0) {
                     holder.iconView.setImageResource(mIconResourceId);
                 } else {    // if image not available, take the apps logo
                     holder.iconView.setImageResource(R.drawable.ic_statusbar_pv);
                 }
-                            /* If the reader should use favicons from the feeds websites take the code below.
-                                    // Get and display favicon if available
-                                    final long feedId = mFeedsCursor.getLong(POS_ID);
-                                    Bitmap bitmap = UiUtils.getFaviconBitmap(feedId, mFeedsCursor, POS_ICON);
-                                    if (bitmap != null) {
-                                        holder.iconView.setImageBitmap(bitmap);
-                                    } else {
-                                        holder.iconView.setImageResource(R.mipmap.ic_launcher);
-                                    }
-                             */
             }
-        }
         return convertView;
     }
 
@@ -294,7 +321,7 @@ public class DrawerAdapter extends BaseAdapter {
     // De sectie-titels in het menu zijn geen echte items en worden 'disabled'.
     @Override
     public boolean isEnabled(int menuPosition) {
-        return MenuPrivacyVandaag.isEnabled(menuPosition);
+        return ( ! mMenuList.get(menuPosition).isSectionHeader);
     }
 
     @Override
@@ -304,103 +331,56 @@ public class DrawerAdapter extends BaseAdapter {
 
     @Override
     public long getItemId(int menuPosition) {
-        // retrieve the cursorPosition for the feed by looking at the menuPosition
-        int cursorPosition = MenuPrivacyVandaag.getCursorPosition(menuPosition);
-        if (mFeedsCursor != null && mFeedsCursor.moveToPosition(cursorPosition)) {
-            return mFeedsCursor.getLong(POS_ID);
-        }
-        return -1;
+        return mMenuList.get(menuPosition).feedId;
     }
 
+    // Number of items in the menu including the section headers
     @Override
     public int getCount() {
-        return MenuPrivacyVandaag.getCount();
-}
-
-    // Haal het logo uit de database. Hebben we niet nodig, want de logo's zijn als .png's
-    //direct beschikbaar. Zie de map res > drawables.
-    /*
-    public byte[] getItemIcon(int menuPosition) {
-        int cursorPosition = getCursorPosition(menuPosition);
-        if (mFeedsCursor != null && mFeedsCursor.moveToPosition(cursorPosition)) {
-            return mFeedsCursor.getBlob(POS_ICON);
-        }
-        return null;
-    }
-    */
-
-    // Haal het resource ID voor het logo uit de database
-    public int getIconResourceId(int menuPosition) {
-        int cursorPosition = MenuPrivacyVandaag.getCursorPosition(menuPosition);
-        if (mFeedsCursor != null && mFeedsCursor.moveToPosition(cursorPosition)) {
-            return mFeedsCursor.getInt(POS_ICON_DRAWABLE);
-        }
-        return 0;
+        return mMenuList.size();
     }
 
-    // Haal de naam (titel) van de feed uit de database
-    public String getItemName(int menuPosition) {
-        int cursorPosition = MenuPrivacyVandaag.getCursorPosition(menuPosition);
-        if (mFeedsCursor != null && mFeedsCursor.moveToPosition(cursorPosition)) {
-            return mFeedsCursor.isNull(POS_NAME) ? mFeedsCursor.getString(POS_URL) : mFeedsCursor.getString(POS_NAME);
-        }
-        return null;
-    }
-
-    // Haal de URL van de website op om naar toe te gaan vanuit het LeftDrawer menu.
+    // Get the domain of the feed to go to (through the browser) from the LeftDrawer context menu.
     public String getWebsite(int menuPosition) {
-        int cursorPosition = MenuPrivacyVandaag.getCursorPosition(menuPosition);
+        int cursorPosition = mMenuList.get(menuPosition).cursorPosition;
         if (mFeedsCursor != null && mFeedsCursor.moveToPosition(cursorPosition)) {
             String fullUrl = mFeedsCursor.getString(POS_URL);
             int xPos = fullUrl.indexOf("/", 8);
             return (xPos > 0) ? fullUrl.substring(0, xPos) : "";
         }
-        return ""; // Als het goed is, komen we hier nooit.
+        return ""; // We'll never get here hopefully.
     }
 
 
-    // Check of er meldingen / notifications van een feed moeten worden gemaakt.
+    // Check whether notifications for the feed are on.
     public boolean getNotifyMode(int menuPosition) {
-        int cursorPosition = MenuPrivacyVandaag.getCursorPosition(menuPosition);
+        int cursorPosition = mMenuList.get(menuPosition).cursorPosition;
         if (mFeedsCursor != null && mFeedsCursor.moveToPosition(cursorPosition)) {
-            return (mFeedsCursor.getInt(POS_NOTIFY) > 0); // Er bestaat geen boolean in SQLite, dus int = 0 of 1
+            return (mFeedsCursor.getInt(POS_NOTIFY) > 0); // There is no boolean in SQLite, so int = 0 or 1
         }
-        return true; // Als het goed is, komen we hier nooit.
+        return true; // We'll never get here hopefully.
     }
 
     // Stel in of er meldingen / notificaties van nieuwe berichten van dit menu-item (feed) in de LeftDrawer
     // wel of niet moeten worden gemaakt.
-    public boolean setNotifyMode(Context mContext, int menuPosition, boolean notifyMode) {
+    public boolean setNotifyMode(int menuPosition, boolean notifyMode) {
         final int newNotifyMode = (notifyMode) ? 1 : 0;
-        final long feedId =  (long) MenuPrivacyVandaag.getFeedIdFromMenuPosition(menuPosition);
         ContentValues values = new ContentValues();
         ContentResolver cr = mContext.getContentResolver();
         values.put(FeedData.FeedColumns.NOTIFY, newNotifyMode);
-        return (cr.update(FeedData.FeedColumns.CONTENT_URI(feedId), values, null, null) > 0);
+        return (cr.update(FeedData.FeedColumns.CONTENT_URI(mMenuList.get(menuPosition).feedId), values, null, null) > 0);
     }
 
-    // Check of de berichten van dit menu-item (feed) in de LeftDrawer opgehaald / gevolgd moeten worden
-    public boolean getFetchMode(int menuPosition) {
-        int cursorPosition = MenuPrivacyVandaag.getCursorPosition(menuPosition);
-        if (mFeedsCursor != null && mFeedsCursor.moveToPosition(cursorPosition)) {
-            return !(mFeedsCursor.getInt(POS_FETCH_MODE) == FETCHMODE_DO_NOT_FETCH);
-        }
-        return true; // Als het goed is, komen we hier nooit.
-    }
 
     // Stel in of berichten van dit menu-item (feed) in de LeftDrawer wel of niet opgehaald moeten worden.
-    public boolean setFetchMode(Context mContext, int menuPosition, boolean fetchMode) {
+    public boolean setFetchMode(int menuPosition, boolean fetchMode) {
         final int newFetchMode = (fetchMode) ? 0 : FETCHMODE_DO_NOT_FETCH;
-        final long feedId =  (long) MenuPrivacyVandaag.getFeedIdFromMenuPosition(menuPosition);
         ContentValues values = new ContentValues();
         ContentResolver cr = mContext.getContentResolver();
         values.put(FeedData.FeedColumns.FETCH_MODE, newFetchMode); // 99 IS DO NOT FETCH this feed
-       // boolean success = (cr.update(FeedData.FeedColumns.CONTENT_URI(menuItemsArray[menuPosition].feedId), values, null, null) > 0);
-        boolean success = (cr.update(FeedData.FeedColumns.CONTENT_URI(feedId), values, null, null) > 0);
+        boolean success = (cr.update(FeedData.FeedColumns.CONTENT_URI(mMenuList.get(menuPosition).feedId), values, null, null) > 0);
         cr.notifyChange(FeedData.FeedColumns.CONTENT_URI, null);
         return success;
-
-
     }
 
     // Update de nummers van aantal ongelezen artikelen en aantal favoriete artikelen.
@@ -429,5 +409,244 @@ public class DrawerAdapter extends BaseAdapter {
         private View separator;
     }
 
+
+
+
+/**
+ * Part to create the main menu
+ *
+ * We want to create the following layout of the menu in the Left Drawer
+ *
+ * 0 - Section Header news
+ * 1 -      query all entries
+ * 2 - Section Header organisations
+ * 3 -      feed organisation 1
+ * 4 -      feed organisation 2
+ * ...
+ * ...
+ * n -      feed organisation n
+ * n+1 - Section Header overig
+ * n+2 -    query favorites
+ * n+3 -    query search
+ * n+4 -    feed service messages
+ *
+ * We store only the feedId's in the mMenuList. The order of the drawerMenuList is the order of the menu.
+ * See provider > FeedData.java for more info about the feeds
+ *
+ */
+
+
+    /**
+     * Add the fixed items to the top/beginning of the MenuList
+     */
+    private void addFixedTopItems() {
+        Log.e(TAG, " addFixedTopItems ");
+        // Add section header
+        mMenuList.add(
+                new MenuItemObject(mContext.getString(R.string.menu_section_news))
+        );
+        // Add menu item with drawerMenuList of all entriews (articles)
+        mMenuList.add(
+                new MenuItemObject(mContext.getString(R.string.all),false, PSEUDO_FEED_ID_MEANING_ALL_ENTRIES,-1, R.drawable.ic_statusbar_rss, EMPTY_CURSOR_POSITION,true)
+        );
+        // Add sectionn header for the drawerMenuList with individual feeds
+        mMenuList.add (
+                new MenuItemObject(mContext.getString(R.string.menu_section_organisations))
+        );
+    }
+
+    /**
+     * Add all the individual rss feeds to the MenuList
+     */
+    private void addRssFeedItems() {
+        String feedName;
+        int fetchMode;
+        Log.e (TAG," adding RSSFeedItems");
+        // start looping trough all available individual feeds
+        if (mFeedsCursor != null ) {
+            mFeedsCursor.moveToPosition(-1);
+            // Just add items to the menu in the order they are in the cursor.
+            // The query this cursor orders the result according the PRIORITY field ASC.
+            // (see HomeActivity, line 600 and FeedDataContentProvider on line 310: URI_GROUPED_FEEDS)
+            while (mFeedsCursor.moveToNext()) {
+                feedName = mFeedsCursor.getString(POS_NAME);
+                Log.e (TAG," adding " + feedName);
+                if (feedName.contains("Serviceberichten")) {
+                    // It is the service channel! This should not be in this part of the menu.
+                    // Store it's feedId temporarily aand add it in addFixedBottomItems() to the menuList.
+                    serviceChannelCursorPosition = mFeedsCursor.getPosition();
+                } else {
+                    fetchMode = mFeedsCursor.getInt(POS_FETCH_MODE);
+                    // add the feed to the menu
+                    //   (String title, boolean isSectionHeader, int feed, int fetchMode, int iconResourceId,int cursorPosition, boolean hasViewPagerPage)
+                    mMenuList.add(
+                            new MenuItemObject(feedName, false, (int) mFeedsCursor.getLong(POS_ID),
+                                    fetchMode, mFeedsCursor.getInt(POS_ICON_DRAWABLE),mFeedsCursor.getPosition(), (fetchMode != FETCHMODE_DO_NOT_FETCH) )
+                    );
+
+                }
+            }
+        }
+    }
+
+
+    /**
+     * The items at the top and at the bottom of the navigation menu are fixed,
+     * but the feeds in between can be sorted.
+     * @param startIndex: menuposition where the drawerMenuList of sortable feeds starts
+     * @param endIndex: menuposition where the lists of sortable feeds ends.
+     */
+    private void updateRssFeedItems (int startIndex,int endIndex) {
+        int fetchMode;
+        int cursorPosition;
+        if (mFeedsCursor != null ) { // Check if cursor is not null
+            mFeedsCursor.moveToPosition(-1);    // Set the cursor to the starting position
+
+            for(int i=startIndex; i<endIndex; i++) {
+                if (mFeedsCursor.moveToNext()) {    // iterate trhough the cursor
+                    cursorPosition = mFeedsCursor.getPosition();
+                    if ( cursorPosition != serviceChannelCursorPosition) {  // The channel with service messages is in the bottom menu
+                        fetchMode = mFeedsCursor.getInt(POS_FETCH_MODE);
+                        // update the menu item 'i' with new values from the cursor at position 'cursorPosition'.
+                        mMenuList.get(i).update(mFeedsCursor.getString(POS_NAME),
+                                false, (int) mFeedsCursor.getLong(POS_ID),
+                                fetchMode, mFeedsCursor.getInt(POS_ICON_DRAWABLE),
+                                cursorPosition, (fetchMode != FETCHMODE_DO_NOT_FETCH)
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+
+
+    /**
+     * Add the fixed items to the bottom/end of the MenuList
+     */
+    private void addFixedBottomItems() {
+        Log.e(TAG, " addFixedBottomItems ");
+        mMenuList.add(
+                new MenuItemObject(mContext.getString(R.string.menu_section_other))
+        );
+        mMenuList.add(
+                new MenuItemObject(mContext.getString(R.string.favorites),false, PSEUDO_FEED_ID_MEANING_FAVORITES,-1,R.drawable.rating_important,EMPTY_CURSOR_POSITION,true)
+        );
+        mMenuList.add(
+                new MenuItemObject(mContext.getString(R.string.search),false, PSEUDO_FEED_ID_MEANING_SEARCH,-1,R.drawable.action_search,EMPTY_CURSOR_POSITION,true)
+        );
+        if (serviceChannelCursorPosition > -1 ) {    // We've got a rss channel for service messages
+            mFeedsCursor.moveToPosition(serviceChannelCursorPosition);
+            mMenuList.add(
+                    new MenuItemObject(mFeedsCursor.getString(POS_NAME), false, (int) mFeedsCursor.getLong(POS_ID),
+                            mFeedsCursor.getInt(POS_FETCH_MODE),R.drawable.logo_icon_serviceberichten, serviceChannelCursorPosition,true)
+            );
+        }
+    }
+
+
+
+
+
+    // Get the complete drawerMenuList of menu items
+    public ArrayList<MenuItemObject> drawerMenuList() {
+        return mMenuList;
+    }
+    // Get feedId from item's drawer position
+    public long getFeedId(int menuposition) {
+        return mMenuList.get(menuposition).feedId;
+    }
+    // Check whether a menu item has it's own page in the ViewPager
+    public boolean hasPage(int menuposition) {
+        // TODO: No need to keep seperate variable. Can be replaced by ...viewPagerPagePosition > -1
+        return mMenuList.get(menuposition).hasViewPagerPage;
+    }
+    // Get title from item's drawer position
+    public String getTitle(int menuposition) {
+        return mMenuList.get(menuposition).title;
+    }
+    // Get icon from item's drawer position
+    public int getIconDrawable(int menuposition) {
+        return mMenuList.get(menuposition).iconDrawable;
+    }
+    // Get ViewPager page position from item's drawer position
+    public int getViewPagerPagePosition(int menuposition) {
+        return mMenuList.get(menuposition).viewPagerPagePosition;
+    }
+
+    public int getMenuPositionFromPagePosition(int pagePosition) {
+        for(int i = 0; i < mMenuList.size(); ++i) {
+            if(mMenuList.get(i).viewPagerPagePosition == pagePosition) return i;
+        }
+        return -1;
+    }
+    // Check if feed is to be refreshed or not
+    public boolean hasActiveFetchMode(int menuPosition) {
+        return ( mMenuList.get(menuPosition).fetchMode != FETCHMODE_DO_NOT_FETCH );
+    }
+    // Check whether menu item gets a contextMenu in the left drawer.
+    public boolean hasContextMenu (int menuPosition) {
+        return (mMenuList.get(menuPosition).cursorPosition != serviceChannelCursorPosition) &&
+                (mMenuList.get(menuPosition).feedId > 0 && mMenuList.get(menuPosition).feedId < MAX_REAL_FEED_ID);
+    }
+    // Has the menu-item that has a contextmenu also a website to go to from that contextmenu?
+    public boolean hasWebsite (int menuPosition) {
+        return ( ! mMenuList.get(menuPosition).title.contains("in het nieuws"));
+    }
+    // Not very efficient, but is needed only once in HomeActivity if app starts from notification
+    public int getMenuPositionFromFeedId(int feedId) {
+        // notifications can only come from feeds
+        for(int i = START_FEEDS_ITEMS; i < mMenuList.size(); i++) {
+            if(mMenuList.get(i).feedId==feedId) return i;
+        }
+        return -1;
+    }
+
+
+
+
+    /**
+     * Inner Class to store menu-items in.
+     * Each menu-item is an object. The lot is stored in an array.
+     */
+    public class MenuItemObject { // has to be public!
+        private String title;
+        public boolean hasViewPagerPage;
+        public int viewPagerPagePosition;
+        public int feedId;
+        private int fetchMode;
+        private int iconDrawable;
+        private int cursorPosition;
+        private boolean isSectionHeader;
+
+        // Simplified constructor for section headers. fetchMode set to -1 (is not used), iconId = -1 and hasViewPagerPage set to false
+        private MenuItemObject  (String title) {
+            this(title, true, EMPTY_FEED_ID_FOR_SECTION_HEADERS, -1, -1, EMPTY_CURSOR_POSITION ,false);  // call to main constructor
+        }
+
+        // Main constructor
+        private MenuItemObject  (String title, boolean isSectionHeader, int feed, int fetchMode, int iconResourceId,int cursorPosition, boolean hasViewPagerPage) {
+            this.title = title; // To avoid nullpointers, all items get a (empty) string
+            this.isSectionHeader = isSectionHeader;    // Menu items that are no items but section header get true
+            this.feedId = feed;    // id of the feed in the database
+            this.fetchMode = fetchMode;    // should the RSS feed be followed? fetchMode == 99 means feed is inactive. Page with articels is hidden. No new articles ar fetched.
+            this.hasViewPagerPage = hasViewPagerPage;    // item has it's own page in the ViewPager in HomeActivity (if it is not hidden through fetchMode 99)
+            this.viewPagerPagePosition = -1;    // position of the page in the PageViewer is set in HomeActivity > ViewPager
+            this.iconDrawable = iconResourceId;
+            this.cursorPosition = cursorPosition;
+        }
+
+        private void update (String title, boolean isSectionHeader, int feed, int fetchMode, int iconResourceId,int cursorPosition, boolean hasViewPagerPage) {
+            this.title = title; // To avoid nullpointers, all items get a (empty) string
+            this.isSectionHeader = isSectionHeader;    // Menu items that are no items but section header get true
+            this.feedId = feed;    // id of the feed in the database
+            this.fetchMode = fetchMode;    // should the RSS feed be followed? fetchMode == 99 means feed is inactive. Page with articels is hidden. No new articles ar fetched.
+            this.hasViewPagerPage = hasViewPagerPage;    // item has it's own page in the ViewPager in HomeActivity (if it is not hidden through fetchMode 99)
+            this.viewPagerPagePosition = -1;    // position of the page in the PageViewer is set in HomeActivity > ViewPager
+            this.iconDrawable = iconResourceId;
+            this.cursorPosition = cursorPosition;
+        }
+
+    }   // End of inner class MenuItemObject
 
 }
