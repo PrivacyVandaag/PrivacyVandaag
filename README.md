@@ -1,6 +1,4 @@
 # Privacy Vandaag
-THIS VERSION CONTAINS MAJOR ERROR. WE PUBLISH IMPROVED VERSION WITH FIX LATER TODAY!
-
 Modified general RSS-reader to follow some predefined feeds.
 Forked from version 60 of the SpaRSS reader from Etuldan.
 The modifications are described in the changelog.
@@ -41,9 +39,9 @@ If you have any idea to improve Privacy Vandaag, feel free to add it [here](http
 GitHub project: https://github.com/PrivacyVandaag/PrivacyVandaag.
 The app is currently in beta test. As soon as the app becomes publically available, we will post a link here to the app in the play store. 
 
-## Hints for adaptations for your own use
-Do you want to adapt this app to follow some interesting feeds of your own? Check where the main adaptations should be made:
-* In /java/.../adpater/DrawerAdapter.java the navigation menu is defined.
+## Hints for using this app for your own use
+Do you want to adapt this app to follow some interesting feeds of your own? Check where some major adjustments should be made:
+* In /java/.../adapter/DrawerAdapter.java the navigation menu is defined.
 * In /java/.../provider/FeedData.java the feeds that are to be followed are defined and added to the database.
 * In /java/.../utils/ArticleTextExtractor.java the text of the full articles is cut out of the website. 
   For some websites this needs adjustments to get the cutting of the article right. Some special selections are made there for our use.
