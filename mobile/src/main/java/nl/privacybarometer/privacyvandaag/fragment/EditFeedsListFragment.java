@@ -75,13 +75,10 @@ import nl.privacybarometer.privacyvandaag.view.DragNDropListener;
  * Different action is taken if a group of feeds or a specific feed is selected.
  * PrivacyVandaag doesn't need much editing possibilities, so much of the code is modified or not used.
  *
- * At the moment is this fragment / adapter and activity not enabled in the app Privacy Vandaag!
- *
  * This class provides the method to re-order the items in de feedslist (menu in the left drawer).
- * In a future release, we will use this to give the user control over the order of the items
- * in the navigation menu in the Left Drawer. At the moment the menu is put together in a static class.
- * We have to rewrite that to a non-static menu with cursor adapter to fill the menu items and use the order
- * of the items. The order of the items is stored in FeedColumns.PRIORITY.
+ * It gives the user control over the order of the items
+ * in the navigation menu in the Left Drawer.
+ * The order of the items is stored in FeedColumns.PRIORITY.
  *
  * The Drag and Drop methods are called from this class
  * and defined in > view > DragNDropExpandableListView.java
@@ -164,6 +161,7 @@ public class EditFeedsListFragment extends ListFragment {
                     PrefUtils.putBoolean(PrefUtils.DISPLAY_TIP_FEEDS, false);
                 }
             });
+
             mListView.addHeaderView(header);
         } // end tip
 
@@ -228,7 +226,7 @@ public class EditFeedsListFragment extends ListFragment {
 
     @Override
     public void onDestroy() {
-        getLoaderManager().destroyLoader(0); // This is needed to avoid an activity leak!
+        getLoaderManager().destroyLoader(0); // This is needed to avoid an activity (memory) leak!
         super.onDestroy();
     }
 

@@ -38,11 +38,14 @@ import nl.privacybarometer.privacyvandaag.MainApplication;
 import nl.privacybarometer.privacyvandaag.R;
 import nl.privacybarometer.privacyvandaag.provider.FeedData;
 import nl.privacybarometer.privacyvandaag.provider.FeedData.EntryColumns;
+import nl.privacybarometer.privacyvandaag.utils.PrefUtils;
 import nl.privacybarometer.privacyvandaag.utils.StringUtils;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import static nl.privacybarometer.privacyvandaag.activity.EditFeedsListActivity.MENU_HAS_BEEN_RESORTED;
 
 
 /**
@@ -89,8 +92,8 @@ public class DrawerAdapter extends BaseAdapter {
 
 
     private static final int EMPTY_CURSOR_POSITION = -1;
-    private static final int START_FEEDS_ITEMS = 3; // First 3 menu items are non-newsfeed items
-    private static final int END_FEEDS_ITEMS = 3;   // Last 3 menu items are non-newsfeed items
+    private static final int START_SORTABLE_FEEDS_ITEMS = 3; // First 3 menu items are non-newsfeed items
+    private static final int END_SORTABLE_FEEDS_ITEMS = 4;   // Last 3 menu items are non-newsfeed items
 
 
     private static final int FETCHMODE_DO_NOT_FETCH = 99;   // 99 means 'Do not refresh feed'. Predefined feed is inactive.
@@ -141,16 +144,27 @@ public class DrawerAdapter extends BaseAdapter {
     /**
      * Dataset in database has changed. New cursor is available.
      */
-    public void setCursor(Cursor feedCursor) {
-        Log.e (TAG, "New cursor for Left Drawer");
+    public boolean setCursor(Cursor feedCursor, boolean rebuildViewPager) {
+        // Log.e (TAG, "New cursor for Left Drawer");
         mFeedsCursor = feedCursor;
 
         // Update MenuList
-        // The items at the top and at the bottom are fixed, so no need to update them.
-        // We only have to update the RSS feeds.
-        // So we start with item 4 and end with item getCount - 3;
-        updateRssFeedItems(START_FEEDS_ITEMS, mMenuList.size()- END_FEEDS_ITEMS);
-        /* For debugging only
+
+        // ONLY if the menu has been resorted, it should be completely rebuild.
+        // This value is set in EditFeedsListActivity.java
+        if (PrefUtils.getBoolean (MENU_HAS_BEEN_RESORTED,false)) {
+            // The items at the top and at the bottom are fixed, so no need to update them.
+            // We only have to update the RSS feeds.
+            // So we start with item 3 and end with item getCount - 4;
+            updateRssFeedItems(START_SORTABLE_FEEDS_ITEMS, mMenuList.size() - END_SORTABLE_FEEDS_ITEMS);
+            // reset the 'listener' whether menu has been resorted.
+            PrefUtils.putBoolean (MENU_HAS_BEEN_RESORTED,false);
+            rebuildViewPager = true;
+
+
+        }
+       // For debugging only
+        /*
         for (MenuItemObject mObject : mMenuList){
             Log.e(TAG, "UPDATE Menu item :  " +  mObject.title);
             Log.e(TAG, "UPDATE Menu item :  " + mObject.feedId);
@@ -160,8 +174,12 @@ public class DrawerAdapter extends BaseAdapter {
         // Update the numbers for the unread counters in Left Drawer Menu
         updateNumbers();
         notifyDataSetChanged();
+        return rebuildViewPager;
     }
 
+
+
+    //*** HANDLE THE LEFT DRAWER VIEWS *** HANDLE THE LEFT DRAWER VIEWS *** HANDLE THE LEFT DRAWER VIEWS
 
     // Start building the left drawer menu item voor item
     @Override
@@ -177,7 +195,7 @@ public class DrawerAdapter extends BaseAdapter {
 
 
     /**
-     * *****   MENU SECTION HEADER   ******   MENU SECTION HEADER  ******   MENU SECTION HEADER  ******
+     * *****  VIEW MENU SECTION HEADER
      */
     private View getSectionHeaderView(int menuPosition, View convertView, ViewGroup parent) {
         // If we already have a View, use it. Inflating new ones is expensive.
@@ -203,7 +221,7 @@ public class DrawerAdapter extends BaseAdapter {
 
 
     /**
-     * *****   MENU ITEM   ******   MENU ITEM   ******   MENU ITEM   ******   MENU ITEM   ******
+     * *****   VIEW MENU ITEM
      */
 
     private View getItemView(int menuPosition, View convertView, ViewGroup parent) {
@@ -317,8 +335,24 @@ public class DrawerAdapter extends BaseAdapter {
         return convertView;
     }
 
+    // Object of a view in the left drawer
+    private static class ViewHolder {
+        private ImageView iconView;
+        private TextView titleTxt;
+        private TextView stateTxt;
+        private TextView unreadTxt;
+        private ImageView noNotification;
+        private View separator;
+    }
 
-    // De sectie-titels in het menu zijn geen echte items en worden 'disabled'.
+    // *** END OF THE LEFT DRAWER VIEWS ***
+
+
+
+
+    //*** MENU LOGIC *** MENU LOGIC *** MENU LOGIC *** MENU LOGIC *** MENU LOGIC *** MENU LOGIC
+
+    // Sectie headers in the menu are not real items and are 'disabled'.
     @Override
     public boolean isEnabled(int menuPosition) {
         return ( ! mMenuList.get(menuPosition).isSectionHeader);
@@ -365,6 +399,7 @@ public class DrawerAdapter extends BaseAdapter {
     // wel of niet moeten worden gemaakt.
     public boolean setNotifyMode(int menuPosition, boolean notifyMode) {
         final int newNotifyMode = (notifyMode) ? 1 : 0;
+        // store the new value for this feed in the database. No need to use it in mMenuList
         ContentValues values = new ContentValues();
         ContentResolver cr = mContext.getContentResolver();
         values.put(FeedData.FeedColumns.NOTIFY, newNotifyMode);
@@ -375,6 +410,10 @@ public class DrawerAdapter extends BaseAdapter {
     // Stel in of berichten van dit menu-item (feed) in de LeftDrawer wel of niet opgehaald moeten worden.
     public boolean setFetchMode(int menuPosition, boolean fetchMode) {
         final int newFetchMode = (fetchMode) ? 0 : FETCHMODE_DO_NOT_FETCH;
+        // set the new value for the menu item in the mMenulist.
+        mMenuList.get(menuPosition).fetchMode = newFetchMode;
+        mMenuList.get(menuPosition).hasViewPagerPage = fetchMode;
+        // store the new value for this feed in the database.
         ContentValues values = new ContentValues();
         ContentResolver cr = mContext.getContentResolver();
         values.put(FeedData.FeedColumns.FETCH_MODE, newFetchMode); // 99 IS DO NOT FETCH this feed
@@ -398,17 +437,6 @@ public class DrawerAdapter extends BaseAdapter {
             numbers.close();
         }
     }
-
-    // Het object van een item in de left drawer
-    private static class ViewHolder {
-        private ImageView iconView;
-        private TextView titleTxt;
-        private TextView stateTxt;
-        private TextView unreadTxt;
-        private ImageView noNotification;
-        private View separator;
-    }
-
 
 
 
@@ -440,7 +468,6 @@ public class DrawerAdapter extends BaseAdapter {
      * Add the fixed items to the top/beginning of the MenuList
      */
     private void addFixedTopItems() {
-        Log.e(TAG, " addFixedTopItems ");
         // Add section header
         mMenuList.add(
                 new MenuItemObject(mContext.getString(R.string.menu_section_news))
@@ -461,7 +488,6 @@ public class DrawerAdapter extends BaseAdapter {
     private void addRssFeedItems() {
         String feedName;
         int fetchMode;
-        Log.e (TAG," adding RSSFeedItems");
         // start looping trough all available individual feeds
         if (mFeedsCursor != null ) {
             mFeedsCursor.moveToPosition(-1);
@@ -470,7 +496,6 @@ public class DrawerAdapter extends BaseAdapter {
             // (see HomeActivity, line 600 and FeedDataContentProvider on line 310: URI_GROUPED_FEEDS)
             while (mFeedsCursor.moveToNext()) {
                 feedName = mFeedsCursor.getString(POS_NAME);
-                Log.e (TAG," adding " + feedName);
                 if (feedName.contains("Serviceberichten")) {
                     // It is the service channel! This should not be in this part of the menu.
                     // Store it's feedId temporarily aand add it in addFixedBottomItems() to the menuList.
@@ -505,6 +530,7 @@ public class DrawerAdapter extends BaseAdapter {
             for(int i=startIndex; i<endIndex; i++) {
                 if (mFeedsCursor.moveToNext()) {    // iterate trhough the cursor
                     cursorPosition = mFeedsCursor.getPosition();
+                    // Log.e (TAG, "Updating: " + mFeedsCursor.getString(POS_NAME) );
                     if ( cursorPosition != serviceChannelCursorPosition) {  // The channel with service messages is in the bottom menu
                         fetchMode = mFeedsCursor.getInt(POS_FETCH_MODE);
                         // update the menu item 'i' with new values from the cursor at position 'cursorPosition'.
@@ -525,7 +551,6 @@ public class DrawerAdapter extends BaseAdapter {
      * Add the fixed items to the bottom/end of the MenuList
      */
     private void addFixedBottomItems() {
-        Log.e(TAG, " addFixedBottomItems ");
         mMenuList.add(
                 new MenuItemObject(mContext.getString(R.string.menu_section_other))
         );
@@ -543,9 +568,6 @@ public class DrawerAdapter extends BaseAdapter {
             );
         }
     }
-
-
-
 
 
     // Get the complete drawerMenuList of menu items
@@ -596,7 +618,7 @@ public class DrawerAdapter extends BaseAdapter {
     // Not very efficient, but is needed only once in HomeActivity if app starts from notification
     public int getMenuPositionFromFeedId(int feedId) {
         // notifications can only come from feeds
-        for(int i = START_FEEDS_ITEMS; i < mMenuList.size(); i++) {
+        for(int i = START_SORTABLE_FEEDS_ITEMS; i < mMenuList.size(); i++) {
             if(mMenuList.get(i).feedId==feedId) return i;
         }
         return -1;
@@ -610,6 +632,8 @@ public class DrawerAdapter extends BaseAdapter {
      * Each menu-item is an object. The lot is stored in an array.
      */
     public class MenuItemObject { // has to be public!
+
+        // TODO: Why do we have fetchMode and hasViewPagerPage? Both state the same.
         private String title;
         public boolean hasViewPagerPage;
         public int viewPagerPagePosition;

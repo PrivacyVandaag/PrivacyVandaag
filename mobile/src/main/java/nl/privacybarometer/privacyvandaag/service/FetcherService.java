@@ -821,7 +821,6 @@ public class FetcherService extends IntentService {
         int newArticles = (handler != null) ? handler.getNewCount() : 0;
 
         // Log.e(TAG, "Test notification is verzonden"); // ONLY FOR TESTING !!!!
-        // if (newArticles == 0 ) newArticles =1;      // ONLY FOR TESTING !!!!
         // buildNotification(feedId, feedTitle, 1);    // ONLY FOR TESTING !!!!
 
         // Notify only when app is not open. If refresh is called from AutoRefresh then the app
