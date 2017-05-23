@@ -1,4 +1,6 @@
 # Privacy Vandaag
+THIS VERSION CONTAINS MAJOR ERROR. WE PUBLISH IMPROVED VERSION WITH FIX LATER TODAY!
+
 Modified general RSS-reader to follow some predefined feeds.
 Forked from version 60 of the SpaRSS reader from Etuldan.
 The modifications are described in the changelog.
