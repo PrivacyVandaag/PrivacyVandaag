@@ -1,7 +1,6 @@
 # Privacy Vandaag
 Modified general RSS-reader to follow some predefined feeds.
 Forked from version 60 of the SpaRSS reader from Etuldan.
-The modifications are described in the changelog.
 
 ##Table of Contents
 * [Summary](#summary)
@@ -11,7 +10,7 @@ The modifications are described in the changelog.
 
 ## Summary
 Privacy Vandaag is a light, modern, totally free (no ads) and opensource project which keeps you informed 
-about developments on the privacy front in The Netherlands. The app follows actively six privacy organisations 
+about developments on the privacy front in The Netherlands. The app follows actively seven sources, mainly privacy organisations, 
 and notifies the user when new articles are published by those organisations. The articles are fetched and displayed 
 in a mobile-optimized way. The project is based on the SpaRSS and Flym RSS reader.
 
