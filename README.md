@@ -7,7 +7,7 @@ Forked from version 60 of the SpaRSS reader from Etuldan.
 * [Features](#features)
 * [How to contribute ?](#how-to-contribute-)
 * [Links](#links)
-* [Hints for using this app for your own use](#Hints-for-using-this-app-for-your-own-use)
+* [Hints for using this app for your own use](#hints-for-using-this-app-for-your-own-use)
 
 ## Summary
 Privacy Vandaag is a light, modern, totally free (no ads) and opensource project which keeps you informed 
