@@ -7,6 +7,7 @@ Forked from version 60 of the SpaRSS reader from Etuldan.
 * [Features](#features)
 * [How to contribute ?](#how-to-contribute-)
 * [Links](#links)
+* [Hints for using this app for your own use](#Hints-for-using-this-app-for-your-own-use)
 
 ## Summary
 Privacy Vandaag is a light, modern, totally free (no ads) and opensource project which keeps you informed 
@@ -36,7 +37,8 @@ If you have any idea to improve Privacy Vandaag, feel free to add it [here](http
 
 ## Links
 GitHub project: https://github.com/PrivacyVandaag/PrivacyVandaag.
-The app is currently in beta test. As soon as the app becomes publically available, we will post a link here to the app in the play store. 
+The app is currently in beta test. As soon as the app becomes publically available, we will post a link here to the app in the play store.
+
 
 ## Hints for using this app for your own use
 Do you want to adapt this app to follow some interesting feeds of your own? Check where some major adjustments should be made:
