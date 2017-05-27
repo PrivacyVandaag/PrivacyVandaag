@@ -173,8 +173,23 @@ public class EntriesListFragment extends SwipeRefreshListFragment {
             // Configure the query for the loader.
             CursorLoader cursorLoader = new CursorLoader(getActivity(),
                     mUri, // What is the source to be searched? (table)
-                    // TODO: IS HET NODIG DAT WE HIERONDER ALLE KOLOMMEN OPHALEN? IS INEFFICIENT!
-                    null, // What columns do we get back from the query as a result? null = all available columns!
+                    // Defined new return columns.
+                    // Why did the original programmers loaded the whole entrycolumns??
+                    // These resulting columns should be corresponding with the cursor positions
+                    // in EntriesCursorAdapter.java on line 325 (or about)
+                    new String[]{
+                            EntryColumns._ID,
+                            EntryColumns.TITLE,
+                            EntryColumns.IMAGE_URL,
+                            EntryColumns.DATE,
+                            EntryColumns.IS_READ,
+                            EntryColumns.IS_FAVORITE,
+                            FeedData.FeedColumns.NAME,
+                            EntryColumns.FEED_ID,
+                            FeedData.FeedColumns.ICON,
+                            FeedData.FeedColumns.ICON_DRAWABLE },
+
+                    // null, // What columns do we get back from the query as a result? null = all available columns!
                     where, // selection criteria
                     null, // selection args
                     EntryColumns.DATE + entriesOrder    // order by

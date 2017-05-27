@@ -65,9 +65,9 @@ public class EntryActivity extends BaseActivity {
     }
 
     /**
-     * Als in de actionbar op 'home' (het terugpijltje) wordt geklikt, moet deze activity worden gestopt
-     * en de HomeActivity weer worden gestart.
-     * @param item = is het item waarop geklikt wordt ('home')
+     * When in toolbar / actionbar 'home' (back arrow) is pressed, destroy this activity
+     * and start HomeActivity again.
+     * @param item = the pressed item ('home')
      * @return
      */
     @Override

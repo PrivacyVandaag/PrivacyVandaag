@@ -66,10 +66,9 @@ import nl.privacybarometer.privacyvandaag.MainApplication;
 import nl.privacybarometer.privacyvandaag.R;
 import nl.privacybarometer.privacyvandaag.provider.FeedData;
 import nl.privacybarometer.privacyvandaag.provider.FeedData.EntryColumns;
-import nl.privacybarometer.privacyvandaag.provider.FeedData.FeedColumns;
-import nl.privacybarometer.privacyvandaag.utils.NiceImageTransform;
 import nl.privacybarometer.privacyvandaag.utils.NetworkUtils;
 import nl.privacybarometer.privacyvandaag.utils.PrefUtils;
+import nl.privacybarometer.privacyvandaag.utils.RoundedCornersTransformation;
 import nl.privacybarometer.privacyvandaag.utils.StringUtils;
 
 /**
@@ -90,7 +89,6 @@ public class EntriesCursorAdapter extends ResourceCursorAdapter {
 
     private final Uri mUri;
     private final boolean mShowFeedInfo;
-    private final NiceImageTransform mNiceImageTransform = new NiceImageTransform();
     private int mIdPos, mTitlePos, mMainImgPos, mDatePos, mIsReadPos, mFavoritePos, mFeedIdPos, mFeedIconPos, mFeedNamePos;
     private int mIconIdPos;    // Added to find reference to logo drawable resource
     private final long mYesterdayMidnight;
@@ -152,9 +150,16 @@ public class EntriesCursorAdapter extends ResourceCursorAdapter {
         String mainImgUrl = cursor.getString(mMainImgPos);
         mainImgUrl = TextUtils.isEmpty(mainImgUrl) ? null : NetworkUtils.getDownloadedOrDistantImageUrl(cursor.getLong(mIdPos), mainImgUrl);
 
-        // If a image is available from the full article, place it instead of the icon next to the title of the article.
+        // If a image is available from the full article, place it instead of the icon next to
+        // the title of the article.
         if (mainImgUrl != null) {
-            Picasso.with(context).load(mainImgUrl).transform(mNiceImageTransform).into(holder.mainImgView);
+            Picasso.with(context)   // Use Picasso library to handle images.
+                    .load(mainImgUrl)  // Load (create) Bitmap image from filename
+                    .fit()  // Resize the image to fit exactly the holder.mainImgView
+                    .centerCrop()   // Crop the image to make it fit the holder.mainImgView
+                    .transform (new RoundedCornersTransformation()) // Add rounded corners to the image
+                    .into(holder.mainImgView);  // Place the image in the TextView in the EntriesList
+
          } else {
             Picasso.with(context).cancelRequest(holder.mainImgView);
             int mIconResourceId = cursor.getInt(mIconIdPos);
@@ -301,9 +306,31 @@ public class EntriesCursorAdapter extends ResourceCursorAdapter {
         super.notifyDataSetInvalidated();
     }
 
+    /**
+     * New data from database is available. Get the
+     * @param cursor
+     */
 
     private void reinit(Cursor cursor) {
         if (cursor != null && cursor.getCount() > 0) {
+
+            // Define the positions of the cursor table.
+            // See the loader in EntriesListFragment.java
+            mIdPos = 0;
+            mTitlePos = 1;
+            mMainImgPos = 2;
+            mDatePos = 3;
+            mIsReadPos = 4;
+            mFavoritePos = 5;
+            mFeedNamePos = 6;
+            mFeedIdPos = 7;
+            mFeedIconPos = 8;
+            mIconIdPos = 9;
+
+
+            /*
+            // Defined new return columns.
+            // Why did the original programmers loaded the whole entrycolumns table??
             mIdPos = cursor.getColumnIndex(EntryColumns._ID);
             mTitlePos = cursor.getColumnIndex(EntryColumns.TITLE);
             mMainImgPos = cursor.getColumnIndex(EntryColumns.IMAGE_URL);
@@ -314,6 +341,8 @@ public class EntriesCursorAdapter extends ResourceCursorAdapter {
             mFeedIdPos = cursor.getColumnIndex(EntryColumns.FEED_ID);
             mFeedIconPos = cursor.getColumnIndex(FeedColumns.ICON);
             mIconIdPos = cursor.getColumnIndex(FeedColumns.ICON_DRAWABLE);
+
+            */
         }
     }
 

@@ -64,7 +64,7 @@ public class UiUtils {
         return bitmap;
     }
 
-    static public Bitmap getScaledBitmap(byte[] iconBytes, int sizeInDp) {
+    static private Bitmap getScaledBitmap(byte[] iconBytes, int sizeInDp) {
         if (iconBytes != null && iconBytes.length > 0) {
             Bitmap bitmap = BitmapFactory.decodeByteArray(iconBytes, 0, iconBytes.length);
             if (bitmap != null && bitmap.getWidth() != 0 && bitmap.getHeight() != 0) {
@@ -80,30 +80,42 @@ public class UiUtils {
         return null;
     }
 
-    /** FloatingActionButton functies.
-     * Is van extern package van Melnykov. Gebruiken we niet
+    /**
+     * Resize downloaded images if they are too large
+     *
+     *
+     * @param photoPath The file of the image
+     * @param targetW   The max width or height to scale down to.
+     * @return
      */
+    static Bitmap scaleDownBitmap(String photoPath, int targetW) {
+        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+        bmOptions.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(photoPath, bmOptions);
+        int photoW = bmOptions.outWidth;
+        int photoH = bmOptions.outHeight;
+        // Only resize if image is larger than target size
+        // Check to be sure if photoH and targetW > 0 to prevent divide by zero
 
-    /*
+        if ((photoW > targetW) && (photoH > 0 ) && (targetW > 0))  {
 
-    static public void updateHideReadButton(FloatingActionButton drawerHideReadButton) {
-        if (drawerHideReadButton != null) {
-            if (PrefUtils.getBoolean(PrefUtils.SHOW_READ, true)) {
-                drawerHideReadButton.setColorNormalResId(getAttrResource(drawerHideReadButton.getContext(), R.attr.colorPrimary, R.color.light_theme_color_primary));
-            } else {
-                drawerHideReadButton.setColorNormalResId(R.color.floating_action_button_disabled);
-            }
+            final float photoAspectRatio = photoW / photoH;
+            int targetH = (int) (targetW / photoAspectRatio);
+            int scaleFactor = Math.min(photoW / targetW, photoH / targetH);
+
+            bmOptions.inJustDecodeBounds = false;
+            bmOptions.inSampleSize = scaleFactor;
+            bmOptions.inPurgeable = false; //Deprecated API 21
+
+            return BitmapFactory.decodeFile(photoPath, bmOptions);
         }
+        return null;
     }
 
-    static public void displayHideReadButtonAction(Context context) {
-        if (PrefUtils.getBoolean(PrefUtils.SHOW_READ, true)) {
-            Toast.makeText(context, R.string.context_menu_hide_read, Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(context, R.string.context_menu_show_read, Toast.LENGTH_SHORT).show();
-        }
-    }
-*/
+
+
+
+
     static public void addEmptyFooterView(ListView listView, int dp) {
         View view = new View(listView.getContext());
         view.setMinimumHeight(dpToPixel(dp));

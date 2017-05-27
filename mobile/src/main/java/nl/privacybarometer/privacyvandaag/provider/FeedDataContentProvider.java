@@ -137,11 +137,12 @@ public class FeedDataContentProvider extends ContentProvider {
 
     private DatabaseHelper mDatabaseHelper;
 
-
-    public static void addFeed(Context context, String url, String name, boolean retrieveFullText,String iconDrawable) {    // MPV: added
+    // The short method, cause a few parameters have standard values
+    public static void addFeed(Context context, String url, String name, boolean retrieveFullText,String iconDrawable) {
         addFeed(context, url, name, retrieveFullText, "", "", STANDAARD_BEWAARTERMIJNEN_ARTIKELEN, iconDrawable, true);
     }
 
+    // The complete method with all the parameters
     public static void addFeed(Context context, String url, String name,
                                boolean retrieveFullText, String cookieName, String cookieValue,
                                Integer keepTime, String iconDrawable, boolean notify) { // MPV: added
@@ -238,7 +239,7 @@ public class FeedDataContentProvider extends ContentProvider {
                         else if (feedName.toLowerCase().contains("nieuws"))
                             iconFileName = "logo_icon_privacy_in_het_nieuws";
                         else if (feedName.toLowerCase().contains("service"))
-                            iconFileName = "logo_icon_serviceberichten_inverse";
+                            iconFileName = "logo_icon_serviceberichten";
 
                         // We have an icon file, so let's store it in the database.
                         if (iconFileName != null) values.put(FeedColumns.ICON, iconFileName);

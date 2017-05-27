@@ -29,7 +29,6 @@ import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-import android.text.Html;
 import android.util.Log;
 
 import nl.privacybarometer.privacyvandaag.Constants;
@@ -83,17 +82,33 @@ public class NetworkUtils {
         return IMAGE_FOLDER + TEMP_PREFIX + entryId + ID_SEPARATOR + StringUtils.getMd5(imgUrl);
     }
 
+    /**
+     * Download images that are found in a full article (mobilized) in FetcherService.java
+     * @param entryId
+     * @param imgUrl
+     * @throws IOException
+     */
+
+    private static final int MAX_IMAGE_FILE_SIZE = 200000; // 200 kB
+    private static final int NEW_IMAGE_WIDTH = 800;    // 800 px
+    private static final int JPG_IMAGE_QUALITY = 85;    // 100 is best quality (lossless).
+
     public static void downloadImage(long entryId, String imgUrl) throws IOException {
         String tempImgPath = getTempDownloadedImagePath(entryId, imgUrl);
         String finalImgPath = getDownloadedImagePath(entryId, imgUrl);
 
-        if (!new File(tempImgPath).exists() && !new File(finalImgPath).exists()) {
+        final File tempImgFile = new File(tempImgPath);
+        final File finalImgFile = new File(finalImgPath);
+
+        // Check if files not already exist
+        if ( ! (tempImgFile.exists()) &&  ! (finalImgFile.exists())) {
             HttpURLConnection imgURLConnection = null;
             try {
                 IMAGE_FOLDER_FILE.mkdir(); // create images dir
 
                 // Compute the real URL (without "&eacute;", ...)
-                String realUrl = Html.fromHtml(imgUrl).toString();
+                // Deprecated fromHTML alternative in DeprecateUtils
+                String realUrl = DeprecateUtils.fromHtml(imgUrl).toString();
                 //Log.e(TAG, "Real URL = " + realUrl);
                 imgURLConnection = setupConnection(realUrl);
 
@@ -109,11 +124,44 @@ public class NetworkUtils {
                 fileOutput.close();
                 inputStream.close();
 
-                if (!(new File(tempImgPath).renameTo(new File(finalImgPath)))) {
-                    Log.e(TAG, "rename van afbeelding niet gelukt");
+                long length = tempImgFile.length(); //  in bytes. if divided by 1024 then size in KB
+                // If image is to large, it reduces performance, mainly with smooth scrolling entrieslists
+                // So we rescale larger images.
+                if (length > MAX_IMAGE_FILE_SIZE) {
+                    // Resize the image
+                    Bitmap resizedImage =  UiUtils.scaleDownBitmap(tempImgPath,NEW_IMAGE_WIDTH);
+                    // if resizing succesfull, save it as JPG as it is the most common format here.
+                    if (resizedImage != null) {
+                        try {
+                            fileOutput = new FileOutputStream(finalImgPath);
+                            resizedImage.compress(Bitmap.CompressFormat.JPEG, JPG_IMAGE_QUALITY , fileOutput);
+                            fileOutput.flush();
+                            fileOutput.close();
+                        } catch (Exception e) {
+                            Log.e(TAG, "Saving resized image not succeeded. ");
+                        }
+
+                    }
+                    // We wanted to scale down, but the image size in pixels is aalready within max boundaries
+                    // so save anyway.
+                    else {
+                        if ( ! (tempImgFile.renameTo(new File(finalImgPath)))) {
+                            Log.e(TAG, "renaming image not succeeded.");
+                        }
+                    }
+                    // image hase been resized (or renamed) so we can try to delete the temporary
+                    // file of the downloaded image.
+                    tempImgFile.delete();
                 }
+                // The image is not too large, we didn't try to resize, but just save it.
+                else {
+                    if ( ! (tempImgFile.renameTo(new File(finalImgPath)))) {
+                        Log.e(TAG, "renaming image not succeeded.");
+                    }
+                }
+
             } catch (IOException e) {
-                new File(tempImgPath).delete();
+                tempImgFile.delete();
                 throw e;
             } finally {
                 if (imgURLConnection != null) {
@@ -122,6 +170,11 @@ public class NetworkUtils {
             }
         }
     }
+
+
+
+
+
 
     public static synchronized void deleteEntriesImagesCache(Uri entriesUri, String selection, String[] selectionArgs) {
         if (IMAGE_FOLDER_FILE.exists()) {

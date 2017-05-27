@@ -28,8 +28,10 @@
     <item
         android:id="@+id/menu_mark_as_unread"
         android:title="@string/menu_mark_as_unread"/>
+    <!--    For debugging purposes only. See EntryFragment.java line 345
     <item
         android:id="@+id/menu_reload_article"
         android:title="@string/menu_reload_article"/>
+        -->
 
 </menu>

@@ -76,7 +76,19 @@ public class ArticleTextExtractor {
         return extractContent(Jsoup.parse(input, null, ""), contentIndicator, link);
     }
 
-
+    /**
+     * Extract the full article from a website.
+     *
+     * For the predefined feeds, we made specific selectors to cut the text correctly out of the webpage.
+     * For other, unknown sites, there is a heuristic fall back method. It 'guesses' where the main
+     * article is most likely to be found. In most cases, the result is fine, but in some cases it
+     * cuts out too much or too little.
+     *
+     * @param doc
+     * @param contentIndicator
+     * @param link
+     * @return
+     */
 
     private static String extractContent(Document doc, String contentIndicator, String link) {
         if (doc == null) throw new NullPointerException("missing document");
@@ -103,26 +115,50 @@ public class ArticleTextExtractor {
         // Source of article is Bits of Freedom
         if (link.toLowerCase().contains(bitsOfFreedom)) {
             // The article is in div class="blog-item"> <div class="post_contents"> ... </div></div>
-            Element tmpElement = doc.select(".blog_item .post_contents").first();
-            String article = (tmpElement != null) ? tmpElement.html() : null; // Get text or make it null
-            // Get the main image.
-            tmpElement = doc.select(".post_image .wp-post-image").first();
-            String articleMainImageName = (tmpElement != null) ? tmpElement.attr("src") : null; // Get imagename or make it null
-            // Get the meta-data and copyright info belonging to the main info.
-            tmpElement = doc.select(".post_image .attribution").first();
-            String articleMainImageMetaData = (tmpElement != null) ? tmpElement.html() : null;
-            // In some places, the text needs adjustment.
-            if ((articleMainImageMetaData != null) && ( ! articleMainImageMetaData.contains("Foto:"))) {
-                articleMainImageMetaData = "Foto: " + articleMainImageMetaData;
+           // Old:  Element tmpElement = doc.select(".blog_item .post_contents").first();
+
+            // First remove the links in margin of the text as they mess up the article text.
+            Elements linksSelected= doc.select("span.linked-item");
+            for (Element item : linksSelected) {
+                item.remove();
             }
+            // Get first part of the text seperately, as it is enclosed by <h3>. We change this to <b>
+            Element tmpElement1 = doc.select(".post__content h3").first();
+            String article = (tmpElement1 != null) ? "<b>" + tmpElement1.html() + "</b>" : null;
+            // The article can be split in several div's with the class .post__message. We have to get them all.
+            Elements tmpElements = doc.select(".post__content .post__message");
+            for (int i = 0; i < tmpElements.size(); i++) {
+                if (i != 0) {   // First element already selected in first selection above.
+                    if (tmpElements.get(i) != null) article += tmpElements.get(i).html();
+                }
+            }
+            // The text has some empty paragraphs. We remove them here
+            if (article != null) article.replace("<p>&nbsp;</p>", "");
+
+            // Get the main image.
+            tmpElement1 = doc.select(".post__background .wp-post-image").first();
+            String articleMainImageName = (tmpElement1 != null) ? tmpElement1.attr("src") : null; // Get imagename or make it null
+            // Get the meta-data and copyright info belonging to the main info.
+            tmpElement1 = doc.select(".post__content .post__credits").first();
+            String articleMainImageMetaData = (tmpElement1 != null) ? tmpElement1.html() : null;
             // Combine the collected info.
             if (article != null) {
                 if (articleMainImageName != null) {
                     article = "<img src=\"" + articleMainImageName + "\" alt=\"\">" + article;
                 }
                 // Add copyright notice \u00A9 = ©
-                article += "<p> <br>\u00A9 Bits of Freedom <a href=\"https://creativecommons.org/licenses/by-nc-sa/4.0/deed.nl\">(CC BY-NC-SA 4.0)</a></p>";
+                article += "<p> <br>\u00A9 Bits of Freedom <a href=\"https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.nl\">(CC BY-NC-SA 4.0)</a></p>";
                 if (articleMainImageMetaData != null) {
+                   // Log.e (TAG, "Metatdata: " + articleMainImageMetaData);
+                    // Remove the prefix "Credits:" because we have  the text needs adjustment.
+                    int offset = articleMainImageMetaData.indexOf("<br>");
+                    // Log.e (TAG, "offset: " + offset);
+                    if (offset > 0) {
+                        articleMainImageMetaData = articleMainImageMetaData.substring(offset+4);
+                    }
+                    if ( ! articleMainImageMetaData.contains("Foto:")) {
+                        articleMainImageMetaData = "Foto: " + articleMainImageMetaData;
+                    }
                     article += "<p>" + articleMainImageMetaData + "</p>";
                 }
             } else article = "";

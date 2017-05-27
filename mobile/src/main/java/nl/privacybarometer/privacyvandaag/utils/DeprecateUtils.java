@@ -1,9 +1,12 @@
 package nl.privacybarometer.privacyvandaag.utils;
 
+import android.app.Activity;
 import android.support.annotation.ColorRes;
 import android.text.Html;
 import android.text.Spanned;
 import android.view.View;
+
+import nl.privacybarometer.privacyvandaag.activity.BaseActivity;
 
 import static android.R.attr.id;
 

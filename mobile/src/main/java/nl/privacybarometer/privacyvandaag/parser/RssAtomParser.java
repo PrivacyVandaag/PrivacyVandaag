@@ -80,6 +80,8 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static nl.privacybarometer.privacyvandaag.provider.FeedData.SERVICE_CHANNEL_FEEDNAME;
+
 /**
  * Parse the found and loaded RSS file. (RssAtomParser())
  * Fetch full article and images according to preferences.
@@ -548,12 +550,18 @@ public class RssAtomParser extends DefaultHandler {
                         }
 
                         if (improvedContent != null) {
-                            // As long as we display the short description of the article, add a read-further notice
-                            improvedContent += ADD_READ_MORE_START;
-                            if (mAuthor != null) improvedContent += ADD_READ_MORE_MIDDLE + mAuthor.toString();
-                            improvedContent += ADD_READ_MORE_END;
-                            // Log.e(TAG,improvedContent);
-                            // Add the content to the database
+                            if ( ! (mFeedName.contains(SERVICE_CHANNEL_FEEDNAME))) {
+                                // No additions to the content if it is the channel with service messages.
+
+                                // As long as we display the short description of the article, add a read-further notice
+                                improvedContent += ADD_READ_MORE_START;
+                                if (mAuthor != null)
+                                    improvedContent += ADD_READ_MORE_MIDDLE + mAuthor.toString();
+                                improvedContent += ADD_READ_MORE_END;
+                                // Log.e(TAG,improvedContent);
+                                // Add the content to the database
+
+                            }
                             values.put(EntryColumns.ABSTRACT, improvedContent);
                         }
                     }

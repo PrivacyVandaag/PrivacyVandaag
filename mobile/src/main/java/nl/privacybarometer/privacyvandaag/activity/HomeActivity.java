@@ -87,6 +87,14 @@ import static nl.privacybarometer.privacyvandaag.service.FetcherService.NOTIFICA
  * and a left drawer menu with categories and feeds.
  *
  * The data is read from database using a loader in de background via LoaderManager()
+ *
+ * Some interesting points for adjustments in this package:
+ *  - In /java/.../adapter/DrawerAdapter.java the navigation menu is defined.
+ *  - In /java/.../provider/FeedData.java the feeds that are to be followed are defined and added to the database.
+ *  - In /java/.../utils/ArticleTextExtractor.java the text of the full articles is cut out of the website. For some websites this needs adjustments to get the cutting of the article right. Some special selections are made there for our use.
+ *  - In /res/values/strings.xml you can translate all the text used in the app
+ *  - In /res/drawable-xhdpi/ most of the icons are located. You can add or replace them by your own.
+ *
  */
 public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final String TAG = HomeActivity.class.getSimpleName() + " ~> ";
@@ -149,16 +157,15 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
         super.onCreate(savedInstanceState);
 
         //*** Check whether upgrade took place and perform upgrade actions if necessary
-        final int versionCode = BuildConfig.VERSION_CODE;
         // Perform upgrade actions only if not fresh install
         if ( ! (PrefUtils.getBoolean(PrefUtils.FIRST_OPEN, true)) ) {
             // read old versionCode of the app
             final int storedVersionCode = PrefUtils.getInt(PrefUtils.APP_VERSION_CODE, 0);
-            if (versionCode > storedVersionCode) { // UpgradeAction is always(!!) necessary
+            if (BuildConfig.VERSION_CODE > storedVersionCode) { // UpgradeAction is always(!!) necessary
                 if (UpgradeActions.startUpgradeActions(this, storedVersionCode))
-                    PrefUtils.putInt(PrefUtils.APP_VERSION_CODE, versionCode);
+                    PrefUtils.putInt(PrefUtils.APP_VERSION_CODE, BuildConfig.VERSION_CODE);
             }
-        } else PrefUtils.putInt(PrefUtils.APP_VERSION_CODE, versionCode);
+        } else PrefUtils.putInt(PrefUtils.APP_VERSION_CODE, BuildConfig.VERSION_CODE);
         //*** end upgrade
 
         // Perform these actions only on the first occassion the app is run.
@@ -275,6 +282,7 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
             // Can't think of a nice header, so let's keep it empty for now.
             // TextView navBar = (TextView) findViewById(R.id.empty_bar);
             //navBar.setText("");
+
             ViewGroup.LayoutParams  params2 = findViewById(R.id.empty_ba).getLayoutParams();
             params2.width = newWidth;
             findViewById(R.id.empty_ba).setLayoutParams(params2);
@@ -701,6 +709,7 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
         mCancelNotification.run();
 
         // Set title and icon in toolbar
+        // TODO: Recycle bitmap if possible for efficient memory usage. Is it possible here?
         getSupportActionBar().setTitle(TITLE_SPACES + mTitle);  // TITLE_SPACES because margin cannot be set easily to icon.
         if (mIconResourceId > 0) {  // We have an icon. Let's display it in the toolbar
             mIconDrawable = ContextCompat.getDrawable(this, mIconResourceId);

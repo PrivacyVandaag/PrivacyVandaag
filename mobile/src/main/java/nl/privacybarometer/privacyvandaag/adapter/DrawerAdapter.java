@@ -46,6 +46,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static nl.privacybarometer.privacyvandaag.activity.EditFeedsListActivity.MENU_HAS_BEEN_RESORTED;
+import static nl.privacybarometer.privacyvandaag.provider.FeedData.SERVICE_CHANNEL_FEEDNAME;
 
 
 /**
@@ -496,7 +497,7 @@ public class DrawerAdapter extends BaseAdapter {
             // (see HomeActivity, line 600 and FeedDataContentProvider on line 310: URI_GROUPED_FEEDS)
             while (mFeedsCursor.moveToNext()) {
                 feedName = mFeedsCursor.getString(POS_NAME);
-                if (feedName.contains("Serviceberichten")) {
+                if (feedName.contains(SERVICE_CHANNEL_FEEDNAME)) {
                     // It is the service channel! This should not be in this part of the menu.
                     // Store it's feedId temporarily aand add it in addFixedBottomItems() to the menuList.
                     serviceChannelCursorPosition = mFeedsCursor.getPosition();

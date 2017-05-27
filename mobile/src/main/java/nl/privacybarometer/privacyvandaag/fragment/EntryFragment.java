@@ -42,11 +42,13 @@ import android.graphics.drawable.Drawable;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -81,6 +83,7 @@ import static android.R.attr.screenDensity;
  *
  */
 public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.OnFullScreenListener, LoaderManager.LoaderCallbacks<Cursor>, EntryView.EntryViewManager {
+    private static final String TAG = EntryFragment.class.getSimpleName() + " ~> ";
 
     private static final String STATE_BASE_URI = "STATE_BASE_URI";
     private static final String STATE_CURRENT_PAGER_POS = "STATE_CURRENT_PAGER_POS";
@@ -176,22 +179,47 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
         super.onSaveInstanceState(outState);
     }
 
-/**
- *  Deprecated, but safe to use, because this same method is called via a detour.
- *  Check: http://stackoverflow.com/questions/32258125/onattachactivity-deprecated-where-i-can-check-if-the-activity-implements-call
- *
-*/
+    /**
+     *  Deprecated, but safe to use, because this same method is called via a detour.
+     *  Check: http://stackoverflow.com/questions/32258125/onattachactivity-deprecated-where-i-can-check-if-the-activity-implements-call
+     *
+     * However, the listener is not registered on Android 6 device.
+     *
+     * Alternatively, set the listener in onCreate or onResume.
+     *
+    */
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        BaseActivity activity = (BaseActivity) context;
+        activity.setOnFullscreenListener(this);
+    }
+
+    //    @SuppressWarnings("deprecation")
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            ((BaseActivity) activity).setOnFullscreenListener(this);
+        }
+    }
+
+
+
+/*
+
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
 
         ((BaseActivity) activity).setOnFullscreenListener(this);
     }
-
+*/
 
     /**
      * The alternative of the deprecated method above
-     * New from SDK 23. The cnew method uses activity instead of context. Does it work for us?
+     * New from SDK 23. The new method uses activity instead of context. Does it work for us?
      * No, so let's keep the deprecated method for the moment.
      *//*
     @Override
@@ -311,41 +339,24 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
                     activity.finish();
                     break;
                 }
-                // Sometimes full articles are not retrieved correctly. Reloading a article could perhaps solve this.
+                // For Debugging only
+                // Sometimes full articles are not retrieved correctly.
+                // BIj removing the articel it can be reloaded for testing purposes.
+/*
+                // The resource is in res/menu/entry.xml. To use it, uncomment it there.
                 case R.id.menu_reload_article: {
                     final Uri uri = ContentUris.withAppendedId(mBaseUri, mEntriesIds[mCurrentPagerPos]);
                     new Thread() {
                         @Override
                         public void run() {
-                            // TODO: INSERT EXPLANATION OF WHAT HAPPENS AFTER CONFIRM AND INSERT CONFIRM BUTTON
                             ContentResolver cr = MainApplication.getContext().getContentResolver();
                             cr.delete(uri, null, null);
                         }
                     }.start();
-                    // article is deleted, start the reload of the feed.
-
-                    // TODO: START INTENT FOR TEH FETSCHERSERVICE TO FETCH NEW ARTICLES
-
-                    /*
-
-                        if (!PrefUtils.getBoolean(PrefUtils.IS_REFRESHING, false)) {    // als er niet al verversd wordt!
-                            MainApplication.getContext().startService(new Intent(getContext(), FetcherService.class).setAction(FetcherService.ACTION_REFRESH_FEEDS).putExtra(Constants.FEED_ID, feedId));
-                        }
-*/
-                        // Start refreshing the feeds if the preferences are set that way.
-        /*
-        if (PrefUtils.getBoolean(PrefUtils.REFRESH_ENABLED, true)) {
-            // starts the service independent to this activity
-            getContext().startService(new Intent(getContext(), RefreshService.class));
-        } else {
-            getContext().stopService(new Intent(getContext(), RefreshService.class));
-        }
-        */
-
-
                     activity.finish();
                     break;
                 }
+//                */
             }
         }
         return true;
@@ -368,7 +379,8 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
                     (b != null && b.getBoolean(Constants.INTENT_FROM_WIDGET, false)) ? null : EntryColumns.WHERE_UNREAD;
             String entriesOrder = PrefUtils.getBoolean(PrefUtils.DISPLAY_OLDEST_FIRST, false) ? Constants.DB_ASC : Constants.DB_DESC;
 
-            // Load the entriesIds list. Should be in a loader... but I was too lazy to do so
+            // Load the entriesIds list.
+            // TODO: Should be in a loader in a seperate thread
             Cursor entriesCursor = MainApplication.getContext().getContentResolver()
                     .query(mBaseUri, EntryColumns.PROJECTION_ID, whereClause, null, EntryColumns.DATE + entriesOrder);
 
@@ -478,6 +490,10 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
         }
     }
 
+    /**
+     *  Activate or deactivate full screen mode. Hide the toolbar / actionbar
+     * @param fullScreen
+     */
     private void setImmersiveFullScreen(boolean fullScreen) {
         BaseActivity activity = (BaseActivity) getActivity();
         activity.setImmersiveFullScreen(fullScreen);
@@ -494,6 +510,9 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
         });
     }
 
+    /**
+     * View the full text of an article. Not used in Privacy Vandaag setup.
+     */
     @Override
     public void onClickFullText() {
         final BaseActivity activity = (BaseActivity) getActivity();

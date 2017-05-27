@@ -44,9 +44,6 @@ public class PrefUtils {
 
     public static final String NOTIFICATIONS_ENABLED = "notifications.enabled";
     public static final String NOTIFY_PrivacyVandaag = "notifications.privacyVandaag";
-    public static final String NOTIFY_STADSNIEUWS = "notifications.stadsnieuws";
-    public static final String NOTIFY_GEMEENTEBERICHTEN = "notifications.gemeentenberichten";
-    public static final String NOTIFY_EVENEMENTEN = "notifications.evenementen";
 
 
 

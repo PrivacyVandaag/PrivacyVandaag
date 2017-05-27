@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import nl.privacybarometer.privacyvandaag.R;
 
 import static nl.privacybarometer.privacyvandaag.Constants.FETCHMODE_DO_NOT_FETCH;
+import static nl.privacybarometer.privacyvandaag.provider.FeedData.SERVICE_CHANNEL_FEEDNAME;
 
 
 /**
@@ -145,10 +146,6 @@ public class MenuListAdapter {
 
 
 
-
-
-
-
     /**
      * Add the fixed items to the top/beginning of the MenuList
      */
@@ -184,7 +181,7 @@ public class MenuListAdapter {
             while (mFeedsCursor.moveToNext()) {
                 feedName = mFeedsCursor.getString(POS_NAME);
                 Log.e (TAG," adding " + feedName);
-                if (feedName.contains("Serviceberichten")) {
+                if (feedName.contains(SERVICE_CHANNEL_FEEDNAME)) {
                     // It is the service channel! This should not be in this part of the menu.
                     // Store it's feedId temporarily aand add it in addFixedBottomItems() to the menuList.
                     serviceChannelCursorPosition = mFeedsCursor.getPosition();

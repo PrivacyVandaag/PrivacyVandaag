@@ -307,6 +307,8 @@ public class FeedData {
     /**
      * Add predefined Rss-feeds to the database.
      */
+    // This is used within the package to make certain special selections as it is a special channel
+    public final static String SERVICE_CHANNEL_FEEDNAME = "Serviceberichten";
 
     public static void addPredefinedFeeds (Context context) {        // %2C is a comma
         /*
@@ -329,7 +331,7 @@ public class FeedData {
         FeedDataContentProvider.addFeed(context, "http://www.kdvp.nl/?format=feed&type=rss", "KDVP",  true, "logo_icon_kdvp");
         FeedDataContentProvider.addFeed(context, "https://autoriteitpersoonsgegevens.nl/nl/rss", "Autoriteit Persoonsgegevens",  false, "logo_icon_ap");
         // channel for service messages
-        FeedDataContentProvider.addFeed(context, "https://www.privacybarometer.nl/app/feed/" + BuildConfig.PRODUCT_FLAVOR, "Serviceberichten",  false, "logo_icon_serviceberichten_inverse"); // 61 is het aantal dagen dat items bewaard moeten worden.
+        FeedDataContentProvider.addFeed(context, "https://www.privacybarometer.nl/app/feed/" + BuildConfig.PRODUCT_FLAVOR, SERVICE_CHANNEL_FEEDNAME,  false, "logo_icon_serviceberichten"); // 61 is het aantal dagen dat items bewaard moeten worden.
    }
 
 
