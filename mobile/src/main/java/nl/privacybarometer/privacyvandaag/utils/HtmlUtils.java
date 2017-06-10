@@ -124,11 +124,14 @@ public class HtmlUtils {
 
     public static String replaceImageURLs(String content, final long entryId) {
         if (!TextUtils.isEmpty(content)) {
+            // Check settings if we should display and/or download images.
             boolean needDownloadPictures = NetworkUtils.needDownloadPictures();
             final ArrayList<String> imagesToDl = new ArrayList<>();
 
+            // Regex to match the img tags in the HTML web content
             Matcher matcher = IMG_PATTERN.matcher(content);
             while (matcher.find()) {
+                // find a match with the regex and store the image source in 'match'.
                 String match = matcher.group(1).replace(" ", URL_SPACE);
                 String imgPath = NetworkUtils.getDownloadedImagePath(entryId, match);
                 if (new File(imgPath).exists()) {

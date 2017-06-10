@@ -54,6 +54,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.text.format.DateFormat;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
@@ -79,6 +80,7 @@ import java.util.TimeZone;
  */
 
 public class EntryView extends WebView {
+    private static final String TAG = EntryView.class.getSimpleName() + " ~> ";
     // Nodig om de tijd in het artikel goed weer te geven. In database zit de GMT tijd.
     private static final TimeZone TIME_ZONE = TimeZone.getTimeZone("CET");
 
@@ -89,9 +91,9 @@ public class EntryView extends WebView {
     // Neem voor de link kleur de accent kleur, neem voor de buttonkleur de color_primary
     // Let op: dit zijn HTML/CSS kleurinstellingen, dus geen android resources oid!!
     // Link kleur = dark-primary-color
-    private static final String LINK_COLOR = PrefUtils.getBoolean(PrefUtils.LIGHT_THEME, true) ? "#512DA8" : "#3b9038";
+    private static final String LINK_COLOR = PrefUtils.getBoolean(PrefUtils.LIGHT_THEME, true) ? "#512DA8" : "#a78ddb"; // "#D1C4E9";
    // Buttonkleur = default-primary-color
-    private static final String BUTTON_COLOR = PrefUtils.getBoolean(PrefUtils.LIGHT_THEME, true) ? "#673AB7"  : "#296427";
+    private static final String BUTTON_COLOR = PrefUtils.getBoolean(PrefUtils.LIGHT_THEME, true) ? "#673AB7"  : "#673AB7";
 
     // Standaard kleuren onafhankelijk van gebruikt kleurenpalet
     private static final String BACKGROUND_COLOR = PrefUtils.getBoolean(PrefUtils.LIGHT_THEME, true) ? "#f6f6f6" : "#181b1f";
@@ -173,6 +175,7 @@ public class EntryView extends WebView {
     public void setHtml(long entryId, String title, String link, String contentText, String enclosure, String author, long timestamp, boolean preferFullText) {
         if (PrefUtils.getBoolean(PrefUtils.DISPLAY_IMAGES, true)) {
             contentText = HtmlUtils.replaceImageURLs(contentText, entryId);
+            // Log.e(TAG,"Id of the entry = " + entryId);
             if (getSettings().getBlockNetworkImage()) {
                 // setBlockNetworkImage(false) calls postSync, which takes time, so we clean up the html first and change the value afterwards
                 loadData("", TEXT_HTML, Constants.UTF8);

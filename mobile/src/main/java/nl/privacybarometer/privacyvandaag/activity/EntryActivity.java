@@ -95,13 +95,8 @@ public class EntryActivity extends BaseActivity {
      * Testing the back-key, because is gives a SQLite error (14): cannot open file / open(/NotificationPermissions.db)
      * App doesn't crash, but it still generates an error in the debugger
      * Unfortunately, still unable to understand what's going on.
-
      *
-     * The Error occurs after this activity is closed and the homeactivity is resumed.
-     * But it only occurs after closing this EntryActivity. It does not occur when closing AboutActivity
-     *
-     *      *
-     * Maybe the connection to a database is not closed properly, so opening it returns error.
+     * As I understand, it is something in the Samsung S4 mini, not something in the app.
      */
     /*
 

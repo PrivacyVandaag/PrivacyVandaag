@@ -171,13 +171,19 @@ public class StringUtils {
     }
 
 
-
-    public static String getMd5(String input) {
+    /**
+     * Get MD5 hash of a string. Used to make filenames for images.
+     * @param input
+     * @return
+     */
+    static String getMd5(String input) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] messageDigest = md.digest(input.getBytes());
-            BigInteger number = new BigInteger(1, messageDigest);
-            return number.toString(16);
+            if (md != null) {
+                byte[] messageDigest = md.digest(input.getBytes());
+                BigInteger number = new BigInteger(1, messageDigest);
+                return number.toString(16);
+            } else return null;
         } catch (NoSuchAlgorithmException e) {
             return null;
         }

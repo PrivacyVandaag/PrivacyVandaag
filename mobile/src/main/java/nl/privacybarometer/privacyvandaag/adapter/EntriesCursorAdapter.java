@@ -59,6 +59,7 @@ import android.widget.ImageView;
 import android.widget.ResourceCursorAdapter;
 import android.widget.TextView;
 
+import com.squareup.picasso.MemoryPolicy;
 import com.squareup.picasso.Picasso;
 
 import nl.privacybarometer.privacyvandaag.Constants;
@@ -89,7 +90,7 @@ public class EntriesCursorAdapter extends ResourceCursorAdapter {
 
     private final Uri mUri;
     private final boolean mShowFeedInfo;
-    private int mIdPos, mTitlePos, mMainImgPos, mDatePos, mIsReadPos, mFavoritePos, mFeedIdPos, mFeedIconPos, mFeedNamePos;
+    private int mIdPos, mTitlePos, mMainImgPos, mDatePos, mIsReadPos, mLinkPos, mFavoritePos, mFeedIdPos, mFeedIconPos, mFeedNamePos;
     private int mIconIdPos;    // Added to find reference to logo drawable resource
     private final long mYesterdayMidnight;
     private final long mLastMidnight;
@@ -156,11 +157,13 @@ public class EntriesCursorAdapter extends ResourceCursorAdapter {
             Picasso.with(context)   // Use Picasso library to handle images.
                     .load(mainImgUrl)  // Load (create) Bitmap image from filename
                     .fit()  // Resize the image to fit exactly the holder.mainImgView
+                    //.resize(50,50)
+                    //.onlyScaleDown()
                     .centerCrop()   // Crop the image to make it fit the holder.mainImgView
                     .transform (new RoundedCornersTransformation()) // Add rounded corners to the image
                     .into(holder.mainImgView);  // Place the image in the TextView in the EntriesList
 
-         } else {
+        } else {
             Picasso.with(context).cancelRequest(holder.mainImgView);
             int mIconResourceId = cursor.getInt(mIconIdPos);
             if (mIconResourceId > 0) {
@@ -282,6 +285,22 @@ public class EntriesCursorAdapter extends ResourceCursorAdapter {
         }.start();
     }
 
+    /**
+     * Generate a list with favorite items to share.
+     * @return String with the list of items
+     */
+    public String getFavoritesList() {
+        String list = null;
+        Cursor cursor = this.getCursor();
+        if ((cursor != null) && (cursor.moveToFirst()) ) {
+                list = "";
+                do {
+                    list += cursor.getString(mTitlePos) + "\n" + cursor.getString(mLinkPos) + "\n\n";
+                } while (cursor.moveToNext());
+            }
+        return list;
+    }
+
     @Override
     public void changeCursor(Cursor cursor) {
         reinit(cursor);
@@ -321,11 +340,12 @@ public class EntriesCursorAdapter extends ResourceCursorAdapter {
             mMainImgPos = 2;
             mDatePos = 3;
             mIsReadPos = 4;
-            mFavoritePos = 5;
-            mFeedNamePos = 6;
-            mFeedIdPos = 7;
-            mFeedIconPos = 8;
-            mIconIdPos = 9;
+            mLinkPos = 5;
+            mFavoritePos = 6;
+            mFeedNamePos = 7;
+            mFeedIdPos = 8;
+            mFeedIconPos = 9;
+            mIconIdPos = 10;
 
 
             /*

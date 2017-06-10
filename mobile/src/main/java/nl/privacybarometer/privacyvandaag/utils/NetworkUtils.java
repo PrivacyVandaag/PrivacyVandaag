@@ -48,12 +48,14 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.URL;
+import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Pattern;
 
 public class NetworkUtils {
     private static final String TAG = NetworkUtils.class.getSimpleName() + " ~> ";
     public static final File IMAGE_FOLDER_FILE = new File(MainApplication.getContext().getCacheDir(), "images/");
+    public static final File PICASSO_FOLDER_FILE = new File(MainApplication.getContext().getCacheDir(), "picasso-cache/");
     public static final String IMAGE_FOLDER = IMAGE_FOLDER_FILE.getAbsolutePath() + '/';
     public static final String TEMP_PREFIX = "TEMP__";
     public static final String ID_SEPARATOR = "__";
@@ -74,10 +76,16 @@ public class NetworkUtils {
         }
     }
 
-    public static String getDownloadedImagePath(long entryId, String imgUrl) {
+    /**
+     * Determine the final filename (including path) in which the image is downloaded from website.
+     */
+    static String getDownloadedImagePath(long entryId, String imgUrl) {
         return IMAGE_FOLDER + entryId + ID_SEPARATOR + StringUtils.getMd5(imgUrl);
     }
 
+    /**
+     * Determine the temporary filename (including path) in which the image is downloaded from website.
+     */
     private static String getTempDownloadedImagePath(long entryId, String imgUrl) {
         return IMAGE_FOLDER + TEMP_PREFIX + entryId + ID_SEPARATOR + StringUtils.getMd5(imgUrl);
     }
@@ -90,8 +98,8 @@ public class NetworkUtils {
      */
 
     private static final int MAX_IMAGE_FILE_SIZE = 200000; // 200 kB
-    private static final int NEW_IMAGE_WIDTH = 800;    // 800 px
-    private static final int JPG_IMAGE_QUALITY = 85;    // 100 is best quality (lossless).
+    private static final int TARGET_NEW_IMAGE_DIMENSION = 600;    // 600 px
+    private static final int JPG_IMAGE_QUALITY = 80;    // 100 is best quality (lossless).
 
     public static void downloadImage(long entryId, String imgUrl) throws IOException {
         String tempImgPath = getTempDownloadedImagePath(entryId, imgUrl);
@@ -104,7 +112,7 @@ public class NetworkUtils {
         if ( ! (tempImgFile.exists()) &&  ! (finalImgFile.exists())) {
             HttpURLConnection imgURLConnection = null;
             try {
-                IMAGE_FOLDER_FILE.mkdir(); // create images dir
+                IMAGE_FOLDER_FILE.mkdir(); // create images dir if not exists
 
                 // Compute the real URL (without "&eacute;", ...)
                 // Deprecated fromHTML alternative in DeprecateUtils
@@ -112,9 +120,9 @@ public class NetworkUtils {
                 //Log.e(TAG, "Real URL = " + realUrl);
                 imgURLConnection = setupConnection(realUrl);
 
+                // Stream the image from website to temporary file.
                 FileOutputStream fileOutput = new FileOutputStream(tempImgPath);
                 InputStream inputStream = imgURLConnection.getInputStream();
-
                 byte[] buffer = new byte[2048];
                 int bufferLength;
                 while ((bufferLength = inputStream.read(buffer)) > 0) {
@@ -123,13 +131,17 @@ public class NetworkUtils {
                 fileOutput.flush();
                 fileOutput.close();
                 inputStream.close();
+                // Downloading is done. The image has been saved in app cache under temporary name.
 
-                long length = tempImgFile.length(); //  in bytes. if divided by 1024 then size in KB
-                // If image is to large, it reduces performance, mainly with smooth scrolling entrieslists
-                // So we rescale larger images.
+                // Next, analyse the size of image and scale down if too large. If image is to large,
+                // it reduces performance, mainly with smooth scrolling entrieslists. Also, it takes
+                // up too much of the cache. So we scale down larger images.
+                long length = tempImgFile.length(); // File size in bytes. if divided by 1024 then size in KB
+                // Log.e(TAG,"file size = " + length );
                 if (length > MAX_IMAGE_FILE_SIZE) {
-                    // Resize the image
-                    Bitmap resizedImage =  UiUtils.scaleDownBitmap(tempImgPath,NEW_IMAGE_WIDTH);
+                    // Log.e(TAG,"file size too large = " + length );
+                    // If too large, resize the image to a new target size (width or height).
+                    Bitmap resizedImage =  scaleDownBitmap(tempImgPath, TARGET_NEW_IMAGE_DIMENSION);
                     // if resizing succesfull, save it as JPG as it is the most common format here.
                     if (resizedImage != null) {
                         try {
@@ -140,26 +152,29 @@ public class NetworkUtils {
                         } catch (Exception e) {
                             Log.e(TAG, "Saving resized image not succeeded. ");
                         }
-
+                        resizedImage.recycle(); // free up the memory the bitmap was using.
                     }
-                    // We wanted to scale down, but the image size in pixels is aalready within max boundaries
-                    // so save anyway.
+                    // Large file size, but still unable to scale down, because the image size in pixels
+                    // is already within TARGET_NEW_IMAGE_DIMENSION. This happens most often with
+                    // animated gifs, which have file sizes of MB's while the actual pixel width
+                    // and height stay within the TARGET_NEW_IMAGE_DIMENSION.
+                    // At the moment we think it is worth to keep the animated gifs at the cost of
+                    // storage space. So we do not resize, just rename it under final image name.
                     else {
                         if ( ! (tempImgFile.renameTo(new File(finalImgPath)))) {
                             Log.e(TAG, "renaming image not succeeded.");
                         }
                     }
-                    // image hase been resized (or renamed) so we can try to delete the temporary
+                    // image hase been resized (or just renamed) so we can try to delete the temporary
                     // file of the downloaded image.
                     tempImgFile.delete();
                 }
-                // The image is not too large, we didn't try to resize, but just save it.
+                // The image is not too large, we didn't try to resize, but just rename it to final name.
                 else {
                     if ( ! (tempImgFile.renameTo(new File(finalImgPath)))) {
                         Log.e(TAG, "renaming image not succeeded.");
                     }
                 }
-
             } catch (IOException e) {
                 tempImgFile.delete();
                 throw e;
@@ -171,16 +186,59 @@ public class NetworkUtils {
         }
     }
 
+    /**
+     * Resize downloaded images if they are too large
+     *
+     * @param imagePath The file of the image
+     * @param targetSize   The max width or height to scale down to.
+     * @return
+     */
+    private static Bitmap scaleDownBitmap(String imagePath, int targetSize) {
+        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
+        // This option let us read the dimensions of the image without actually loading it.
+        bmOptions.inJustDecodeBounds = true;
+        // With the option above, decoding the file gives us the dimensions
+        BitmapFactory.decodeFile(imagePath, bmOptions);
+        int imageWidth = bmOptions.outWidth;
+        int imageHeight = bmOptions.outHeight;
+        // factor to scale down the image with. The decoder always uses a power of 2 value!
+        int inSampleSize = 1;
+
+        // Only resize if image is larger than target size
+        // Check to be sure if targetSize > 0 to prevent divide by zero
+        if ( ((imageWidth > targetSize) || (imageHeight > targetSize)) && (targetSize > 0))  {
+            // get the largest dimension by comparing width and heigth, and work with that value.
+            final int imageSize = Math.max(imageWidth, imageHeight);
+            final int imageHalfSize = imageSize / 2;
+            // Calculate the largest inSampleSize value that is a power of 2 and keeps the
+            // imageSize larger than the target height or width.
+            while ((imageHalfSize / inSampleSize) >= targetSize) {
+                inSampleSize *= 2;
+            }
+            // Log.e (TAG, "The scale down factor = " + inSampleSize);
+            // Set the scale down factor of the image
+            bmOptions.inSampleSize = inSampleSize;
+            // Now we have the value necessary to scale the image down, so let's load not only
+            // the dimensions but also the actual image.
+            bmOptions.inJustDecodeBounds = false;
+            bmOptions.inPurgeable = false; //As of LOLLIPOP (API 21), this is ignored.
+            return BitmapFactory.decodeFile(imagePath, bmOptions);
+        }
+        return null;
+    }
 
 
 
 
-
+    // TODO: This is no longer necessary, since we got a new delete method beneath.
+    // TODO: This method is probably never called anymore.
+    // TODO: Delete also helper methods end objects, like PictureFilenameFilter.
     public static synchronized void deleteEntriesImagesCache(Uri entriesUri, String selection, String[] selectionArgs) {
         if (IMAGE_FOLDER_FILE.exists()) {
             PictureFilenameFilter filenameFilter = new PictureFilenameFilter();
 
-            Cursor cursor = MainApplication.getContext().getContentResolver().query(entriesUri, FeedData.EntryColumns.PROJECTION_ID, selection, selectionArgs, null);
+            Cursor cursor = MainApplication.getContext().getContentResolver().query(
+                    entriesUri, FeedData.EntryColumns.PROJECTION_ID, selection, selectionArgs, null);
 
             while (cursor.moveToNext()) {
                 filenameFilter.setEntryId(cursor.getString(0));
@@ -195,6 +253,81 @@ public class NetworkUtils {
             cursor.close();
         }
     }
+
+    /**
+     * Go through the directory with stored images and remove those that are created beyond the
+     * keepDateBorderTime. These images can safely be deleted, because the articles will get
+     * deleted next in the FetcherService.java where this method is being called.
+     *
+     * The favorited entries/ articles have to be excluded from this deleting process.
+     *
+     * This replaces the old deleteEntriesImagesCache() aboce. Is that still necessary?
+     *
+     * @param keepDateBorderTime
+     */
+    public static synchronized void deleteEntriesImagesCache(long keepDateBorderTime) {
+        if (IMAGE_FOLDER_FILE.exists()) {
+            // We need to exclude favorite entries images from this cleanup.
+            // Get the Id's of the favorited items first and put them in an array.
+            HashSet<Long> favIds = new HashSet<>();
+            Cursor cursor = MainApplication.getContext().getContentResolver()
+                    .query(FeedData.EntryColumns.FAVORITES_CONTENT_URI, FeedData.EntryColumns.PROJECTION_ID, null, null, null);
+            if (cursor != null) {   // notice that an empty cursor != null
+                while (cursor.moveToNext()) {
+                    favIds.add(cursor.getLong(0));  // Put the favorited articles in an array.
+                }
+                cursor.close();
+            }
+
+            // Get the list of files (images) and loop through them.
+            File[] files = IMAGE_FOLDER_FILE.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    // If the file (image) is older than the keep datetime.
+                    if (file.lastModified() < keepDateBorderTime) {
+                        boolean isAFavoriteEntryImage = false;
+                        // The images are named after the entry ID of the entry to which it belongs.
+                        // So, check if the ID in the name of the image file is in the favorites array.
+                        for (Long favId : favIds) {
+                            if (file.getName().startsWith(favId + ID_SEPARATOR)) {
+                                isAFavoriteEntryImage = true;
+                                break;
+                            }
+                        }
+                        // If it doesn't belong to a favorite entry, delete the image.
+                        if (!isAFavoriteEntryImage) {
+                            file.delete();
+                        }
+                    }
+                    // Some temporary image files are not deleted properly.
+                    // So, we delete TEMP files here to be sure
+                    if (file.getName().startsWith(TEMP_PREFIX)) {
+                        file.delete();
+                    }
+                }
+            }
+        }
+        // Delete also older picasso files from cache
+        // no need to exclude favorites, cause images will be recreated if necessary.
+        /* NOT NECESSARY
+        if (PICASSO_FOLDER_FILE.exists()) {
+
+            final String journal = "journal";
+            // Get the list of files (images) and loop through them.
+            File[] files = PICASSO_FOLDER_FILE.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    // If the file (image) is older than the keep datetime.
+                    // Exclude the file "journal" as deleting this would invalidate whole cache.
+                    if ( ( ! file.getName().contains(journal)) && (file.lastModified() < keepDateBorderTime)) {
+                        file.delete();
+                    }
+                }
+            }
+        }
+        */
+    }
+
 
     public static boolean needDownloadPictures() {
         String fetchPictureMode = PrefUtils.getString(PrefUtils.PRELOAD_IMAGE_MODE, Constants.FETCH_PICTURE_MODE_WIFI_ONLY_PRELOAD);

@@ -10,14 +10,6 @@
                 android:layout_height="wrap_content">
 
 
-    <!-- Deze optie is verplaatst naar het overflow menu in de toolbar. Zie HomeActivity.java regel 309
-    <PreferenceScreen
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:title="@string/about_this_app">
-        <intent android:action="privacyVandaag_about_activity_intent" />
-    </PreferenceScreen>
-    -->
     <!-- !!!!! NOTICE: These options corresponds with the values in values > strings.xml
                     and values > not_translatable_strings.xml -->
 
@@ -88,12 +80,11 @@
             android:title="@string/settings_left_panel"
             android:summary="@string/settings_left_panel_description"/>
 
-        <!-- defaultValue="61" aangepast zodat alles 2 maand bewaard blijft. Origineel was defaultValue="4"
-            Zie voor de keuzeopties values > not_translatable_strings.xml -->
+        <!-- See for values > not_translatable_strings.xml -->
         <nl.privacybarometer.privacyvandaag.view.AutoSummaryListPreference
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:defaultValue="91"
+            android:defaultValue="61"
             android:entries="@array/settings_keep_times"
             android:entryValues="@array/settings_keep_time_values"
             android:inputType="number"

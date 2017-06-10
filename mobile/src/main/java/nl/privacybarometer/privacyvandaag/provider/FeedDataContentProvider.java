@@ -71,6 +71,7 @@ import nl.privacybarometer.privacyvandaag.utils.NetworkUtils;
 
 import java.util.Date;
 
+import static nl.privacybarometer.privacyvandaag.provider.FeedData.SERVICE_CHANNEL_FEEDNAME;
 import static nl.privacybarometer.privacyvandaag.provider.FeedData.STANDAARD_BEWAARTERMIJNEN_ARTIKELEN;
 
 /**
@@ -145,7 +146,7 @@ public class FeedDataContentProvider extends ContentProvider {
     // The complete method with all the parameters
     public static void addFeed(Context context, String url, String name,
                                boolean retrieveFullText, String cookieName, String cookieValue,
-                               Integer keepTime, String iconDrawable, boolean notify) { // MPV: added
+                               Integer keepTime, String iconDrawable, boolean notify) {
         ContentResolver cr = context.getContentResolver();
         // add http or https if not present in the given url
         if (!url.startsWith(Constants.HTTP_SCHEME) && !url.startsWith(Constants.HTTPS_SCHEME)) {
@@ -155,7 +156,7 @@ public class FeedDataContentProvider extends ContentProvider {
         Cursor cursor = cr.query(FeedColumns.CONTENT_URI, null, FeedColumns.URL + Constants.DB_ARG, new String[]{url}, null);
 
 
-        if (cursor.moveToFirst()) { //check if the feed-address already exists in the database
+        if (cursor != null && cursor.moveToFirst()) { //check if the feed-address already exists in the database
             cursor.close(); // If the feed already exists, end this method.
 
             /* ModPrivacyVandaag: By using predefined RSS feeds, there is quite a chance that the feed already exists
@@ -186,82 +187,6 @@ public class FeedDataContentProvider extends ContentProvider {
             values.put(FeedColumns.ICON_DRAWABLE, mIconId);
             values.put(FeedColumns.NOTIFY, notify);
             cr.insert(FeedColumns.CONTENT_URI, values);
-        }
-    }
-
-    /**
-     * Resource identifiers change if images are added to or delete from the resources of the app.
-     * Update the resource identifiers to get to the right logo's in the toolbar and left drawer navigation menu.
-     *
-     * @param context   necessary for getting access to database and resources.
-     */
-    public static void updateIconResourceIds(Context context) {
-        ContentResolver cr = context.getContentResolver();
-        Cursor cursor = null;
-        // perform query to lookup icon filename in the database.
-        try {
-            cursor = cr.query(FeedColumns.CONTENT_URI, // table to query
-                    new String[]{FeedColumns._ID, FeedColumns.ICON, FeedColumns.NAME}, // return columns
-                    null, // selection
-                    null, // selection args
-                    null // order by
-            );
-            //  Log.e(TAG,DatabaseUtils.dumpCursorToString(cursor)); // Debugging: See what's in the cursor
-            int posFeedId = 0;  // position of feedId in the returned results in the cursor
-            int posIconName = 1; // position of name of the logo in the returned results in the cursor
-            int posFeedName = 2; // position of name of the feed in the returned results in the cursor
-            ContentValues values = new ContentValues(); // values for the update of the database
-            long feedId;
-            String iconFileName;
-            String feedName;
-            int iconResourceId = 0;
-
-
-            while (cursor.moveToNext()) {
-                values.clear(); // reset values to be used again. This is more efficient than declaring each time a new ContentValues object.
-                feedId = Long.parseLong(cursor.getString(posFeedId));   // cursor results are always returned as String
-                iconFileName = cursor.getString(posIconName);   // read the filename of the icon
-                if (iconFileName == null) {  // No filename of icon found. Let's put it in.
-                    feedName = cursor.getString(posFeedName);   // read the feed name to determine the belonging icon.
-                    if (feedName != null) {
-                        if (feedName.toLowerCase().contains("barometer"))
-                            iconFileName = "logo_icon_pb";
-                        else if (feedName.toLowerCase().contains("freedom"))
-                            iconFileName = "logo_icon_bof";
-                        else if (feedName.toLowerCase().contains("first"))
-                            iconFileName = "logo_icon_pf";
-                        else if (feedName.toLowerCase().contains("vrijbit"))
-                            iconFileName = "logo_icon_vrijbit";
-                        else if (feedName.toLowerCase().contains("kdvp"))
-                            iconFileName = "logo_icon_kdvp";
-                        else if (feedName.toLowerCase().contains("persoonsgegevens"))
-                            iconFileName = "logo_icon_ap";
-                        else if (feedName.toLowerCase().contains("nieuws"))
-                            iconFileName = "logo_icon_privacy_in_het_nieuws";
-                        else if (feedName.toLowerCase().contains("service"))
-                            iconFileName = "logo_icon_serviceberichten";
-
-                        // We have an icon file, so let's store it in the database.
-                        if (iconFileName != null) values.put(FeedColumns.ICON, iconFileName);
-                    }
-                }
-                // At this point the iconFileName can still be null. So check it.
-                if ((iconFileName != null) && (iconFileName.length() > 0)) {   // We have an icon file, so let's find the resource ID to it.
-                    iconFileName = iconFileName.trim(); // Maybe it was previously not stored correctly?
-                    // lookup the icon by its name get the resource identifier
-                    iconResourceId = context.getResources().getIdentifier(iconFileName, "drawable", context.getPackageName());
-                    // put the resource Id in the database to work with during normal operation of the app.
-                    values.put(FeedColumns.ICON_DRAWABLE, iconResourceId);
-                    cr.update(FeedColumns.CONTENT_URI(feedId), values, null, null); // update the feed with the new resource identifier.
-                }
-            }
-        } catch (Exception e) {
-            // exception handling
-            Log.e (TAG,"error upgrade resource Id's. " + e);
-        } finally {
-            if(cursor != null){
-                cursor.close();
-            }
         }
     }
 

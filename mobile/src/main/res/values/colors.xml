@@ -2,48 +2,29 @@
 
 <resources>
     <!--
-        LET OP: Sommige kleuren zijn hard gecodeerd in de java bestanden:
-            > view > EntryView.java regel 85
-            > adapter > FeedsCursorAdapter.java regel 50 (maar onafhankelijk van gekozen kleurenpalet)
+        NOTICE: Some colors are hard coded in java classes:
+            > view > EntryView.java line 85
+            > adapter > FeedsCursorAdapter.java line 50
 
-            Android kleruenset vind je in
+            Android default holo color set is located in
             C:\Program Files Unrestricted\Android\sdk\platforms\android-23\data\res\values\colors_holo.xml
 
-        De kleur wordt gedefinieerd met 8 hexadecimale cijfers. De eerste twee geven
-        de transparantie aan (alpha-kanaal). De volgende 6 de R-G-B waarden.
+        Color is defined by 8 hexadecimal characters. The first two define the values for the alpha channel
+        (transparancy). The next 3 pairs define the R-G-B values.
 
-        Voor lichtere kleuren BIJ VOORKEUR transparantie gebruiken, want dat mixt veel mooier
-        met de achtergrond.
+        Use alpha channel (transparancy) to make colors lighter. They merge more beautiful with the background.
 
     -->
 
-    <!-- standaard kleur voor de action bar, de menukeuze, de floating button, etc.  -->
-    <!-- <color name="light_theme_color_primary">#8bc34a</color>  --><!-- is de 500 van het palette  -->
-    <color name="light_theme_color_primary">#673AB7</color>  <!-- is de 500 van het palette  -->
-
-    <!-- behoort bij standaard kleur voor de action bar, nemlijk als deze inactief is. -->
-    <!-- <color name="light_theme_color_primary_dark">#689F38</color>  --><!-- is de 700 van het palette   -->
     <color name="light_theme_color_primary_dark">#512DA8</color>  <!-- is de 700 van het palette   -->
-    <!-- <color name="light_theme_color_primary_light">#DCEDC8</color>  --><!-- is de 500 van het palette  -->
+    <color name="light_theme_color_primary">#673AB7</color>  <!-- DEFAULT COLOR / is 500 of palette  -->
+    <color name="light_theme_color_primary_semilight">#A78DDB</color>	<!-- unofficial extra in between color -->
     <color name="light_theme_color_primary_light">#D1C4E9</color>  <!-- is de 500 van het palette  -->
-    <!-- <color name="light_theme_color_accent">#FFD43A3F</color>-->
     <color name="light_theme_color_accent">#FFEE8107</color>
-               <!-- Oude acentkleur volgens material design
-                <color name="light_theme_color_accent">#FFFF5252</color>
-                -->
 
-
-    <!-- wordt gebruikt in de EntriesCursorAdapter om in de lijst aan tegeven welke artikelen al gelezen zijn. -->
-    <!-- <color name="light_theme_disabled_color">#CCCCCC</color>
-    <color name="light_theme_enabled_color">#555555</color>    -->
+    <!-- is used in EntriesCursorAdapter to distinguish between read and unread articles. -->
     <color name="light_theme_enabled_color">#DD000000</color>   <!-- donkergrijs -->
     <color name="light_theme_disabled_color">#6E000000</color>  <!-- lichtgrijs -->
-
-    <!-- floating button  -->
-    <!-- standaard color is light_theme_color_primary -->
-    <!-- <color name="floating_action_button_disabled">#FF689F38</color>   --><!-- zelfde als light-theme, maar transparantie op 38% (#60) -->
-
-
 
     <!-- drawer -->
     <!-- Colors used to differentiate between active feed channels and inactive feed channels (i.e. no refresh) -->
@@ -52,30 +33,23 @@
     <color name="light_theme_secondary_text_color">#8A000000</color>  <!-- secondary tekst is zwart met opacity 54% (#8A) -->
     <color name="light_theme_default_inactive_color">#60000000</color>  <!-- inactive is opacity van 38% (#60) -->
 
+    <!-- horizontal lines between items in the navigation left drawer menu -->
     <color name="light_theme_divider_color">#4A000000</color>
-
     <color name="left_drawer_separator_header">#B6B6B6</color> <!-- separatie lijn in left drawer menu -->
     <color name="left_drawer_separator_item">#333333</color> <!-- separatie lijn in left drawer menu -->
 
 
-
-
-
-
-
-
     <!-- Dark theme  -->
-    <color name="dark_theme_color_primary">#673AB7</color>       <!-- same as light_theme_color_primary_dark  -->
     <color name="dark_theme_color_primary_dark">#512DA8</color>
-    <color name="dark_background">#FF202020</color>
+    <color name="dark_theme_color_primary">#673AB7</color>       <!-- same as light_theme_color_primary_dark  -->
+    <color name="dark_theme_color_primary_semilight">#A78DDB</color>	<!-- same as light_theme_color_primary_semilight -->
+    <color name="dark_background">#FF202020</color> <!-- dark grey -->
     <color name="dark_theme_color_accent">#FFd67606</color>
 
-    <color name="dark_theme_enabled_color">#BBFFFFFF</color>   <!-- lichtgrijs -->
-    <color name="dark_theme_disabled_color">#44FFFFFF</color>  <!-- donkergrijs -->
+    <color name="dark_theme_enabled_color">#BBFFFFFF</color>   <!-- dark grey -->
+    <color name="dark_theme_disabled_color">#44FFFFFF</color>  <!-- light grey -->
 
    <!-- <color name="dark_theme_divider_color">#B6000000</color> -->
     <color name="dark_theme_divider_color">#4AFFFFFF</color>
-
-
 
 </resources>

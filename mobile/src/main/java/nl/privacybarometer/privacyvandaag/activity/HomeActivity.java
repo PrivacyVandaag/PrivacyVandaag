@@ -28,6 +28,8 @@ import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -45,6 +47,7 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 
 import android.support.design.widget.FloatingActionButton;
@@ -60,6 +63,7 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import nl.privacybarometer.privacyvandaag.BuildConfig;
@@ -96,7 +100,7 @@ import static nl.privacybarometer.privacyvandaag.service.FetcherService.NOTIFICA
  *  - In /res/drawable-xhdpi/ most of the icons are located. You can add or replace them by your own.
  *
  */
-public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCallbacks<Cursor> {
+public class HomeActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<Cursor> {
     private static final String TAG = HomeActivity.class.getSimpleName() + " ~> ";
     private static final String TITLE_SPACES = "  "; // Two spaces as margin between icon and title in toolbar.
 
@@ -156,7 +160,7 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
         UiUtils.setPreferenceTheme(this);
         super.onCreate(savedInstanceState);
 
-        //*** Check whether upgrade took place and perform upgrade actions if necessary
+         //*** Check whether upgrade took place and perform upgrade actions if necessary
         // Perform upgrade actions only if not fresh install
         if ( ! (PrefUtils.getBoolean(PrefUtils.FIRST_OPEN, true)) ) {
             // read old versionCode of the app
@@ -167,6 +171,7 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
             }
         } else PrefUtils.putInt(PrefUtils.APP_VERSION_CODE, BuildConfig.VERSION_CODE);
         //*** end upgrade
+
 
         // Perform these actions only on the first occassion the app is run.
         // There are also some ont time only actions in selectDrawerItem(), so
@@ -315,6 +320,7 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
             @Override
             public void onClick(View view) {
                 if (mDrawerLayout != null) {
+                    // seeFileSizes (); // For debugging of cache only!!! Not for production release!
                     if (mDrawerLayout.isDrawerOpen(mLeftDrawer)) { // If left menu drawer is open
                         mDrawerLayout.closeDrawer(mLeftDrawer);
                     } else {    // If left menu drawer is closed
@@ -339,12 +345,55 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
                         setAction(FetcherService.ACTION_REFRESH_FEEDS));
             }
         }
+
+        // Register the listener for change in preferences. Is destroyed in onDestroy()
+        PrefUtils.registerOnPrefChangeListener(mPositionFabListener);
+
     }
     /*  *** END ONCREATE *** */
 
 
+    // *** NOT FOR PRODUCTION RELEASE!!!  FOR DEBUGGING OF CACHE ONLY !! *** //
+    /*
+    public void logFilesInDir (File baseDir, String itemName) {
+        long fileSize;
+        long totalFileSize = 0;
+        File subItem;
+        String dirType;
+        if (itemName == null) {   // Scan the root first
+            subItem = baseDir;
+            dirType = "Root directory: ";
+        } else {  // Scan the subdir
+            subItem = new File(baseDir, itemName + "/");
+            dirType = "Subdirectory: ";
+        }
+        if (subItem.exists()) {
+            if (subItem.isDirectory()) {
+                Log.e(TAG, dirType + subItem);
+                File[] subFiles = subItem.listFiles();
+                if (subFiles != null) {
+                    for (File subFile : subFiles) {
+                        fileSize = subFile.length();
+                        Log.e(TAG, "  - File: " + subFile.getName() + " (" + fileSize +" Bytes)");
+                        totalFileSize += fileSize;
+                        // if (f.getName().contains("hwuicache")) subFile.delete();
+                    }
+                    Log.e(TAG, "Total size of subdir: " + subItem + " = " + totalFileSize + " Bytes.");
+                    Log.e(TAG, "-----------------------------");
 
+                    //Start looking for next level subdirs
+                    for (File subFile : subFiles) {
+                        logFilesInDir(subItem, subFile.getName());
+                    }
+                } else Log.e(TAG, "No files found.");
+            }
+            else if (subItem.isFile()) {
+                //Log.e(TAG, "File name = " + subItem.getName() + " and has size of " + subItem.length());
+            }
+        } else Log.e (TAG, subItem.getName() + " does not exists");
+    }
 
+    //*/
 
 
     /*  *** CONTEXT MENU LEFT DRAWER ***   *** CONTEXT MENU LEFT DRAWER ***   *** CONTEXT MENU LEFT DRAWER *** */
@@ -450,13 +499,6 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
         super.onSaveInstanceState(outState);
     }
 
-    // TODO: Put this in the onCreate() to keep it in line with the onDestroy();
-    @Override
-    protected void onStart() {
-        super.onStart();
-        PrefUtils.registerOnPrefChangeListener(mPositionFabListener);
-    }
-
     @Override
     protected void onDestroy() {
         PrefUtils.unregisterOnPrefChangeListener(mPositionFabListener);
@@ -465,7 +507,7 @@ public class HomeActivity extends BaseActivity implements LoaderManager.LoaderCa
 
 
     /**
-     * Afsluiten van de app
+     * Close app
      */
     @Override
     public void finish() {

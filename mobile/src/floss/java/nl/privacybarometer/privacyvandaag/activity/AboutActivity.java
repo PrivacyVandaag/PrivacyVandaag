@@ -28,9 +28,8 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.text.Html;
-import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.method.LinkMovementMethod;
@@ -58,7 +57,6 @@ import nl.privacybarometer.privacyvandaag.utils.DeprecateUtils;
 import nl.privacybarometer.privacyvandaag.utils.PrefUtils;
 import nl.privacybarometer.privacyvandaag.utils.UiUtils;
 
-import static android.text.util.Linkify.EMAIL_ADDRESSES;
 import static nl.privacybarometer.privacyvandaag.utils.NetworkUtils.setupConnection;
 
 /**
@@ -68,7 +66,7 @@ import static nl.privacybarometer.privacyvandaag.utils.NetworkUtils.setupConnect
  * This is only included with ditribution outside google play store!
  *
  */
-public class AboutActivity extends BaseActivity {
+public class AboutActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -167,6 +165,7 @@ public class AboutActivity extends BaseActivity {
                 input.close();
             } catch (Exception e) {
                 Log.e("Privacy Vandaag","Error while checking for update: " + e.getMessage());
+                this.cancel(true);
             }
             return response;
         }
@@ -192,7 +191,7 @@ public class AboutActivity extends BaseActivity {
     }
 
     // If update is available, update button turns visible. When clicked, updateApp() starts */
-    public void updateApp(View view) {  // Do something in response to button click
+    public void updateApp(View view) {  // This method links to button in activity_about.xml and is executed on click
         TextView contentView = (TextView) findViewById(R.id.update_feedback);
         contentView.setText("Downloading meest recente versie...");
         new DownloadFileAndInstall().execute("");   // Call new AsyncTask to download and install new releas

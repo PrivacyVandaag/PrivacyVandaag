@@ -2,11 +2,13 @@
 The image, title, feedname and date/time of the item (article) are displayed.
 Optionally, the favorites-image is displayed if the item is marked favorite by the user.
 -->
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minHeight="100dp">
+    android:minHeight="100dp"
+    android:orientation="horizontal"
+    >
 
     <!-- Icon of the article. Is programmatically replaced by an article related image if that is available in the article. -->
     <ImageView
@@ -21,7 +23,8 @@ Optionally, the favorites-image is displayed if the item is marked favorite by t
 
         <!-- wrapper/container for title and subtitle of the article -->
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
+        android:layout_weight="1"
         android:layout_height="wrap_content"
         android:layout_centerVertical="false"
         android:layout_marginBottom="10dp"
@@ -29,7 +32,8 @@ Optionally, the favorites-image is displayed if the item is marked favorite by t
         android:layout_marginRight="15dp"
         android:layout_marginTop="10dp"
         android:layout_toRightOf="@+id/main_icon"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        >
 
             <!-- title of the item / article -->
             <!-- android:textAppearance="?android:attr/textAppearanceMedium" font size is too large,
@@ -65,12 +69,16 @@ Optionally, the favorites-image is displayed if the item is marked favorite by t
 
     </LinearLayout>
 
-    <!-- favorite icon. Only visible if the article is marked as favorite -->
+        <!-- favorite icon. Only visible if the article is marked as favorite -->
     <ImageView
         android:id="@+id/favorite_icon"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentRight="true"
-        android:src="@drawable/item_favorite" />
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:layout_centerVertical="false"
+        android:layout_marginRight="15dp"
+        android:layout_marginTop="15dp"
+        android:scaleType="centerCrop"
+        tools:ignore="ContentDescription"
+        android:src="@drawable/rating_important" />
 
-</RelativeLayout>
+</LinearLayout>

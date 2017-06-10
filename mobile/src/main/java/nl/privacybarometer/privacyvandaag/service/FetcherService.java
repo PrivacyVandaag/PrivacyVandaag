@@ -86,6 +86,7 @@ import nl.privacybarometer.privacyvandaag.utils.PrefUtils;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -412,15 +413,19 @@ public class FetcherService extends IntentService {
      */
     private void downloadAllImages() {
         ContentResolver cr = MainApplication.getContext().getContentResolver();
-        Cursor cursor = cr.query(TaskColumns.CONTENT_URI, new String[]{TaskColumns._ID, TaskColumns.ENTRY_ID, TaskColumns.IMG_URL_TO_DL,
-                TaskColumns.NUMBER_ATTEMPT}, TaskColumns.IMG_URL_TO_DL + Constants.DB_IS_NOT_NULL, null, null);
+        Cursor cursor = cr.query(TaskColumns.CONTENT_URI,
+                new String[]{
+                        TaskColumns._ID, TaskColumns.ENTRY_ID,
+                        TaskColumns.IMG_URL_TO_DL, TaskColumns.NUMBER_ATTEMPT
+                }, TaskColumns.IMG_URL_TO_DL + Constants.DB_IS_NOT_NULL, null, null
+        );
 
         ArrayList<ContentProviderOperation> operations = new ArrayList<>();
         if (cursor != null) {
             while (cursor.moveToNext()) {
                 long taskId = cursor.getLong(0);
-                long entryId = cursor.getLong(1);
-                String imgPath = cursor.getString(2);
+                long entryId = cursor.getLong(1);       // Id of the entry (article) in database
+                String imgPath = cursor.getString(2);   // url of the image on website
                 int nbAttempt = 0;
                 if (!cursor.isNull(3)) {
                     nbAttempt = cursor.getInt(3);
@@ -432,7 +437,7 @@ public class FetcherService extends IntentService {
                     // If we are here, everything is OK
                     operations.add(ContentProviderOperation.newDelete(TaskColumns.CONTENT_URI(taskId)).build());
                 } catch (Exception e) {
-                    Log.e(TAG, "Afbeelding downloaden lukt niet in een keer. Poging: " + nbAttempt);
+                    Log.e(TAG, "Downloading images not succeeded. This was attempt: " + nbAttempt);
                     if (nbAttempt + 1 > MAX_TASK_ATTEMPT) {
                         operations.add(ContentProviderOperation.newDelete(TaskColumns.CONTENT_URI(taskId)).build());
                     } else {
@@ -451,6 +456,7 @@ public class FetcherService extends IntentService {
             } catch (Throwable ignored) {
             }
         }
+
     }
 
     /**
@@ -465,8 +471,12 @@ public class FetcherService extends IntentService {
             String where = EntryColumns.DATE + '<' + keepDateBorderTime + Constants.DB_AND + EntryColumns.WHERE_NOT_FAVORITE;
             // Delete the entries, the cache files will be deleted by the content provider
             MainApplication.getContext().getContentResolver().delete(EntryColumns.CONTENT_URI, where, null);
+            // Delete the cache files
+            NetworkUtils.deleteEntriesImagesCache(keepDateBorderTime);
         }
-        Cursor cursor = MainApplication.getContext().getContentResolver().query(FeedColumns.CONTENT_URI, new String[]{FeedColumns._ID, FeedColumns.KEEP_TIME}, null, null, null);
+        Cursor cursor = MainApplication.getContext().getContentResolver()
+                .query(FeedColumns.CONTENT_URI,
+                        new String[]{FeedColumns._ID, FeedColumns.KEEP_TIME}, null, null, null);
         if (cursor != null) {
             while (cursor.moveToNext()) {
                 long feedid = cursor.getLong(0);
@@ -508,24 +518,6 @@ public class FetcherService extends IntentService {
         });
 
         // Start refreshing all selected feeds
-        CompletionService<Integer> completionService = new ExecutorCompletionService<>(executor);
-        while (cursor.moveToNext()) {
-            final String feedId = cursor.getString(0);
-            completionService.submit(new Callable<Integer>() {
-                @Override
-                public Integer call() {
-                    int result = 0;
-                    try {
-                        result = refreshFeed(feedId, keepDateBorderTime, isFromAutoRefresh);   // ModPrivacyVandaag: refresh feed en return number of new articles found
-                    } catch (Exception e) {
-                        Log.e(TAG, "Error refreshing feed " + e.getMessage());
-                    }
-                    return result;
-                }
-            });
-        }
-        cursor.close();
-
         /**
          * While scanning the source websites for new articles, it is unknown
          * how fast they will respond and in what order.
@@ -536,7 +528,32 @@ public class FetcherService extends IntentService {
          * Therefore, we kept track of the number of feeds we check in nbFeed so we know
          * how many completionService takes we have to do.
          *
-         * The loop blocks (in the background) until all results are in. So at the end of the loop,
+         * PROBLEM: The app runs three (THREAD_NUMBER) threads simultaneously. But RSSAtomParser is not thread safe.
+         *
+         */
+        CompletionService<Integer> completionService = new ExecutorCompletionService<>(executor);
+        while (cursor.moveToNext()) {
+            final String feedId = cursor.getString(0);
+            completionService.submit(new Callable<Integer>() {
+                @Override
+                public Integer call() {
+                    int result = 0;
+                    try {
+                        result = refreshFeed(feedId, keepDateBorderTime, isFromAutoRefresh);
+                    } catch (Exception e) {
+                        Log.e(TAG, "Error refreshing feed " + e.getMessage());
+                    }
+                    return result;
+                }
+            });
+        }
+        cursor.close();
+
+
+
+
+        /*
+         * The loop with Futures blocks (in the background) until all results are in. So at the end of the loop,
          * we are certain that all tasks are completed.
          */
         int globalResult = 0;
@@ -591,17 +608,18 @@ public class FetcherService extends IntentService {
             try {
                 String feedUrl = cursor.getString(urlPosition);
                 connection = NetworkUtils.setupConnection(feedUrl); // Setup the internet connection to the website
-                String contentType = connection.getContentType();   // C
+                String contentType = connection.getContentType();   // Get content-type from the header of the webpage
                 // Check if it is the first time a feed is read. If that's the case, do not
                 // get all articles from the past, but just the articles from the past period
                 // according to the DEFAULT_FETCH_OLD_NEWS_TIME (in days) setting
                 long lastRetrieveTime = cursor.getLong(realLastUpdatePosition);
               //  Log.e(TAG, "lastRetrieveTime = " + lastRetrieveTime);
-                if (lastRetrieveTime == 0)
+                if (lastRetrieveTime == 0) {    // Updating for the first time, so set a fictional lastRetrieveTime.
                     lastRetrieveTime = System.currentTimeMillis() - (Long.parseLong(DEFAULT_FETCH_OLD_NEWS_TIME) * Constants.DURATION_OF_ONE_DAY);
-
-// >>>>>> Get the RSS feed for this URL and parse it
-                handler = new RssAtomParser(lastRetrieveTime, keepDateBorderTime, id, cursor.getString(titlePosition), feedUrl,
+                }
+                // >>>>>> Get the RSS feed for this URL and parse it
+                handler = new RssAtomParser(lastRetrieveTime, keepDateBorderTime, id, 
+                        cursor.getString(titlePosition), feedUrl,
                         cursor.getInt(retrieveFullscreenPosition) == 1);
                 handler.setFetchImages(NetworkUtils.needDownloadPictures());
 
@@ -813,8 +831,10 @@ public class FetcherService extends IntentService {
                     connection.disconnect();
                 }
             }
+
         }
-        cursor.close();
+        if (cursor != null)  cursor.close();
+
 
         //  FeedData.addPredefinedMessages(); // ONLY FOR TESTING!!!!
 

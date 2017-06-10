@@ -3,10 +3,10 @@
     <!-- !!!!! NOTICE: These options corresponds with the values in strings.xml and xml > general_preferences.xml -->
     <string-array name="settings_interval_values" translatable="false">
         <!-- !!!!! NOTICE: These options corresponds with the values in strings.xml  -->
-        <!--    <item>60000</item>      1 minuut -->
-        <!--    <item>300000</item>     5 minuten -->
-        <!--    <item>900000</item>     15 minuten -->
-        <!--    <item>1800000</item>    30 minuten -->
+        <!--    <item>60000</item>      1 minute -->
+        <!--    <item>300000</item>     5 minutes -->
+        <!--    <item>900000</item>     15 minutes -->
+        <!--    <item>1800000</item>    30 minutes -->
         <item>3600000</item>
         <item>7200000</item>    <!-- 2 uur, standaard instelling vind je in xml > general_preferences.xml -->
         <item>21600000</item>
@@ -20,8 +20,8 @@
         <item>7</item>
         <item>14</item>
         <item>30</item>
-        <item>61</item>
-        <item>91</item>  <!-- nieuwe standaard instelling bewaartermijn van de artikelen 91 dagen -->
+        <item>61</item>     <!-- new standard setting keep time of entries (articles) 61 days -->
+        <item>91</item>
         <item>182</item>
         <item>0</item>
     </string-array>

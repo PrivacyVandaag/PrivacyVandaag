@@ -47,6 +47,7 @@
 package nl.privacybarometer.privacyvandaag.activity;
 
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 
@@ -59,7 +60,7 @@ import nl.privacybarometer.privacyvandaag.utils.UiUtils;
  * to retrieve and display the stored settings.
  */
 
-public class GeneralPrefsActivity extends BaseActivity {
+public class GeneralPrefsActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

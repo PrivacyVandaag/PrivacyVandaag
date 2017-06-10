@@ -248,6 +248,7 @@ public class DrawerAdapter extends BaseAdapter {
         holder.titleTxt.setTextColor(NORMAL_TEXT_COLOR);
         holder.titleTxt.setAllCaps(false);
         holder.stateTxt.setVisibility(View.GONE);
+        holder.stateTxt.setTextColor(NORMAL_STATE_TEXT_COLOR_LIGHT_THEME);
         holder.noNotification.setVisibility(View.GONE);
         holder.unreadTxt.setText("");
         convertView.setPadding(0, 0, 0, 0);

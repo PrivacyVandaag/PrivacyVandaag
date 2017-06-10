@@ -56,7 +56,6 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 // import com.melnykov.fab.FloatingActionButton;
 
@@ -143,7 +142,7 @@ public class EntriesListFragment extends SwipeRefreshListFragment {
      *
      * Een LoaderManager kan meerdere loaders (= meerdere verschillende queries) bijhouden.
      * JEen opzet hiervoor  is om voor elke loader een eigen LoaderCallBack te maken.
-     * Die LoaderCallBack bevat de quuery om de database te doorzoeken bij onCreateLoader
+     * Die LoaderCallBack bevat de query om de database te doorzoeken bij onCreateLoader
      * en bevat ook wat er moet gebeuren als de gegevens uit de database zijn opgehaald in onLoadFinished
      *
      * Zie verder hieronder bij mEntriesLoader (Loader 1) en bij mEntriesNumberLoader (Loader 2)
@@ -183,12 +182,13 @@ public class EntriesListFragment extends SwipeRefreshListFragment {
                             EntryColumns.IMAGE_URL,
                             EntryColumns.DATE,
                             EntryColumns.IS_READ,
+                            EntryColumns.LINK,
                             EntryColumns.IS_FAVORITE,
                             FeedData.FeedColumns.NAME,
                             EntryColumns.FEED_ID,
                             FeedData.FeedColumns.ICON,
-                            FeedData.FeedColumns.ICON_DRAWABLE },
-
+                            FeedData.FeedColumns.ICON_DRAWABLE
+                    },
                     // null, // What columns do we get back from the query as a result? null = all available columns!
                     where, // selection criteria
                     null, // selection args
@@ -604,33 +604,28 @@ public class EntriesListFragment extends SwipeRefreshListFragment {
         super.onCreateOptionsMenu(menu, inflater);
     }
 
-
+    /**
+     * Menu items in the tool bar of an entrieslist
+     * @param item
+     * @return
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.menu_share_starred: {
                 if (mEntriesCursorAdapter != null) {
-                    String starredList = "";
-                    Cursor cursor = mEntriesCursorAdapter.getCursor();
-                    if (cursor != null && !cursor.isClosed()) {
-                        int titlePos = cursor.getColumnIndex(EntryColumns.TITLE);
-                        int linkPos = cursor.getColumnIndex(EntryColumns.LINK);
-                        if (cursor.moveToFirst()) {
-                            do {
-                                starredList += cursor.getString(titlePos) + "\n" + cursor.getString(linkPos) + "\n\n";
-                            } while (cursor.moveToNext());
-                        }
+                    String favoritesList = mEntriesCursorAdapter.getFavoritesList();
+                    if (favoritesList != null) {
                         startActivity(Intent.createChooser(
                                 new Intent(Intent.ACTION_SEND).putExtra(Intent.EXTRA_SUBJECT, getString(R.string.share_favorites_title))
-                                        .putExtra(Intent.EXTRA_TEXT, starredList).setType(Constants.MIMETYPE_TEXT_PLAIN), getString(R.string.menu_share)
+                                        .putExtra(Intent.EXTRA_TEXT, favoritesList).setType(Constants.MIMETYPE_TEXT_PLAIN), getString(R.string.menu_share)
                         ));
                     }
                 }
                 return true;
             }
-            case R.id.reset_app: {  // optie om artikelen te herladen
-                // Dialoog popup om mensen te vragen of ze daadwerklijk de artikelen willen verwijderen
-                // en opnieuw willen laden.
+            case R.id.reset_app: {  // option to reload articles of the specific feed or feeds
+                // Dialogue popup to confirm to delete the existing entries first before reloading.
                 AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
                 builder.setTitle(R.string.reset_title);
                 builder.setCancelable(true);
@@ -645,17 +640,14 @@ public class EntriesListFragment extends SwipeRefreshListFragment {
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {
                                 dialog.cancel();
-                                startResetFeed();
+                                resetFeed();
                             }
                         });
                 builder.show();
 
                 return true;
-
             }
-
-
-            /* Knop is niet in gebruik, want we hebben swipe refresh
+            /* We do not use this menu option since we can swipe to refresh
             case R.id.menu_refresh: {
                 startRefresh();
                 return true;
@@ -664,42 +656,23 @@ public class EntriesListFragment extends SwipeRefreshListFragment {
             case R.id.menu_all_read: {
                 if (mEntriesCursorAdapter != null) {
                     mEntriesCursorAdapter.markAllAsRead(mListDisplayDate);
-
-                    /* oud van origineel
-                    // If we are on "all items" uri, we can remove the notification here
-                    if (mUri != null && EntryColumns.CONTENT_URI.equals(mUri) && Constants.NOTIF_MGR != null) {
-                        Constants.NOTIF_MGR.cancel(0);
-                    }
-                    */
                 }
                 return true;
             }
-
         }
         return super.onOptionsItemSelected(item);
     }
 
     /**
-     * Verwijder alle artikelen in dit katern en herlaad de artikelen.
+     * Delete all entries (articles) from this feed, reread the RSS feed and reload the
+     * full articles from website inclusing assets like images.
      */
-    private void startResetFeed () {
+    private void resetFeed() {
         String feedId = String.valueOf(mFeedId);
-        ResetUtils resetFeed = new ResetUtils();
-        resetFeed.resetLastUpdateTime(feedId);
+        new ResetUtils().resetLastUpdateTime(feedId);   // reset feed. Delete all existing tasks, images & entries
         if (!PrefUtils.getBoolean(PrefUtils.IS_REFRESHING, false)) {    // als er niet al verversd wordt!
             getContext().startService(new Intent(getContext(), FetcherService.class).setAction(FetcherService.ACTION_REFRESH_FEEDS).putExtra(Constants.FEED_ID, feedId));
         }
-
-        // Start refreshing the feeds if the preferences are set that way.
-        /*
-        if (PrefUtils.getBoolean(PrefUtils.REFRESH_ENABLED, true)) {
-            // starts the service independent to this activity
-            getContext().startService(new Intent(getContext(), RefreshService.class));
-        } else {
-            getContext().stopService(new Intent(getContext(), RefreshService.class));
-        }
-        */
-
     }
 
 

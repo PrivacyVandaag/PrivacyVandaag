@@ -28,6 +28,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.support.v4.util.LongSparseArray;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 import android.widget.ListView;
@@ -39,7 +40,7 @@ import nl.privacybarometer.privacyvandaag.MainApplication;
 import nl.privacybarometer.privacyvandaag.R;
 
 public class UiUtils {
-
+    private static final String TAG = UiUtils.class.getSimpleName() + " ~> ";
     static private final LongSparseArray<Bitmap> FAVICON_CACHE = new LongSparseArray<>();
 
     static public void setPreferenceTheme(Activity a) {
@@ -79,41 +80,6 @@ public class UiUtils {
         }
         return null;
     }
-
-    /**
-     * Resize downloaded images if they are too large
-     *
-     *
-     * @param photoPath The file of the image
-     * @param targetW   The max width or height to scale down to.
-     * @return
-     */
-    static Bitmap scaleDownBitmap(String photoPath, int targetW) {
-        BitmapFactory.Options bmOptions = new BitmapFactory.Options();
-        bmOptions.inJustDecodeBounds = true;
-        BitmapFactory.decodeFile(photoPath, bmOptions);
-        int photoW = bmOptions.outWidth;
-        int photoH = bmOptions.outHeight;
-        // Only resize if image is larger than target size
-        // Check to be sure if photoH and targetW > 0 to prevent divide by zero
-
-        if ((photoW > targetW) && (photoH > 0 ) && (targetW > 0))  {
-
-            final float photoAspectRatio = photoW / photoH;
-            int targetH = (int) (targetW / photoAspectRatio);
-            int scaleFactor = Math.min(photoW / targetW, photoH / targetH);
-
-            bmOptions.inJustDecodeBounds = false;
-            bmOptions.inSampleSize = scaleFactor;
-            bmOptions.inPurgeable = false; //Deprecated API 21
-
-            return BitmapFactory.decodeFile(photoPath, bmOptions);
-        }
-        return null;
-    }
-
-
-
 
 
     static public void addEmptyFooterView(ListView listView, int dp) {

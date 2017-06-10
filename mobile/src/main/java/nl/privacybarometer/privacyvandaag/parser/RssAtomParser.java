@@ -89,8 +89,28 @@ import static nl.privacybarometer.privacyvandaag.provider.FeedData.SERVICE_CHANN
  * Store the results in the database.
  * Called from > service > FetcherService.Java line 544
  *
- * Aanpassing om ook datum in de toekomst weer te geven in ongeveer regel 330, regel 570 en regel 600.
- */
+ * An item in RSS specs includes the following elements
+ * <item>
+ *     <title></title>
+ *     <link></link>
+ *     <description></description>
+ *     <author></author>
+ *     <pubDate></pubDate> (following RFC 822 specs: <pubDate>Wed, 02 Oct 2002 13:00:00 GMT</pubDate>)
+ *     <guid></guid>  (Globally Unique ID)
+ * </item>
+ *
+ * An entry according to ATOM specs includes the following elements
+ * <entry>
+ *     <title></title>
+ *     <link></link>
+ *     <summary></summary>
+ *     <content></content> (full content)
+ *     <author></author>    (has subelements like <name></name>)
+ *     <updated></updated>  (following RFC 3339 specs: <updated>2003-12-13T18:30:02Z</updated>)
+ *     <id></id>
+ * </entry>
+*/
+
 public class RssAtomParser extends DefaultHandler {
     private static final String TAG = RssAtomParser.class.getSimpleName() + " ~> ";
 
@@ -103,7 +123,7 @@ public class RssAtomParser extends DefaultHandler {
     private static final String ADD_READ_MORE_END = ".</p>";
 
     private static final String TAG_RSS = "rss";
-    private static final String TAG_RDF = "rdf";
+    private static final String TAG_RDF = "rdf";    // Resource Description Framework. Is this still used?
     private static final String TAG_FEED = "feed";
     private static final String TAG_ENTRY = "entry";
     private static final String TAG_ITEM = "item";
@@ -135,20 +155,38 @@ public class RssAtomParser extends DefaultHandler {
     private static final String[][] TIMEZONES_REPLACE = {{"MEST", "+0200"}, {"EST", "-0500"}, {"PST", "-0800"}};
 
     // These are the time and date formats that should be found in the RSS feed.
-    private static final DateFormat[] PUBDATE_DATE_FORMATS = {
+    /*
+    private static final DateFormat[] PUBDATE_DATE_FORMATS = {  // For RSS date time strings
+            new SimpleDateFormat("dd MMM yyyy HH:mm:ss", Locale.US),
+            new SimpleDateFormat("d MMM yyyy HH:mm:ss", Locale.US),
             new SimpleDateFormat("d' 'MMM' 'yy' 'HH:mm:ss", Locale.US),
             new SimpleDateFormat("d' 'MMM' 'yy' 'HH:mm:ss' 'Z", Locale.US),
             new SimpleDateFormat("d' 'MMM' 'yy' 'HH:mm:ss' 'z", Locale.US)};
+    */
 
-    private static final DateFormat[] UPDATE_DATE_FORMATS = {
+    private static final ThreadLocal<DateFormat[]> PUBDATE_DATE_FORMATS
+            = new ThreadLocal<DateFormat[]>(){
+        @Override
+        protected DateFormat[] initialValue() {
+            return new DateFormat[] {  // For RSS date time strings
+                new SimpleDateFormat("dd MMM yyyy HH:mm:ss", Locale.US),
+                new SimpleDateFormat("d MMM yyyy HH:mm:ss", Locale.US),
+                new SimpleDateFormat("d' 'MMM' 'yy' 'HH:mm:ss", Locale.US),
+                new SimpleDateFormat("d' 'MMM' 'yy' 'HH:mm:ss' 'Z", Locale.US),
+                new SimpleDateFormat("d' 'MMM' 'yy' 'HH:mm:ss' 'z", Locale.US)};
+            };
+    };
+
+
+
+
+    private static final DateFormat[] UPDATE_DATE_FORMATS = {   // For ATOM date time strings
             new SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ss", Locale.US),
             new SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ssZ", Locale.US),
             new SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ss.SSSz", Locale.US),
             new SimpleDateFormat("yyyy-MM-dd", Locale.US)};
 
     private static final int SIX_HOURS = 21600000;
-
-   // private static final DateFormat TEST_DATE_TIME_NL = new SimpleDateFormat("EEE MMM d HH:mm:ss z yyyy", new Locale("nl_NL"));     // testing for date and time appearance
 
     private final Date mRealLastUpdateDate;
     private final Date mKeepDateBorderTimeLocal;
@@ -192,10 +230,21 @@ public class RssAtomParser extends DefaultHandler {
     private StringBuilder mGuid;
     private StringBuilder mAuthor, mTmpAuthor;
 
-    private boolean futereDatesAreAllowed = true;   // Allow articles with time and date in the future. Usefull for announcement of events.
+    private boolean futureDatesAreAllowed = true;   // Allow articles with time and date in the future. Usefull for announcement of events.
 
-   // public RssAtomParser(Date realLastUpdateDate, long keepDateBorderTime, final String id, String feedName, String url, boolean retrieveFullText) {
-    public RssAtomParser(long realLastUpdateTime, long keepDateBorderTime, final String id, String feedName, String url, boolean retrieveFullText) {
+    /**
+     * Constructor for the RSS Atom Parser.
+     * This is the start of the reading and analyzing of the RSS feed.
+     *
+     * @param realLastUpdateTime    Datetime of last succesfull refresh of the feed
+     * @param keepDateBorderTime    Datetime in the past beyond which the articles are deleted
+     * @param id                    The ID of the feed that is to be refreshed
+     * @param feedName              The name of the feed that is to be refreshed
+     * @param url                   The URL of the feed that is to be refreshed
+     * @param retrieveFullText      Should we retrieve the full article or just keep the RSS excerpt?
+     */
+    public RssAtomParser(long realLastUpdateTime, long keepDateBorderTime,
+                         final String id, String feedName, String url, boolean retrieveFullText) {
 
         /*
          * Ik heb van de Date opbject in de method en long gemaakt met Unix TimeStamp,
@@ -209,11 +258,8 @@ public class RssAtomParser extends DefaultHandler {
          * zes uur voor de laatste update wordt teruggekeken.
          * Hopelijk glipt er nu niks tussendoor.
          *
-         * TODO: CHECK OF DEZE EXTRA CHECK VAN 6 UUR WEG KAN!
          *
          */
-        // mRealLastUpdateDate = realLastUpdateDate;
-        // mNewRealLastUpdate = realLastUpdateDate.getTime();
         mRealLastUpdateDate = new Date (realLastUpdateTime  - (long) SIX_HOURS);
         mNewRealLastUpdate = realLastUpdateTime - (long) SIX_HOURS;
 
@@ -222,29 +268,48 @@ public class RssAtomParser extends DefaultHandler {
         mFeedEntriesUri = EntryColumns.ENTRIES_FOR_FEED_CONTENT_URI(id);
         mRetrieveFullText = retrieveFullText;
 
+        // Privacy Vandaag does not use filters
         mFilters = new FeedFilters(id);
 
         mFeedBaseUrl = NetworkUtils.getBaseUrl(url);
 
-     //   Log.e(TAG, "Start Atom Parser voor ~> " + mFeedName);
-     //   Log.e(TAG, "Start Atom Parser voor ~> " + mId);
+     //   Log.e(TAG, "Start Atom Parser for ~> " + mFeedName);
+     //   Log.e(TAG, "Start Atom Parser for ~> " + mId);
      //   Log.e(TAG, "Keep Border Time = " + keepDateBorderTime);
 
+
+        /* ** Determine beyond what date we should not retrieve articles
+         * For this are two keepborderdates defined. One for all the feeds in the setting and one
+         * per feed. Get the info from database and determin which keepborderdate should be used.
+        */
         long keepDateBorderTimeLocal = 0;
-        // Haal de bewaartermijn van artikelen bij deze feed uit de database
-        Cursor cursor = MainApplication.getContext().getContentResolver().query(FeedColumns.CONTENT_URI(mId), new String[]{FeedColumns._ID, FeedColumns.KEEP_TIME},null, null, null);
+        // Get the keep time of articles from database. This is defined per feed.
+        Cursor cursor = MainApplication.getContext().getContentResolver()
+                .query(FeedColumns.CONTENT_URI(mId),
+                        new String[]{
+                                FeedColumns._ID,        // get feed ID
+                                FeedColumns.KEEP_TIME   // get keeptime
+                        },null, null, null
+                );
         if (cursor != null) {
             while (cursor.moveToNext()) {
-                long keepTimeLocal = cursor.getLong(1) == 1 ? (long) (Constants.DURATION_OF_ONE_DAY / 4) : cursor.getLong(1) * Constants.DURATION_OF_ONE_DAY; // Als het op 1 dag staat, doen we zes uur.
+                // if keeptime is set to 1 day, we set this to six hours, else we set it to the correct hours.
+                long keepTimeLocal = (cursor.getLong(1) == 1) ? (long) (Constants.DURATION_OF_ONE_DAY / 4)
+                        : cursor.getLong(1) * Constants.DURATION_OF_ONE_DAY;
+                // If we know the period we should keep the articles, we can calculate what datetime that is from now.
                 keepDateBorderTimeLocal = keepTimeLocal > 0 ? System.currentTimeMillis() - keepTimeLocal : 0;
             }
             cursor.close();
         }
-        // Neem de kortste bewaarstermijn. Die bij de feed is ingesteld of de generieke bewaartermijnen volgens de ingestelde voorkeuren
+        // Take most recent keepborderdate. Die bij de feed is ingesteld of de generieke bewaartermijnen volgens de ingestelde voorkeuren
         mKeepDateBorderTimeLocal = new Date (keepDateBorderTimeLocal);
-        if (keepDateBorderTimeLocal > keepDateBorderTime) mKeepDateBorder = new Date(keepDateBorderTimeLocal);
-        else mKeepDateBorder = new Date(keepDateBorderTime);
+        if (keepDateBorderTimeLocal > keepDateBorderTime) {
+            mKeepDateBorder = new Date(keepDateBorderTimeLocal);
+        } else {
+            mKeepDateBorder = new Date(keepDateBorderTime);
+        }
         // Log.e(TAG, "Keep Border Time = " + mKeepDateBorder);
+        // *** We got a date set now beyond we retrieve no articles.
 
     }
 
@@ -469,49 +534,58 @@ public class RssAtomParser extends DefaultHandler {
                 mFeedLink = mEntryLink.toString();  // The first link that is found, is the link from the feed channel
             }
         }
-        // endtag of time and date information
+
+        /* endtag of time and date information
         // clean the time and date information before it is stored using the parse....Date() family
+
+        Let's figure out what the datetime of the item is. We try to read several values for this
+        and after that take the best suited value.
+        */
+        // If used, the update tag is of course the date time of latest update of the item.
         else if (TAG_UPDATED.equals(localName)) {
             mEntryUpdateDate = parseUpdateDate(mDateStringBuilder.toString());
             mUpdatedTagEntered = false;
-        } else if (TAG_PUBDATE.equals(localName)) {
+        }
+        // This is the ONLY tag officially allowed with an <item>
+        // This value should be considered first at all times as an entry datetime!
+        else if (TAG_PUBDATE.equals(localName)) {
             mEntryDate = parsePubdateDate(mDateStringBuilder.toString());
             mPubDateTagEntered = false;
-        } else if (TAG_PUBLISHED.equals(localName)) {
-            mEntryDate = parsePubdateDate(mDateStringBuilder.toString());
+        }
+        // These are fallback datetimes if pubdate is not available.
+        // But they are not allowed with <item> so, is it wise to use this at all?
+        // Privacy Vandaag does not use them, since it can only produce errors.
+        else if (TAG_PUBLISHED.equals(localName)) {
+            //mEntryDate = parsePubdateDate(mDateStringBuilder.toString());
             mPublishedTagEntered = false;
-        } else if (TAG_LAST_BUILD_DATE.equals(localName)) {
-            mEntryDate = parsePubdateDate(mDateStringBuilder.toString());
+        } else if (TAG_LAST_BUILD_DATE.equals(localName)) { // This fails as fallback. Is build datetime of whole channel
+           // mEntryDate = parsePubdateDate(mDateStringBuilder.toString());
             mLastBuildDateTagEntered = false;
         } else if (TAG_DATE.equals(localName)) {
-            mEntryDate = parseUpdateDate(mDateStringBuilder.toString());
+            // mEntryDate = parseUpdateDate(mDateStringBuilder.toString());
             mDateTagEntered = false;
         }
 
 
-        // endtag of "item", so all the information of one item is read and can be stored in database
+        // ****  endtag of "item", so all the information of one item is read.
+        // It can be analysed and stored in database
         else if (TAG_ENTRY.equals(localName) || TAG_ITEM.equals(localName)) {
             mEntryTagEntered = false;   // reset the boolean that an item is being read.
             boolean updateOnly = false;
 
-            // Handle the time and date of the item
-            // If it is an old entry, do not insert!! > Old mEntryDate but recent update date => we need to not insert it!
+            // Handle the datetime of the item
+            // If it is an existing entry with an update, do not insert, but update the existing item
             if (mEntryUpdateDate != null && mEntryDate != null && (mEntryDate.before(mRealLastUpdateDate) || mEntryDate.before(mKeepDateBorder))) {
                 updateOnly = true;
                 if (mEntryUpdateDate.after(mEntryDate)) {
                     mEntryDate = mEntryUpdateDate;
                 }
             }
-            // If pubDate is empty, but an update time and date is given, use that one
+            // If pubDate is empty, but an update datetime of the item is given, use that one.
             else if (mEntryDate == null && mEntryUpdateDate != null) {
                 mEntryDate = mEntryUpdateDate;
             }
-            // If no time and date info is found with this item, use the time and date we retrieved from previous item or feedchannel
-            else if (mEntryDate == null && mEntryUpdateDate == null) {
-                mEntryDate = mPreviousEntryDate;
-                mEntryUpdateDate = mPreviousEntryUpdateDate;
-            }
-            // By now, mEntryDate holds the best possible entryDate
+
 
             // If we are sure a new item is read and the item is no older than the set mKeepDateBorder,
             // start cleaning it up and store it in the database
@@ -520,8 +594,13 @@ public class RssAtomParser extends DefaultHandler {
             // the process is cancelled. All the items that follow are discarded,
             // basically because they are already retrieved in the previous refresh of the feed
             // or they are too old.
-            if (mTitle != null && (mEntryDate == null
-                    || (mEntryDate.after(mRealLastUpdateDate) && mEntryDate.after(mKeepDateBorder)))) {
+            //  Orig: if (mTitle != null && (mEntryDate == null || (mEntryDate.after(mRealLastUpdateDate) && mEntryDate.after(mKeepDateBorder)))) {
+
+            // Check if we have a title and datetime. If not, go to next item.
+            if (mTitle != null && mEntryDate != null) {
+                // Check if we are still after the last refresh datetime and afte the keep datetime.
+                // If not, cancel reading the reamining items as they are (usually) older.
+                if (mEntryDate.after(mRealLastUpdateDate) && mEntryDate.after(mKeepDateBorder)) {
 
                 // Start met het analyseren en opschonen van het item om het eventueel in de database te stoppen.
                     ContentValues values = new ContentValues();
@@ -532,7 +611,6 @@ public class RssAtomParser extends DefaultHandler {
 
                     String improvedTitle = unescapeTitle(mTitle.toString().trim());
                     values.put(EntryColumns.TITLE, improvedTitle);
-                  //  Log.e(TAG, "mTtile = " + mTitle);
 
                     String improvedContent = null;
                     String mainImageUrl = null;
@@ -558,9 +636,6 @@ public class RssAtomParser extends DefaultHandler {
                                 if (mAuthor != null)
                                     improvedContent += ADD_READ_MORE_MIDDLE + mAuthor.toString();
                                 improvedContent += ADD_READ_MORE_END;
-                                // Log.e(TAG,improvedContent);
-                                // Add the content to the database
-
                             }
                             values.put(EntryColumns.ABSTRACT, improvedContent);
                         }
@@ -568,7 +643,6 @@ public class RssAtomParser extends DefaultHandler {
 
                     if (mainImageUrl != null) {
                         values.put(EntryColumns.IMAGE_URL, mainImageUrl);
-                     //   Log.e(TAG, "afbeelding URL = " + mainImageUrl);
                     }
 
                     // Check the item with the filters. If the entry is not filtered out, it needs to be processed further before
@@ -616,52 +690,32 @@ public class RssAtomParser extends DefaultHandler {
                             }
                         }
 
+                        // Build selection arguments to query database if item already exists and we should update instead of insert.
                         String[] existenceValues = enclosureString != null ? (guidString != null ? new String[]{entryLinkString, enclosureString,
                                 guidString} : new String[]{entryLinkString, enclosureString}) : (guidString != null ? new String[]{entryLinkString,
                                 guidString} : new String[]{entryLinkString});
-
 
                         // First, try to update the feed
                         ContentResolver cr = MainApplication.getContext().getContentResolver();
                         boolean isUpdated = (!entryLinkString.isEmpty() || guidString != null)
                                 && cr.update(mFeedEntriesUri, values, existenceStringBuilder.toString(), existenceValues) != 0;
 
-                       // if (isUpdated) Log.e(TAG, "The item already exists: this is an update.");
-
                         // Insert it only if necessary
                         if ( ! isUpdated &&  ! updateOnly) {
-                            // We put the date only for new entry (no need to change the past, you may already read it)
-                            if (mEntryDate != null) {
-                                values.put(EntryColumns.DATE, mEntryDate.getTime());
-                            } else {
-                        //        Log.e(TAG, "time and date of this item is null: " + guidString);
-                                values.put(EntryColumns.DATE, mNow--); // -1 to keep the good entries order
-                            }
-
+                            values.put(EntryColumns.DATE, mEntryDate.getTime());
                             values.put(EntryColumns.LINK, entryLinkString);
-
-                            // We cannot update, we need to insert it
                             mInsertedEntriesImages.add(imagesUrls);
                             mInserts.add(ContentProviderOperation.newInsert(mFeedEntriesUri).withValues(values).build());
-                     //       Log.e(TAG, "We cannot update, we need to insert it in database.");
-
                             mNewCount++;
                         }
-                        // No date, but we managed to update an entry => we already parsed the following entries and don't need to continue
-                        if (isUpdated && mEntryDate == null) {
-                      //      Log.e(TAG, "Het item bestaat blijkbaar al, dus deze feed afbreken!");
-                            cancel();
-                        }
-                    } // if the item is not filtered out by the filter settings
-                    /*
-                    else {
-                        Log.e(TAG, "item got filtered out");
-                    }
-                    */
-            } // end if a new item is read that should be stored in the database, else cancel the parsing
-            else {
-                // We reached already known items, so cancel parcing the feed.
-                cancel();
+
+                    } // end if the item is not filtered out by the filter settings
+                      // else { Log.e(TAG, "item got filtered out"); }
+                } // end if a new item is read that should be stored in the database, else cancel the parsing
+                else {
+                    // We reached already known items, so cancel parsing the feed.
+                    cancel();
+                }
             }
             // reset all the variables to have a clean start for the next item.
             mDescription = null;
@@ -740,10 +794,13 @@ public class RssAtomParser extends DefaultHandler {
 
 
 
-    /******* DATE & TIME ***** DATE & TIME ***** DATE & TIME ***** DATE & TIME ***** DATE & TIME *****
+    //******* DATE & TIME ***** DATE & TIME ***** DATE & TIME ***** DATE & TIME ***** DATE & TIME *****
+
+    /**
+     *  Main function for getting datetime stamp from tag in ATOM feed.
      *
-     * All kinds of time and date checking and handling
-     *
+     * @param dateStr
+     * @return
      */
 
     private Date parseUpdateDate(String dateStr) {
@@ -752,8 +809,7 @@ public class RssAtomParser extends DefaultHandler {
     }
 
     /**
-     * NOTICE: This function is UpdateDate.... This is NOT the mainstream date handler.
-     * See also the method parsePubdateDate() below
+     * Parse date time for date time string with ATOM specifications.
      *
      * @param dateStr
      * @param tryAllFormat
@@ -763,33 +819,18 @@ public class RssAtomParser extends DefaultHandler {
         // Walk through all possible time and date formats in the RSS feed and try for a match.
         for (DateFormat format : UPDATE_DATE_FORMATS) {
             try {
-
-
-                /**
-                 *  Aanpassing Mod Zeehelendenieuw
-                 *  Als de pubDate in de feed in de toekomst ligt, wordt de ophaaltijd gebruikt.
-                 *  Maar de datum van evenementen die in het PrivacyVandaag worden aangekondigd,
-                 *  wordt weergegeven in de pubDate Tags.
-                 *  Er wordt een check hiervoor in parseUpdateDate() gedaan. Die check kan er uit en
-                 *  eens kijken wat er dan in de lijst gebeurt.
-                 *
-                 *  mEntryDate is de pubDate
-                 *  mEntryUpdateDate is de datum waarop de laatste update plaatsvond.
-                 *  mNow is de huidige systeemtijd.
-                 */
-                if (!futereDatesAreAllowed) {   // If future time and date are not allowed in the articles (news)
+                if ( ! futureDatesAreAllowed) {
                     Date result = format.parse(dateStr);
-                    return (result.getTime() > mNow ? new Date(mNow) : result);
+                    // If the time is in the future, we take the current time of the device.
+                    return (result.getTime() > mNow) ? new Date(mNow) : result;
                 } else {    // If future time and date are allowed (if events are announced in the RSS feed)
                     return format.parse(dateStr);
                 }
-                // einde van deze aanpassing
-
             } catch (ParseException ignored) {
-            } // just do nothing
+                // just do nothing
+            }
         }
-
-        if (tryAllFormat) {
+        if (tryAllFormat) { // If the date isnt formatted as ATOM, try if it is formatted according RSS specs.
             return parsePubdateDate(dateStr, false);
         }
         else
@@ -797,84 +838,81 @@ public class RssAtomParser extends DefaultHandler {
     }
 
     /**
-     * NOTICE: this function is PubdateDate.... This is the date handler used in most cases.
-     * Only in some cases the above method parseUpdateDate() is used.
+     *  Main function for getting datetime stamp from tag in RSS feed.
      *
      * @param dateStr
      * @return
      */
     private Date parsePubdateDate(String dateStr) {
+
         // first, the day of the week is removed from the string, because not necessary.
+        // also some unusual formatting is removed or replaced.
         dateStr = improveDateString(dateStr);
+
         // Then check in which format the date is written and convert it to UNIX timestamp?
-        // If the dateStr is set in the future, it is set to mNow if futereDatesAreAllowed=false.
+        // If the dateStr is set in the future, it is set to mNow if futureDatesAreAllowed=false.
         return parsePubdateDate(dateStr, true);
     }
 
 
     /**
-     * Hoofdfunctie om de datumtijd Tag uit de RSS bestand te lezen.
-     * Eerste worden de mogelijke formats doorlopen.
-     * Daarna wordt de tijd teruggestuurd.
+     * Parse date time for date time string with RSS specifications.
      *
-     *
-     * @param dateStr
+     * @param dateStr = String mEntryDate = String pubDate
      * @param tryAllFormat
      * @return
      */
     private Date parsePubdateDate(String dateStr, boolean tryAllFormat) {
-        // Walk through all possible time and date formats in the RSS feed and try for a match.
-        for (DateFormat format : PUBDATE_DATE_FORMATS) {
+        // Iterate through all possible time and date formats in the RSS feed and try for a match.
+        for (DateFormat format : PUBDATE_DATE_FORMATS.get()) {
             try {
-
-
-                /**
-                 *  Aanpassing Mod Zeehelendenieuw
-                 *  Als de pubDate in de feed in de toekomst ligt, wordt de ophaaltijd gebruikt.
-                 *  Maar de datum van evenementen die in het PrivacyVandaag worden aangekondigd,
-                 *  wordt weergegeven in de pubDate Tags.
-                 *  Er wordt een check hiervoor in parseUpdateDate() gedaan. Die check kan er uit en
-                 *  eens kijken wat er dan in de lijst gebeurt.
-                 *
-                 *  mEntryDate is de pubDate
-                 *  mEntryUpdateDate is de datum waarop de laatste update plaatsvond.
-                 *  mNow is de huidige systeemtijd.
-                 */
-
-
-                // This is the main stream date time handler!! The others are for execeptional rss readings
-                if (!futereDatesAreAllowed) {
+                // If we do not allow pubDate being in the future. mNow is current system time of the device
+                if ( ! futureDatesAreAllowed) {
                     Date result = format.parse(dateStr);
                     return (result.getTime() > mNow ? new Date(mNow) : result);
-                } else {
-                    // Aanvullende code in order to allow for future date and time.
-                    return format.parse(dateStr);
-                   // return testing.parse(dateStr);
                 }
-                // einde van deze aanpassing
+                // If we do allow for pubDates being in future (advised in case of events or wrong time zone setting)
+                else {
+                    return format.parse(dateStr);
+                }
             } catch (ParseException ignored) {
-            } // just do nothing
+                // just do nothing
+            }
         }
 
-        if (tryAllFormat) {
+        if (tryAllFormat) { // If the date isn't formatted as RSS, try if it is formatted according ATOM specs.
             return parseUpdateDate(dateStr, false);
         }
         else
             return null;
     }
 
+    /**
+     * Remove some unnecessary formatting in date time string of pubDate
+     *
+     * @param dateStr the pubDate from the item in the RSS feed
+     * @return   a clean date time string, most likely something like:
+     *              07 Oct 2015 23:59:45 +0100
+     *              7 Oct 2015 23:59:45 +0100
+     *              07 Oct 2015 23:59:45 GMT
+     */
     private String improveDateString(String dateStr) {
         // We remove the first part if necessary (the day display)
-        // for example, this removes the "Sat, " in "Sat, 17 Oct 2015 09:50:00 +0000".
-        int coma = dateStr.indexOf(", ");
-        if (coma != -1) {
-            dateStr = dateStr.substring(coma + 2);
+        // example of correct formatted tag:  <pubDate>Sat, 17 Oct 2015 22:00:00 +0000</pubDate>
+        // This removes the "Sat, " in "Sat, 17 Oct 2015 09:50:00 +0000".
+        int comma = dateStr.indexOf(", ");
+        if (comma != -1) {   // If comma is found
+            dateStr = dateStr.substring(comma + 2);
         }
 
-        dateStr = dateStr.replaceAll("([0-9])T([0-9])", "$1 $2").replaceAll("Z$", "").replaceAll("  ", " ").trim(); // fix useless char
+        // Sometimes date time is given in format:  07 Oct 2015T23:59. Replace this with 07 Oct 2015 23:59
+        // Sometimes the time zone is given with the military code Z (=UTC). Remove this as UTC is default.
+        // Remove possible double spaces. Only single spaces between date time elements are allowed.
+        // Remove possible spaces at the beginning or end of the pubDate string by using trim().
+        dateStr = dateStr.replaceAll("([0-9])T([0-9])", "$1 $2").replaceAll("Z$", "").replaceAll("  ", " ").trim(); // remove useless characters
 
-        // Replace bad timezones
-        // Only for United States timezones. Not usefull in this way for European feeds.
+        // Replaces some US timezones in characters to numbers, like "EST" to "-0500".
+        // For other timezones outside US this has no consequences.
         for (String[] timezoneReplace : TIMEZONES_REPLACE) {
             dateStr = dateStr.replace(timezoneReplace[0], timezoneReplace[1]);
         }

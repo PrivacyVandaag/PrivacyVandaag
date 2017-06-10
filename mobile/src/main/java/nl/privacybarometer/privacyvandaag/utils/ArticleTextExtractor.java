@@ -129,11 +129,12 @@ public class ArticleTextExtractor {
             Elements tmpElements = doc.select(".post__content .post__message");
             for (int i = 0; i < tmpElements.size(); i++) {
                 if (i != 0) {   // First element already selected in first selection above.
+                    if (article == null) article = "";  // convert 'null article' to 'empty article' so we can add new parts.
                     if (tmpElements.get(i) != null) article += tmpElements.get(i).html();
                 }
             }
             // The text has some empty paragraphs. We remove them here
-            if (article != null) article.replace("<p>&nbsp;</p>", "");
+            if (article != null) article = article.replace("<p>&nbsp;</p>", "");
 
             // Get the main image.
             tmpElement1 = doc.select(".post__background .wp-post-image").first();
@@ -234,7 +235,10 @@ public class ArticleTextExtractor {
             Element tmpElement1 = doc.select(".itemBody .itemIntroText").first();
             Element tmpElement2 = doc.select(".itemBody .itemFullText").first();
             String article = (tmpElement1 != null) ? tmpElement1.html() : null;
-            if (tmpElement2 != null) article += tmpElement2.html();
+            if (tmpElement2 != null) {
+                if (article != null) article += tmpElement2.html();
+                else article = tmpElement2.html();
+            }
 
             // Do not fetch images! There are none or there are probably copyright issues.
 

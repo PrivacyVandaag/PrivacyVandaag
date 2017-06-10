@@ -183,10 +183,7 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
      *  Deprecated, but safe to use, because this same method is called via a detour.
      *  Check: http://stackoverflow.com/questions/32258125/onattachactivity-deprecated-where-i-can-check-if-the-activity-implements-call
      *
-     * However, the listener is not registered on Android 6 device.
-     *
-     * Alternatively, set the listener in onCreate or onResume.
-     *
+     *  Use deprecated method for SDKs < Marshmallow
     */
     @Override
     public void onAttach(Context context) {
@@ -205,34 +202,9 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
         }
     }
 
-
-
-/*
-
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-
-        ((BaseActivity) activity).setOnFullscreenListener(this);
-    }
-*/
-
-    /**
-     * The alternative of the deprecated method above
-     * New from SDK 23. The new method uses activity instead of context. Does it work for us?
-     * No, so let's keep the deprecated method for the moment.
-     *//*
-    @Override
-    public void onAttach(Context context) {
-        super.onAttach(context);
-
-        ((BaseActivity) context).setOnFullscreenListener(this);
-    }
-*/
     @Override
     public void onDetach() {
         ((BaseActivity) getActivity()).setOnFullscreenListener(null);
-
         super.onDetach();
     }
 
@@ -240,7 +212,6 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
     public void onResume() {
         super.onResume();
         mEntryPagerAdapter.onResume();
-
         if (((BaseActivity) getActivity()).isFullScreen()) {
             mCancelFullscreenBtn.setVisibility(View.VISIBLE);
         } else {
@@ -342,21 +313,21 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
                 // For Debugging only
                 // Sometimes full articles are not retrieved correctly.
                 // BIj removing the articel it can be reloaded for testing purposes.
-/*
-                // The resource is in res/menu/entry.xml. To use it, uncomment it there.
-                case R.id.menu_reload_article: {
-                    final Uri uri = ContentUris.withAppendedId(mBaseUri, mEntriesIds[mCurrentPagerPos]);
-                    new Thread() {
-                        @Override
-                        public void run() {
-                            ContentResolver cr = MainApplication.getContext().getContentResolver();
-                            cr.delete(uri, null, null);
-                        }
-                    }.start();
-                    activity.finish();
-                    break;
-                }
-//                */
+                /*
+                    // The resource is in res/menu/entry.xml. To use it, uncomment it there.
+                    case R.id.menu_reload_article: {
+                        final Uri uri = ContentUris.withAppendedId(mBaseUri, mEntriesIds[mCurrentPagerPos]);
+                        new Thread() {
+                            @Override
+                            public void run() {
+                                ContentResolver cr = MainApplication.getContext().getContentResolver();
+                                cr.delete(uri, null, null);
+                            }
+                        }.start();
+                        activity.finish();
+                        break;
+                    }
+                 //  */
             }
         }
         return true;
@@ -663,9 +634,18 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
         mEntryPagerAdapter.setUpdatedCursor(loader.getId(), null);
     }
 
+    /**
+     * Listener if full screen mode is entered
+     *
+     * @param isImmersive  Are we in full screen mode?
+     * @param isImmersiveFallback Is a button available to get out of full screen mode?
+     *                            This button is not available with full screen video.
+     *
+     */
     @Override
     public void onFullScreenEnabled(boolean isImmersive, boolean isImmersiveFallback) {
-        if (!isImmersive && isImmersiveFallback) {
+       // orig: if (!isImmersive && isImmersiveFallback) {
+       if (isImmersive && isImmersiveFallback) {
             mCancelFullscreenBtn.setVisibility(View.VISIBLE);
         }
     }

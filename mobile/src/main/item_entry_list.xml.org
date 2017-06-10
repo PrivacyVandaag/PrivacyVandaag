@@ -65,7 +65,7 @@ Optionally, the favorites-image is displayed if the item is marked favorite by t
 
     </LinearLayout>
 
-    <!-- favorite icon. Only visible if the article is marked as favorite -->
+        <!-- favorite icon. Only visible if the article is marked as favorite -->
     <ImageView
         android:id="@+id/favorite_icon"
         android:layout_width="wrap_content"

@@ -22,6 +22,7 @@
 package nl.privacybarometer.privacyvandaag.activity;
 
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
@@ -46,7 +47,7 @@ import nl.privacybarometer.privacyvandaag.utils.UiUtils;
  *      > res > layout > activity_edit_feeds.xml to get the fragments for the feedlist
  * In our case, one can press the feed to toggle it's state between active and inactive.
  */
-public class EditFeedsListActivity extends BaseActivity {
+public class EditFeedsListActivity extends AppCompatActivity {
     private static final String TAG = EditFeedsListActivity.class.getSimpleName() + " ~> ";
     public static final String MENU_HAS_BEEN_RESORTED = "menu_has_been_resorted";
 
