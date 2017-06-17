@@ -94,6 +94,7 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
 
     private int mTitlePos = -1, mDatePos, mMobilizedHtmlPos, mAbstractPos, mLinkPos, mIsFavoritePos, mIsReadPos, mEnclosurePos, mAuthorPos, mFeedNamePos, mFeedUrlPos, mFeedIconPos;
     private int mIconIdPos;    //  Added to find reference to logo drawable resource
+    private int mGuidPos;    //  Added to find reference to logo drawable resource
 
     private int mCurrentPagerPos = -1;
     private Uri mBaseUri;
@@ -620,6 +621,9 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
                 mFeedUrlPos = cursor.getColumnIndex(FeedColumns.URL);
                 mFeedIconPos = cursor.getColumnIndex(FeedColumns.ICON);
                 mIconIdPos = cursor.getColumnIndex(FeedColumns.ICON_DRAWABLE);
+
+
+                mGuidPos = cursor.getColumnIndex(EntryColumns.GUID);
             }
 
             int position = loader.getId();
@@ -737,6 +741,12 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
                     String link = newCursor.getString(mLinkPos);
                     String title = newCursor.getString(mTitlePos);
                     String enclosure = newCursor.getString(mEnclosurePos);
+
+                    // For debugging
+                    //String guid = newCursor.getString(mGuidPos);
+                    //Log.e(TAG,"link= "+ link);
+                    //Log.e(TAG,"guid = "+ guid);
+
 
                     view.setHtml(mEntriesIds[pagerPos], title, link, contentText, enclosure, author, timestamp, mPreferFullText);
                     view.setTag(newCursor);

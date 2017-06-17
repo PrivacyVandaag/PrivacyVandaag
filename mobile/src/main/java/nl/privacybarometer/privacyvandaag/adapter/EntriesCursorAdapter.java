@@ -107,8 +107,8 @@ public class EntriesCursorAdapter extends ResourceCursorAdapter {
         mShowFeedInfo = showFeedInfo;
 
         /**
-         * Haal eerst de laatste middernacht op om te kunnen berekenen of het vandaag, morgen of gisteren is.
-         * Door dat hier te doen, gebeurt het eenmalig per lijst in plaats van per item.
+         * Determine last midnight so we can use it while displaying the articles publication time.
+         * By doing it here, we have to do it only once per list of entries
          */
         mLastMidnight =  StringUtils.getLastMidnight();
         mYesterdayMidnight = mLastMidnight - Constants.DURATION_OF_ONE_DAY;
@@ -185,28 +185,24 @@ public class EntriesCursorAdapter extends ResourceCursorAdapter {
         holder.starImgView.setVisibility(holder.isFavorite ? View.VISIBLE : View.INVISIBLE);
 
 
+        // Set the status text
         // Show name of the feedchannel if mShowFeedIfo is true ( See HomeActivity line 314 and line  358
         // and if name can be retrieved from database (mFeedNamePos)
         // Show time & date in the same string, next to the name of the feedchannel.
         if (mShowFeedInfo && mFeedNamePos > -1) {
             if (feedName != null) {
-
-                //ModPrivacyVandaag: remove hardcoded color from name feedchannel with each entry,
-                // because it doesn't turn to isRead color. Besides, why a different color to start with?
-                // holder.dateTextView.setText(Html.fromHtml(new StringBuilder("<font color='" + R.color.light_theme_color_primary + "'>").append(feedName).append("</font>").append(Constants.COMMA_SPACE).append(StringUtils.getDateTimeString(cursor.getLong(mDatePos))).toString()));
-               // holder.dateTextView.setText(Html.fromHtml(new StringBuilder(feedName).append(Constants.COMMA_SPACE).append(StringUtils.getDateTimeString(cursor.getLong(mDatePos), mYesterdayMidnight, mLastMidnight, mComingMidnight,mTomorrowMidnight)).toString()));
                 holder.dateTextView.setText(feedName + Constants.COMMA_SPACE +
-                        StringUtils.getDateTimeString(cursor.getLong(mDatePos), mYesterdayMidnight, mLastMidnight, mComingMidnight, mTomorrowMidnight));
+                    StringUtils.getDateTimeString(cursor.getLong(mDatePos), mYesterdayMidnight, mLastMidnight, mComingMidnight, mTomorrowMidnight));
             } else {
                 holder.dateTextView.setText(StringUtils.getDateTimeString(cursor.getLong(mDatePos), mYesterdayMidnight, mLastMidnight, mComingMidnight, mTomorrowMidnight));
             }
         } else {
             holder.dateTextView.setText(StringUtils.getDateTimeString(cursor.getLong(mDatePos), mYesterdayMidnight, mLastMidnight, mComingMidnight, mTomorrowMidnight));
         }
-        // Einde datumtijd handling
 
 
-        // stel de kleur in voor gelezen / ongelezen.
+
+        // set color read/ unread.
         if (cursor.isNull(mIsReadPos)) {
             holder.titleTextView.setEnabled(true);
             holder.dateTextView.setEnabled(true);

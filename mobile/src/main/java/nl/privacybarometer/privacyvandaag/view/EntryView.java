@@ -172,7 +172,8 @@ public class EntryView extends WebView {
         mEntryViewMgr = manager;
     }
 
-    public void setHtml(long entryId, String title, String link, String contentText, String enclosure, String author, long timestamp, boolean preferFullText) {
+    public void setHtml(long entryId, String title, String link, String contentText, String enclosure,
+                        String author, long timestamp, boolean preferFullText) {
         if (PrefUtils.getBoolean(PrefUtils.DISPLAY_IMAGES, true)) {
             contentText = HtmlUtils.replaceImageURLs(contentText, entryId);
             // Log.e(TAG,"Id of the entry = " + entryId);
@@ -195,40 +196,52 @@ public class EntryView extends WebView {
         // }
 
         // do not put 'null' to the base url...
-        loadDataWithBaseURL("", generateHtmlContent(title, link, contentText, enclosure, author, timestamp, preferFullText), TEXT_HTML, Constants.UTF8, null);
+        loadDataWithBaseURL("", generateHtmlContent(title, link, contentText, enclosure, author, timestamp, preferFullText),
+                TEXT_HTML, Constants.UTF8, null);
     }
 
-    private String generateHtmlContent(String title, String link, String contentText, String enclosure, String author, long timestamp, boolean preferFullText) {
+    /**
+     * Build the HTML page for the webview of the article.
+     *
+     */
+    private String generateHtmlContent(String title, String link, String contentText, String enclosure,
+                                       String author, long timestamp, boolean preferFullText) {
+        // Start with <head> including stylesheet (CSS) </head> and <body> open tag.
         StringBuilder content = new StringBuilder(CSS).append(BODY_START);
 
         if (link == null) {
             link = "";
         }
-        content.append(TITLE_START).append(link).append(TITLE_MIDDLE).append(title).append(TITLE_END).append(SUBTITLE_START);
-        int offSet = TIME_ZONE.getOffset(timestamp);
-        Date date = new Date(timestamp + offSet);   // Pas de tijd aan aan de huidige tijdzone
-        Context context = getContext();
-        StringBuilder dateStringBuilder = new StringBuilder(DateFormat.getLongDateFormat(context).format(date)).append(' ').append(
-                DateFormat.getTimeFormat(context).format(date));
 
+        // Add the title
+        content.append(TITLE_START).append(link).append(TITLE_MIDDLE).append(title).append(TITLE_END).append(SUBTITLE_START);
+
+        // Add date and time
+        Date date = new Date(timestamp);
+        Context context = getContext();
+        StringBuilder dateStringBuilder = new StringBuilder(DateFormat.getLongDateFormat(context).format(date))
+                .append(' ').append(DateFormat.getTimeFormat(context).format(date));
+
+        // Add the author
         if (author != null && !author.isEmpty()) {
             dateStringBuilder.append(" &mdash; ").append(author);
         }
 
+        // Add the main content
         content.append(dateStringBuilder).append(SUBTITLE_END).append(contentText);
 
+        // Add button to view article on website and other options.
         content.append(BUTTON_SECTION_START);
-        /* ModPrivacyVandaag: The app always retrieves full-tekst whenever possible. A extra button to request it is not necessary. */
+        /* The app always retrieves full-tekst whenever possible. A extra button to request it is not necessary. */
         /*
                 content.append(BUTTON_START);
-
                 if (!preferFullText) {
                     content.append(context.getString(R.string.get_full_text)).append(BUTTON_MIDDLE).append("injectedJSObject.onClickFullText();");
                 } else {
                     content.append(context.getString(R.string.original_text)).append(BUTTON_MIDDLE).append("injectedJSObject.onClickOriginalText();");
                 }
                 content.append(BUTTON_END);
-           */
+        */
         if (enclosure != null && enclosure.length() > 6 && !enclosure.contains(IMAGE_ENCLOSURE)) {
             content.append(BUTTON_START).append(context.getString(R.string.see_enclosure)).append(BUTTON_MIDDLE)
                     .append("injectedJSObject.onClickEnclosure();").append(BUTTON_END);
@@ -250,7 +263,7 @@ public class EntryView extends WebView {
         // For color
         setBackgroundColor(Color.parseColor(BACKGROUND_COLOR));
 
-        // De grootte van het lettertype kan worden ingesteld in de voorkeursinstellingen.
+        // Setting font size. This is relative to preference settings of the user.
         int fontSize = Integer.parseInt(PrefUtils.getString(PrefUtils.FONT_SIZE, "0"));
         getSettings().setTextZoom(100 + (fontSize * 20));
 

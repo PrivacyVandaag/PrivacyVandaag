@@ -31,6 +31,7 @@ public class ResetUtils {
         long resetTime = 0;
         ContentValues values = new ContentValues();
         values.put(FeedData.FeedColumns.REAL_LAST_UPDATE, resetTime);
+        values.put(FeedData.FeedColumns.LAST_UPDATE, resetTime);
         ContentResolver cr = MainApplication.getContext().getContentResolver();
         cr.update(FeedData.FeedColumns.CONTENT_URI(feedId), values, null, null);
     }

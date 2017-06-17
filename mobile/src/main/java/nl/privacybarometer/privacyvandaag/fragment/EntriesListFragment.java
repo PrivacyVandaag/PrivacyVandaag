@@ -67,6 +67,7 @@ import nl.privacybarometer.privacyvandaag.provider.FeedData;
 import nl.privacybarometer.privacyvandaag.provider.FeedData.EntryColumns;
 import nl.privacybarometer.privacyvandaag.provider.FeedDataContentProvider;
 import nl.privacybarometer.privacyvandaag.service.FetcherService;
+import nl.privacybarometer.privacyvandaag.utils.DeprecateUtils;
 import nl.privacybarometer.privacyvandaag.utils.PrefUtils;
 import nl.privacybarometer.privacyvandaag.utils.ResetUtils;
 import nl.privacybarometer.privacyvandaag.utils.UiUtils;
@@ -629,7 +630,7 @@ public class EntriesListFragment extends SwipeRefreshListFragment {
                 AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
                 builder.setTitle(R.string.reset_title);
                 builder.setCancelable(true);
-                builder.setMessage(Html.fromHtml(getString(R.string.reset_message)));
+                builder.setMessage(DeprecateUtils.fromHtml(getString(R.string.reset_message)));
                 builder.setNegativeButton("Annuleer",
                         new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int id) {

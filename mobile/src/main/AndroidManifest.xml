@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="nl.privacybarometer.privacyvandaag"
+          xmlns:tools="http://schemas.android.com/tools"
           android:installLocation="auto">
 
     <uses-permission android:name="android.permission.INTERNET"/>
-    <!-- ModPrivacyVandaag: By removing the backup facility, this permission is still needed (only) for update process
-        As of api 19 (android 4.4 kitkat) apps get their own storage folder, so the general permission is no longer needed -->
-   <!-- NIET NODIG <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+    <!-- By removing the backup facility, this permission is still needed (only) for update process
+        As of api 19 (android 4.4 kitkat) apps get their own storage folder, so the general permission is no longer needed.
+	 This is only needed when distributing outside Gplay store -->
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="18" />
-        -->
+        
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.VIBRATE"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
@@ -31,11 +33,6 @@
             android:authorities="nl.privacybarometer.privacyvandaag.provider.FeedData"
             android:exported="true"
             android:writePermission="nl.privacybarometer.privacyvandaag.provider.WRITE_PERMISSION"/>
-        <!-- ModPrivacyVandaag:
-           bovenstaande was niet automatisch refractored, dus handmatig gedaan.
-           Origineel was: android:writePermission="net.etuldan.sparss.provider.WRITE_PERMISSION"/>
-        -->
-
 
         <activity
             android:name="nl.privacybarometer.privacyvandaag.activity.HomeActivity"
@@ -74,41 +71,6 @@
             android:name="nl.privacybarometer.privacyvandaag.activity.GeneralPrefsActivity"
             android:label="@string/menu_settings"
             android:launchMode="singleTask"/>
-
-        <!-- ModPrivacyVandaag: Disabled widget. No need for it.
-         <activity android:name="wizzwebandaag.widget.WidgetConfigActivity">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/>
-            </intent-filter>
-        </activity>
-        -->
-
-
-        <!-- ModPrivacyVandaag: ' EditFeedActivity' activity turned off, welke intent er ook is.
-            De EditFeedActivity laat mensen een feed aanmaken. Gaan we niet doen.
-        -->
-        <!--
-        <activity
-            android:name="wizzwebandaag.activity.EditFeedActivity"
-            android:windowSoftInputMode="adjustResize">
-            <intent-filter>
-                <action android:name="android.intent.action.EDIT"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <data android:mimeType="vnd.android.cursor.item/vnd.spaRSS.feed"/>
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.INSERT"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <data android:mimeType="vnd.android.cursor.dir/vnd.spaRSS.feed"/>
-            </intent-filter>
-            <intent-filter>
-                <action android:name="android.intent.action.SEND"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <data android:mimeType="text/plain"/>
-            </intent-filter>
-        </activity>
-        -->
-
 
         <receiver android:name="nl.privacybarometer.privacyvandaag.receiver.BootCompletedBroadcastReceiver">
             <intent-filter>

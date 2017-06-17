@@ -61,7 +61,6 @@ import nl.privacybarometer.privacyvandaag.MainApplication;
 import nl.privacybarometer.privacyvandaag.provider.FeedData;
 import nl.privacybarometer.privacyvandaag.provider.FeedData.EntryColumns;
 import nl.privacybarometer.privacyvandaag.provider.FeedData.FeedColumns;
-import nl.privacybarometer.privacyvandaag.provider.FeedData.FilterColumns;
 import nl.privacybarometer.privacyvandaag.service.FetcherService;
 import nl.privacybarometer.privacyvandaag.utils.HtmlUtils;
 import nl.privacybarometer.privacyvandaag.utils.NetworkUtils;
@@ -77,8 +76,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static nl.privacybarometer.privacyvandaag.provider.FeedData.SERVICE_CHANNEL_FEEDNAME;
 
@@ -109,6 +106,9 @@ import static nl.privacybarometer.privacyvandaag.provider.FeedData.SERVICE_CHANN
  *     <updated></updated>  (following RFC 3339 specs: <updated>2003-12-13T18:30:02Z</updated>)
  *     <id></id>
  * </entry>
+ *
+ * Check full RSS specs: https://validator.w3.org/feed/docs/rss2.html#hrelementsOfLtitemgt
+ * Check full ATOM specs: https://validator.w3.org/feed/docs/atom.html
 */
 
 public class RssAtomParser extends DefaultHandler {
@@ -142,6 +142,7 @@ public class RssAtomParser extends DefaultHandler {
     private static final String TAG_LAST_BUILD_DATE = "lastBuildDate";
     private static final String TAG_ENCLOSURE = "enclosure";
     private static final String TAG_GUID = "guid";
+    private static final String TAG_ID = "id";
     private static final String TAG_AUTHOR = "author";
     private static final String TAG_CREATOR = "creator";
     private static final String TAG_NAME = "name";
@@ -154,40 +155,38 @@ public class RssAtomParser extends DefaultHandler {
 
     private static final String[][] TIMEZONES_REPLACE = {{"MEST", "+0200"}, {"EST", "-0500"}, {"PST", "-0800"}};
 
-    // These are the time and date formats that should be found in the RSS feed.
-    /*
-    private static final DateFormat[] PUBDATE_DATE_FORMATS = {  // For RSS date time strings
-            new SimpleDateFormat("dd MMM yyyy HH:mm:ss", Locale.US),
-            new SimpleDateFormat("d MMM yyyy HH:mm:ss", Locale.US),
-            new SimpleDateFormat("d' 'MMM' 'yy' 'HH:mm:ss", Locale.US),
-            new SimpleDateFormat("d' 'MMM' 'yy' 'HH:mm:ss' 'Z", Locale.US),
-            new SimpleDateFormat("d' 'MMM' 'yy' 'HH:mm:ss' 'z", Locale.US)};
-    */
-
+    // Create thread safe variable as DateFormat is not thread safe
     private static final ThreadLocal<DateFormat[]> PUBDATE_DATE_FORMATS
             = new ThreadLocal<DateFormat[]>(){
         @Override
         protected DateFormat[] initialValue() {
             return new DateFormat[] {  // For RSS date time strings
-                new SimpleDateFormat("dd MMM yyyy HH:mm:ss", Locale.US),
-                new SimpleDateFormat("d MMM yyyy HH:mm:ss", Locale.US),
-                new SimpleDateFormat("d' 'MMM' 'yy' 'HH:mm:ss", Locale.US),
+                new SimpleDateFormat("dd MMM yyyy HH:mm:ss Z", Locale.US),
+                new SimpleDateFormat("d MMM yyyy HH:mm:ss Z", Locale.US),
                 new SimpleDateFormat("d' 'MMM' 'yy' 'HH:mm:ss' 'Z", Locale.US),
-                new SimpleDateFormat("d' 'MMM' 'yy' 'HH:mm:ss' 'z", Locale.US)};
+                new SimpleDateFormat("d' 'MMM' 'yy' 'HH:mm:ss' 'z", Locale.US),
+                new SimpleDateFormat("d' 'MMM' 'yy' 'HH:mm:ss", Locale.US),
             };
+        }
     };
 
-
-
-
-    private static final DateFormat[] UPDATE_DATE_FORMATS = {   // For ATOM date time strings
-            new SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ss", Locale.US),
-            new SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ssZ", Locale.US),
-            new SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ss.SSSz", Locale.US),
-            new SimpleDateFormat("yyyy-MM-dd", Locale.US)};
+    // Create thread safe variable as DateFormat is not thread safe
+    private static final ThreadLocal<DateFormat[]> UPDATE_DATE_FORMATS
+            = new ThreadLocal<DateFormat[]>(){
+        @Override
+        protected DateFormat[] initialValue() {
+            return new DateFormat[] {   // For ATOM date time strings
+                    new SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ss", Locale.US),
+                    new SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ssZ", Locale.US),
+                    new SimpleDateFormat("yyyy-MM-dd' 'HH:mm:ss.SSSz", Locale.US),
+                    new SimpleDateFormat("yyyy-MM-dd", Locale.US)
+            };
+        }
+    };
 
     private static final int SIX_HOURS = 21600000;
 
+    private final Date mLastUpdateDate;
     private final Date mRealLastUpdateDate;
     private final Date mKeepDateBorderTimeLocal;
     private final String mId;
@@ -195,10 +194,10 @@ public class RssAtomParser extends DefaultHandler {
     private final String mFeedName;
     private final String mFeedBaseUrl;
     private final Date mKeepDateBorder;
-    private final FeedFilters mFilters;
+
     private final ArrayList<ContentProviderOperation> mInserts = new ArrayList<>();
     private final ArrayList<ArrayList<String>> mInsertedEntriesImages = new ArrayList<>();
-    private long mNewRealLastUpdate;
+    private long mNewRealLastUpdateTimeStamp;
     private boolean mEntryTagEntered = false;
     private boolean mTitleTagEntered = false;
     private boolean mUpdatedTagEntered = false;
@@ -213,8 +212,13 @@ public class RssAtomParser extends DefaultHandler {
     private StringBuilder mTitle;
     private StringBuilder mDateStringBuilder;
     private String mFeedLink;
-    private Date mEntryDate;
-    private Date mEntryUpdateDate;
+    private String mItemTitle;
+    private String mItemDescription;
+    private String mItemLink;
+    private String mItemGuid;
+
+    private Date mItemPubDate;
+    private Date mItemUpdateDate;
     private Date mPreviousEntryDate;
     private Date mPreviousEntryUpdateDate;
     private StringBuilder mEntryLink;
@@ -228,7 +232,7 @@ public class RssAtomParser extends DefaultHandler {
     private boolean mCancelled = false;
     private long mNow = System.currentTimeMillis();
     private StringBuilder mGuid;
-    private StringBuilder mAuthor, mTmpAuthor;
+    private StringBuilder mItemAuthor, mTmpAuthor;
 
     private boolean futureDatesAreAllowed = true;   // Allow articles with time and date in the future. Usefull for announcement of events.
 
@@ -236,51 +240,36 @@ public class RssAtomParser extends DefaultHandler {
      * Constructor for the RSS Atom Parser.
      * This is the start of the reading and analyzing of the RSS feed.
      *
-     * @param realLastUpdateTime    Datetime of last succesfull refresh of the feed
+     * @param lastUpdateTime    Datetime of last succesfull refresh of the feed
      * @param keepDateBorderTime    Datetime in the past beyond which the articles are deleted
      * @param id                    The ID of the feed that is to be refreshed
      * @param feedName              The name of the feed that is to be refreshed
      * @param url                   The URL of the feed that is to be refreshed
      * @param retrieveFullText      Should we retrieve the full article or just keep the RSS excerpt?
      */
-    public RssAtomParser(long realLastUpdateTime, long keepDateBorderTime,
+    public RssAtomParser(long lastUpdateTime, long keepDateBorderTime,
                          final String id, String feedName, String url, boolean retrieveFullText) {
 
-        /*
-         * Ik heb van de Date opbject in de method en long gemaakt met Unix TimeStamp,
-         * zodat ik er nog zes uur vanaf kan trekken. Daarna, maak ik er een Date van.
-         * Die zes uur haal ik eraf, zodat een artikel standaard vaker wordt opgehaald.
-         * Het is onzinning om dingen dubbel te doen, maar het is helemaal stom als er artikelen ontbreken.
-         *
-         * Het is nu voorgekomen dat een artikel niet werd opgehaald omdat de redactie een stuk anti-dateerde.
-         * Daardoor stopte de hele feed ermee. Nu wordt er standaadr iets verder teruggekeken.
-         * Als de ververstijd op twee uur staat, wordt een artikel drie keer gecheckt in de AtomParser, omdat er
-         * zes uur voor de laatste update wordt teruggekeken.
-         * Hopelijk glipt er nu niks tussendoor.
-         *
-         *
-         */
-        mRealLastUpdateDate = new Date (realLastUpdateTime  - (long) SIX_HOURS);
-        mNewRealLastUpdate = realLastUpdateTime - (long) SIX_HOURS;
+        // It has occurred that we missed articles when we refreshed the feed. This can be due
+        // to badly configured pubDates in the RSS/ATOM feed. To prevent missing articles, we take
+        // a wide margin of 24 hours before the real last update time.
+        // existing articles get updated if they where published in the last 24 hours.
+        mNewRealLastUpdateTimeStamp = lastUpdateTime - (SIX_HOURS * 4);
+        mLastUpdateDate = new Date (mNewRealLastUpdateTimeStamp);
+        mRealLastUpdateDate = new Date (mNewRealLastUpdateTimeStamp);
+
 
         mId = id;
         mFeedName = feedName;
         mFeedEntriesUri = EntryColumns.ENTRIES_FOR_FEED_CONTENT_URI(id);
         mRetrieveFullText = retrieveFullText;
 
-        // Privacy Vandaag does not use filters
-        mFilters = new FeedFilters(id);
-
         mFeedBaseUrl = NetworkUtils.getBaseUrl(url);
 
-     //   Log.e(TAG, "Start Atom Parser for ~> " + mFeedName);
-     //   Log.e(TAG, "Start Atom Parser for ~> " + mId);
-     //   Log.e(TAG, "Keep Border Time = " + keepDateBorderTime);
-
-
         /* ** Determine beyond what date we should not retrieve articles
-         * For this are two keepborderdates defined. One for all the feeds in the setting and one
-         * per feed. Get the info from database and determin which keepborderdate should be used.
+         * For this there are two keepborderdates defined. One for all the feeds in the preference settings
+         * and one is set per feed and is stored in the database.
+         * Get the info from database and select the most recent keepdate as the one to be used.
         */
         long keepDateBorderTimeLocal = 0;
         // Get the keep time of articles from database. This is defined per feed.
@@ -297,11 +286,12 @@ public class RssAtomParser extends DefaultHandler {
                 long keepTimeLocal = (cursor.getLong(1) == 1) ? (long) (Constants.DURATION_OF_ONE_DAY / 4)
                         : cursor.getLong(1) * Constants.DURATION_OF_ONE_DAY;
                 // If we know the period we should keep the articles, we can calculate what datetime that is from now.
+                // For the Privacy Vandaag feeds the keepTimeLocal is always 0 (meaning keep article indefinitely)
                 keepDateBorderTimeLocal = keepTimeLocal > 0 ? System.currentTimeMillis() - keepTimeLocal : 0;
             }
             cursor.close();
         }
-        // Take most recent keepborderdate. Die bij de feed is ingesteld of de generieke bewaartermijnen volgens de ingestelde voorkeuren
+        // Take most recent keepborderdate. Check if it is the one stored with the feed or the generic preference
         mKeepDateBorderTimeLocal = new Date (keepDateBorderTimeLocal);
         if (keepDateBorderTimeLocal > keepDateBorderTime) {
             mKeepDateBorder = new Date(keepDateBorderTimeLocal);
@@ -346,52 +336,60 @@ public class RssAtomParser extends DefaultHandler {
         // If the tag is "item", initialise a new article item
         else if (TAG_ENTRY.equals(localName) || TAG_ITEM.equals(localName)) {
             mEntryTagEntered = true;
+            // We just entered a new item, so reset all possible item fields
             mDescription = null;
             mEntryLink = null;
+            mItemPubDate = null;
+            mItemUpdateDate = null;
+            mItemTitle = null;
+            mItemDescription = null;
+            mItemLink = null;
+            mItemGuid = null;
+            mItemAuthor = null;
+            mEnclosure = null;
+            mGuid = null;
 
-            // Save some information from the previous item so it can be used if no date-info is found for this entry
-            mPreviousEntryDate = mEntryDate;
-            mPreviousEntryUpdateDate = mEntryUpdateDate;
-            mEntryDate = null;
-            mEntryUpdateDate = null;
 
-            // Get the title of the feed channel from the already retrieved mTitle
+
+            // The first <title> before we encouter <item> has to be the channel title.
             if (mFeedTitle == null && mTitle != null && mTitle.length() > 0) {
                 mFeedTitle = mTitle.toString();
             }
             mTitle = null;
         }
-        // If the tag is "title", get the title and store in mTitle
+        // <title>, notice this tag is used in <channel> as well as in <item>.
         else if (TAG_TITLE.equals(localName)) {
             if (mTitle == null) {
                 mTitleTagEntered = true;
                 mTitle = new StringBuilder();
             }
         }
-        // If the tag is "link", get the link from attributes
+        // <link>, get the link from attributes or directly from tag
         else if (TAG_LINK.equals(localName)) {
-            if (mAuthorTagEntered) {
+            if (mAuthorTagEntered) {    // No link within <author> tag, because it is a link to author.
                 return;
             }
+            // in ATOM <link> can be link of <entry> OR it could be enclosed multimedia, for example:
+            // normal link to entry: <link href="http://www.example.org/entries/1" />
+            // OR link to enclosed multimedia <link rel="enclosure" type="application/x-bittorrent"
+            //             title="BitTorrent" href="http://www.example.org/myaudiofile.torrent" length="1234" />
+            // see for example also: https://www.ibm.com/developerworks/library/x-atom10/
+            // So check if it is in fact enclosed multimedia: <link rel="enclosure" ...
             if (TAG_ENCLOSURE.equals(attributes.getValue("", ATTRIBUTE_REL))) {
+                // if it is, get the value of attribute 'href'.
                 startEnclosure(attributes, attributes.getValue("", ATTRIBUTE_HREF));
-            } else {
-                // Get the link only if we don't have one or if its the good one (html)
+            }
+            // if it is the <link> to <item> or <entry>
+            else {
+                // In ATOM the <link type="text/html" href="..."> can be valid
                 if (mEntryLink == null || HTML_TEXT.equals(attributes.getValue("", ATTRIBUTE_TYPE))) {
+                    mLinkTagEntered = true;
                     mEntryLink = new StringBuilder();
-
-                    boolean foundLink = false;
+                    // Check if we can have a link from href=" ..." attribute
                     String href = attributes.getValue("", ATTRIBUTE_HREF);
-                    if (!TextUtils.isEmpty(href)) {
+                    if ( ! TextUtils.isEmpty(href)) {   // We got a link from href="..."
                         mEntryLink.append(href);
-                        foundLink = true;
-                        mLinkTagEntered = false;
-                    } else {
-                        mLinkTagEntered = true;
-                    }
-
-                    if (!foundLink) {
-                        mLinkTagEntered = true;
+                        mLinkTagEntered = false;    // We are done already, so reset mLinkTagEntered.
                     }
                 }
             }
@@ -425,11 +423,13 @@ public class RssAtomParser extends DefaultHandler {
         else if (TAG_ENCODED_CONTENT.equals(localName)) {
             mDescriptionTagEntered = true;
             mDescription = new StringBuilder();
-        } else if (TAG_ENCLOSURE.equals(localName)) {
+        }
+        // if a link is given like <enclosure url=""> ('url' is an attribute here).
+        else if (TAG_ENCLOSURE.equals(localName)) {
             startEnclosure(attributes, attributes.getValue("", ATTRIBUTE_URL));
         }
-        // tag for the GUID (Globally Unique ID)
-        else if (TAG_GUID.equals(localName)) {
+        // tag for the GUID (RSS, Globally Unique ID) or ID (ATOM)
+        else if (TAG_GUID.equals(localName) || TAG_ID.equals(localName)) {
             mGuidTagEntered = true;
             mGuid = new StringBuilder();
         }
@@ -489,7 +489,7 @@ public class RssAtomParser extends DefaultHandler {
         } else if (mGuidTagEntered) {
             mGuid.append(ch, start, length); // store GUID from the article in mGuid using StringBuilder
         } else if (mAuthorTagEntered) {
-            mTmpAuthor.append(ch, start, length); // store the author from the article in mAuthor using StringBuilder
+            mTmpAuthor.append(ch, start, length); // store the author from the article in mItemAuthor using StringBuilder
         }
     }
 
@@ -509,83 +509,126 @@ public class RssAtomParser extends DefaultHandler {
     public void endElement(String uri, String localName, String qName) throws SAXException {
 
 
-        /** Als de pubDate in de feed in de toekomst ligt, wordt de ophaaltijd gebruikt.
-         *  Maar de datum van evenementen die in het PrivacyVandaag worden aangekondigd,
-         *  wordt weergegeven in de pubDate Tags.
-         *  Er wordt een check hiervoor in parseUpdateDate() gedaan. Die check kan er uit en
-         *  eens kijken wat er dan in de lijst gebeurt.
-         *
-         *  Zie ook ongeveer regel 570 en regel 600.
-         *
-         *  mEntryDate is de pubDate
-         *  mEntryUpdateDate is de datum waarop de laatste update plaatsvond.
-         *  mNow is de huidige systeemtijd.
-         *
-         */
-     //   Log.e(TAG + "~> ", "Einde tag ~> " + localName);
+        // Title
         if (TAG_TITLE.equals(localName)) {
             mTitleTagEntered = false;
-        } else if ((TAG_DESCRIPTION.equals(localName) && !TAG_MEDIA_DESCRIPTION.equals(qName)) || TAG_SUMMARY.equals(localName)
+            if (mEntryTagEntered) { // if we are in an item
+                mItemTitle = (mTitle != null) ? mTitle.toString() : "" ;
+            }
+        }
+        // Description
+        else if ((TAG_DESCRIPTION.equals(localName) && !TAG_MEDIA_DESCRIPTION.equals(qName)) || TAG_SUMMARY.equals(localName)
                 || (TAG_CONTENT.equals(localName) && !TAG_MEDIA_CONTENT.equals(qName)) || TAG_ENCODED_CONTENT.equals(localName)) {
             mDescriptionTagEntered = false;
-        } else if (TAG_LINK.equals(localName)) {
+            if (mEntryTagEntered) { // if we are in an item
+                mItemDescription = (mDescription != null) ? mDescription.toString() : "";
+            }
+        }
+        // Link
+        else if (TAG_LINK.equals(localName)) {
             mLinkTagEntered = false;
             if (mFeedLink == null && !mEntryTagEntered && TAG_LINK.equals(qName)) { // Skip <atom10:link> tags
                 mFeedLink = mEntryLink.toString();  // The first link that is found, is the link from the feed channel
             }
+            if (mEntryTagEntered) { // if we are in an item
+                    mItemLink = (mEntryLink != null) ? mEntryLink.toString() : "";
+            }
+        }
+        else if (TAG_GUID.equals(localName) || TAG_ID.equals(localName)) {
+            mGuidTagEntered = false;
+            if (mEntryTagEntered) { // if we are in an item
+                mItemGuid = (mGuid != null) ?  mGuid.toString() : "";
+            }
+        }
+        // <author> or <dc:author> or <creator> etc. Clean up and handle multiple authors
+        else if (TAG_NAME.equals(localName) || TAG_AUTHOR.equals(localName) || TAG_CREATOR.equals(localName)) {
+            mAuthorTagEntered = false;
+            if (mEntryTagEntered) { // if we are in an item
+                if (mTmpAuthor != null && mTmpAuthor.indexOf("@") == -1) { // skip email address as author
+                    if (mItemAuthor == null) {
+                        mItemAuthor = new StringBuilder(mTmpAuthor);
+                    } else { // this indicates multiple authors
+                        boolean found = false;
+                        for (String previousAuthor : mItemAuthor.toString().split(",")) {
+                            if (previousAuthor.equals(mTmpAuthor.toString())) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            mItemAuthor.append(Constants.COMMA_SPACE);
+                            mItemAuthor.append(mTmpAuthor);
+                        }
+                    }
+                }
+            }
+            mTmpAuthor = null;
         }
 
-        /* endtag of time and date information
-        // clean the time and date information before it is stored using the parse....Date() family
 
-        Let's figure out what the datetime of the item is. We try to read several values for this
-        and after that take the best suited value.
-        */
-        // If used, the update tag is of course the date time of latest update of the item.
+        // *** Date and time tags
+
+        // <updated>, ATOM tag for publication date time of item.
         else if (TAG_UPDATED.equals(localName)) {
-            mEntryUpdateDate = parseUpdateDate(mDateStringBuilder.toString());
+            if (mEntryTagEntered) { // Check we are in an item
+                mItemUpdateDate = parseUpdateDate(mDateStringBuilder.toString());
+            }
             mUpdatedTagEntered = false;
         }
-        // This is the ONLY tag officially allowed with an <item>
-        // This value should be considered first at all times as an entry datetime!
+        // <pubDate>, RSS tag for publication date time of item.
         else if (TAG_PUBDATE.equals(localName)) {
-            mEntryDate = parsePubdateDate(mDateStringBuilder.toString());
+            if (mEntryTagEntered) {  // Check we are in an item
+                mItemPubDate = parsePubdateDate(mDateStringBuilder.toString());
+            }
             mPubDateTagEntered = false;
         }
         // These are fallback datetimes if pubdate is not available.
         // But they are not allowed with <item> so, is it wise to use this at all?
         // Privacy Vandaag does not use them, since it can only produce errors.
+        // <published>, not an official tag. Ignore.
         else if (TAG_PUBLISHED.equals(localName)) {
-            //mEntryDate = parsePubdateDate(mDateStringBuilder.toString());
+            //mItemPubDate = parsePubdateDate(mDateStringBuilder.toString());
             mPublishedTagEntered = false;
-        } else if (TAG_LAST_BUILD_DATE.equals(localName)) { // This fails as fallback. Is build datetime of whole channel
-           // mEntryDate = parsePubdateDate(mDateStringBuilder.toString());
+        }
+        // <lastBuildDate>, last build date of feed channel. Ignore.
+        else if (TAG_LAST_BUILD_DATE.equals(localName)) { // This fails as fallback. Is build datetime of whole channel
+           // mItemPubDate = parsePubdateDate(mDateStringBuilder.toString());
             mLastBuildDateTagEntered = false;
-        } else if (TAG_DATE.equals(localName)) {
-            // mEntryDate = parseUpdateDate(mDateStringBuilder.toString());
+        }
+        // <date>, not an official tag. Ignore.
+        else if (TAG_DATE.equals(localName)) {
+            // mItemPubDate = parseUpdateDate(mDateStringBuilder.toString());
             mDateTagEntered = false;
         }
 
 
-        // ****  endtag of "item", so all the information of one item is read.
-        // It can be analysed and stored in database
+
+
+
+
+
+        // ****  endtag of <item> (RSS) or <entry> (ATOM), so all the information of one item should be available.
+        // We should have the following items
+        // mItemTitle
+        // mItemDescription
+        // mItemLink
+        // mItemGuid
+        // mItemAuthor (still as StringBuilder)
+        // mItemUpdateDate in an ATOM feed
+        // OR mItemPubDate in an RSS feed
+
+        // Let's analyse and see if it is to be stored in database
         else if (TAG_ENTRY.equals(localName) || TAG_ITEM.equals(localName)) {
             mEntryTagEntered = false;   // reset the boolean that an item is being read.
-            boolean updateOnly = false;
 
-            // Handle the datetime of the item
-            // If it is an existing entry with an update, do not insert, but update the existing item
-            if (mEntryUpdateDate != null && mEntryDate != null && (mEntryDate.before(mRealLastUpdateDate) || mEntryDate.before(mKeepDateBorder))) {
-                updateOnly = true;
-                if (mEntryUpdateDate.after(mEntryDate)) {
-                    mEntryDate = mEntryUpdateDate;
-                }
-            }
-            // If pubDate is empty, but an update datetime of the item is given, use that one.
-            else if (mEntryDate == null && mEntryUpdateDate != null) {
-                mEntryDate = mEntryUpdateDate;
-            }
+            //Log.e(TAG, "Let's analyze this item from " + mFeedName);
+            //Log.e(TAG, "Item is " + mItemTitle);
+            //Log.e(TAG, "Item mItemPubDate " + mItemPubDate);
 
+            // If it is an ATOM feed, put the date time in mItemPubDate cause they mean the same
+            if ((mItemUpdateDate != null) && (mItemPubDate == null)) {
+                mItemPubDate = mItemUpdateDate;
+            }
 
             // If we are sure a new item is read and the item is no older than the set mKeepDateBorder,
             // start cleaning it up and store it in the database
@@ -594,50 +637,53 @@ public class RssAtomParser extends DefaultHandler {
             // the process is cancelled. All the items that follow are discarded,
             // basically because they are already retrieved in the previous refresh of the feed
             // or they are too old.
-            //  Orig: if (mTitle != null && (mEntryDate == null || (mEntryDate.after(mRealLastUpdateDate) && mEntryDate.after(mKeepDateBorder)))) {
+            //  Orig: if (mTitle != null && (mItemPubDate == null || (mItemPubDate.after(mRealLastUpdateDate) && mItemPubDate.after(mKeepDateBorder)))) {
 
             // Check if we have a title and datetime. If not, go to next item.
-            if (mTitle != null && mEntryDate != null) {
-                // Check if we are still after the last refresh datetime and afte the keep datetime.
+            if (mTitle != null && (mTitle.length() > 0) && mItemPubDate != null) {
+                // Check if we are still after (the last refresh datetime - 24 hours) && (after the keep datetime).
                 // If not, cancel reading the reamining items as they are (usually) older.
-                if (mEntryDate.after(mRealLastUpdateDate) && mEntryDate.after(mKeepDateBorder)) {
+                if (mItemPubDate.after(mLastUpdateDate) && mItemPubDate.after(mKeepDateBorder)) {
 
-                // Start met het analyseren en opschonen van het item om het eventueel in de database te stoppen.
-                    ContentValues values = new ContentValues();
-                    // mNewRealLastUpdate is the time and date of previous update of the feedchannel
-                    if (mEntryDate != null && mEntryDate.getTime() > mNewRealLastUpdate) {
-                        mNewRealLastUpdate = mEntryDate.getTime();
+                    /* What is the meaning of RealLastUpdate??? It is never used anywhere .
+                    // mNewRealLastUpdateTimeStamp is the time and date of previous update of the feedchannel
+                    // mItemPubDate.getTime() returns the unix timestamp in milliseconds.
+                    if (mItemPubDate.getTime() > mNewRealLastUpdateTimeStamp) {
+                        mNewRealLastUpdateTimeStamp = mItemPubDate.getTime();    // Update lastUpdate time to at least last retrieved item
                     }
+                    */
 
-                    String improvedTitle = unescapeTitle(mTitle.toString().trim());
-                    values.put(EntryColumns.TITLE, improvedTitle);
+                    // Start analyzing and cleaning of item info.
+                    ContentValues values = new ContentValues();
 
-                    String improvedContent = null;
+                    mItemTitle = unescapeTitle(mItemTitle.trim());
+                    values.put(EntryColumns.TITLE, mItemTitle);
+
                     String mainImageUrl = null;
                     ArrayList<String> imagesUrls = null;
                     if (mDescription != null) {
                         // Improve the description
-                        improvedContent = HtmlUtils.improveHtmlContent(mDescription.toString(), mFeedBaseUrl);
+                        mItemDescription = HtmlUtils.improveHtmlContent(mItemDescription, mFeedBaseUrl);
                         if (mFetchImages) {
-                            imagesUrls = HtmlUtils.getImageURLs(improvedContent);
+                            imagesUrls = HtmlUtils.getImageURLs(mItemDescription);
                             if (!imagesUrls.isEmpty()) {
                                 mainImageUrl = HtmlUtils.getMainImageURL(imagesUrls);
                             }
                         } else {
-                            mainImageUrl = HtmlUtils.getMainImageURL(improvedContent);
+                            mainImageUrl = HtmlUtils.getMainImageURL(mItemDescription);
                         }
 
-                        if (improvedContent != null) {
+                        if (mItemDescription != null) {
                             if ( ! (mFeedName.contains(SERVICE_CHANNEL_FEEDNAME))) {
                                 // No additions to the content if it is the channel with service messages.
 
                                 // As long as we display the short description of the article, add a read-further notice
-                                improvedContent += ADD_READ_MORE_START;
-                                if (mAuthor != null)
-                                    improvedContent += ADD_READ_MORE_MIDDLE + mAuthor.toString();
-                                improvedContent += ADD_READ_MORE_END;
+                                mItemDescription += ADD_READ_MORE_START;
+                                if (mItemAuthor != null)
+                                    mItemDescription += ADD_READ_MORE_MIDDLE + mItemAuthor.toString();
+                                mItemDescription += ADD_READ_MORE_END;
                             }
-                            values.put(EntryColumns.ABSTRACT, improvedContent);
+                            values.put(EntryColumns.ABSTRACT, mItemDescription);
                         }
                     }
 
@@ -645,75 +691,86 @@ public class RssAtomParser extends DefaultHandler {
                         values.put(EntryColumns.IMAGE_URL, mainImageUrl);
                     }
 
-                    // Check the item with the filters. If the entry is not filtered out, it needs to be processed further before
-                    // it is stored in the database.  The filtering can only be done here,
-                    // because the filters look at the title and contents, so that needs to be available.
-                    if (!mFilters.isEntryFiltered(improvedTitle, improvedContent)) {
-                    //    Log.e(TAG, "Het item wordt niet uitgefilterd, dus we gaan door.");
-                        if (mAuthor != null) {
-                            values.put(EntryColumns.AUTHOR, mAuthor.toString());
-                      //      Log.e(TAG, "auteur = " + mAuthor);
-                        } else {    // Als er geen auteur is opgegeven, nemen we de naam van de Feed Channel
-                            if (mFeedTitle != null) {
-                                if (mFeedTitle.contains("RSS-feed")) { // Fix for RSS title Autoriteit Persoonsgegevens to be used as Author
-                                    mFeedTitle = mFeedTitle.substring(9);
-                                }
-                                values.put(EntryColumns.AUTHOR, mFeedTitle);
+                    if (mItemAuthor != null) {
+                        values.put(EntryColumns.AUTHOR, mItemAuthor.toString());
+                    } else {    // Als er geen auteur is opgegeven, nemen we de naam van de Feed Channel
+                        if (mFeedTitle != null) {
+                            if (mFeedTitle.contains("RSS-feed")) { // Fix for RSS title Autoriteit Persoonsgegevens to be used as Author
+                                mFeedTitle = mFeedTitle.substring(9);
+                            }
+                            values.put(EntryColumns.AUTHOR, mFeedTitle);
+                        }
+                    }
+
+                    // Handle the multimedia enclosures, if included in the item
+                    String enclosureString = null;
+
+                    if (mEnclosure != null && mEnclosure.length() > 0) {
+                        enclosureString = mEnclosure.toString();
+                        values.put(EntryColumns.ENCLOSURE, enclosureString);
+                    }
+
+                    // Handle the GUID.
+                    if (mItemGuid != null && mItemGuid.length() > 0) {
+                        values.put(EntryColumns.GUID, mItemGuid);
+                    }
+
+                    // Handle the link to the item on the web if available
+                    if (mItemLink != null && mItemLink.length() > 0) {
+                        mItemLink = mItemLink.trim();
+                        // Check if complete url. If not, add the mFeedBaseUrl to it.
+                        if (mFeedBaseUrl != null &&  ! mItemLink.startsWith(Constants.HTTP_SCHEME)
+                                &&  ! mItemLink.startsWith(Constants.HTTPS_SCHEME)) {
+                            if (mItemLink.startsWith(Constants.SLASH)) {
+                                mItemLink = mFeedBaseUrl + mItemLink;
+                            } else {
+                                mItemLink = mFeedBaseUrl + Constants.SLASH + mItemLink;
                             }
                         }
+                    }
 
-                        // Handle the multimedia enclosures, if included in the item
-                        String enclosureString = null;
-                        StringBuilder existenceStringBuilder = new StringBuilder(EntryColumns.LINK).append(Constants.DB_ARG);
-                        if (mEnclosure != null && mEnclosure.length() > 0) {
-                            enclosureString = mEnclosure.toString();
-                            values.put(EntryColumns.ENCLOSURE, enclosureString);
-                            existenceStringBuilder.append(Constants.DB_AND).append(EntryColumns.ENCLOSURE).append(Constants.DB_ARG);
-                        }
+                    // Build selection arguments to query database if item already exists
+                    // and if we should update instead of insert.
+                    StringBuilder existenceStringBuilder;   // Which columns to check if exists
+                    String[] existenceValues;   // with which values
+                    if (mItemGuid != null) {    // Use the guid as unique identifier
+                        existenceStringBuilder = new StringBuilder(EntryColumns.GUID).append(Constants.DB_ARG);
+                        existenceValues = new String[]{mItemGuid};
+                    } else {    // If no guid is given, use the link
+                        existenceStringBuilder = new StringBuilder(EntryColumns.LINK).append(Constants.DB_ARG);
+                        existenceValues = new String[]{mItemLink};
+                    }
 
-                        // Handle the GUID.
-                        String guidString = null;
-                        if (mGuid != null && mGuid.length() > 0) {
-                            guidString = mGuid.toString();
-                            values.put(EntryColumns.GUID, guidString);
-                            existenceStringBuilder.append(Constants.DB_AND).append(EntryColumns.GUID).append(Constants.DB_ARG);
-                        }
 
-                        // Handle the link to the item on the web if available
-                        String entryLinkString = ""; // don't set this to null as we need *some* value
-                        if (mEntryLink != null && mEntryLink.length() > 0) {
-                            entryLinkString = mEntryLink.toString().trim();
-                            //    Log.e(TAG, "link to website = " + entryLinkString);
-                            if (mFeedBaseUrl != null && !entryLinkString.startsWith(Constants.HTTP_SCHEME) && !entryLinkString.startsWith(Constants.HTTPS_SCHEME)) {
-                                entryLinkString = mFeedBaseUrl
-                                        + (entryLinkString.startsWith(Constants.SLASH) ? entryLinkString : Constants.SLASH + entryLinkString);
-                            }
-                        }
+                    //* For Debugging
+                    /*
+                    int k=0;
+                    for (String s : existenceValues) {
+                        Log.e(TAG, "value " + k + " = " + s);
+                        k++;
+                    }
+                    */
 
-                        // Build selection arguments to query database if item already exists and we should update instead of insert.
-                        String[] existenceValues = enclosureString != null ? (guidString != null ? new String[]{entryLinkString, enclosureString,
-                                guidString} : new String[]{entryLinkString, enclosureString}) : (guidString != null ? new String[]{entryLinkString,
-                                guidString} : new String[]{entryLinkString});
+                    // First, try to update the feed. cr.update returns number of rows updated
+                    ContentResolver cr = MainApplication.getContext().getContentResolver();
+                    boolean isUpdated = false;
+                    if ((mItemGuid != null) || (mItemLink != null)) {
+                        isUpdated = (cr.update(mFeedEntriesUri, values, existenceStringBuilder.toString(), existenceValues) > 0 );
+                        // Log.e(TAG, "Item " + mItemTitle + " is updated.");
+                    }
+                    // Insert it only if necessary
+                    if ( ! isUpdated ) {
+                        values.put(EntryColumns.DATE, mItemPubDate.getTime());
+                        values.put(EntryColumns.LINK, mItemLink);
+                        mInsertedEntriesImages.add(imagesUrls);
+                        mInserts.add(ContentProviderOperation.newInsert(mFeedEntriesUri).withValues(values).build());
+                        mNewCount++;
+                        // Log.e(TAG, "Item " + mItemTitle + " is inserted.");
+                    }
 
-                        // First, try to update the feed
-                        ContentResolver cr = MainApplication.getContext().getContentResolver();
-                        boolean isUpdated = (!entryLinkString.isEmpty() || guidString != null)
-                                && cr.update(mFeedEntriesUri, values, existenceStringBuilder.toString(), existenceValues) != 0;
-
-                        // Insert it only if necessary
-                        if ( ! isUpdated &&  ! updateOnly) {
-                            values.put(EntryColumns.DATE, mEntryDate.getTime());
-                            values.put(EntryColumns.LINK, entryLinkString);
-                            mInsertedEntriesImages.add(imagesUrls);
-                            mInserts.add(ContentProviderOperation.newInsert(mFeedEntriesUri).withValues(values).build());
-                            mNewCount++;
-                        }
-
-                    } // end if the item is not filtered out by the filter settings
-                      // else { Log.e(TAG, "item got filtered out"); }
                 } // end if a new item is read that should be stored in the database, else cancel the parsing
+                // We reached already known items, so cancel parsing the feed.
                 else {
-                    // We reached already known items, so cancel parsing the feed.
                     cancel();
                 }
             }
@@ -722,35 +779,16 @@ public class RssAtomParser extends DefaultHandler {
             mTitle = null;
             mEnclosure = null;
             mGuid = null;
-            mAuthor = null;
+            mItemAuthor = null;
+            mItemTitle = null;
+            mItemDescription = null;
+            mItemLink = null;
+            mItemGuid = null;
+            mItemUpdateDate  = null;
+            mItemPubDate  = null;
         }   // End checking and possible storing in database of an item in between the <item> tags.
         else if (TAG_RSS.equals(localName) || TAG_RDF.equals(localName) || TAG_FEED.equals(localName)) {
             mDone = true;   // End of RRS document. The PARSER will call the method endDocument();
-        } else if (TAG_GUID.equals(localName)) {
-            mGuidTagEntered = false;
-        }
-        // endtag for author. Clean up and handle multiple authors
-        else if (TAG_NAME.equals(localName) || TAG_AUTHOR.equals(localName) || TAG_CREATOR.equals(localName)) {
-            mAuthorTagEntered = false;
-
-            if (mTmpAuthor != null && mTmpAuthor.indexOf("@") == -1) { // no email
-                if (mAuthor == null) {
-                    mAuthor = new StringBuilder(mTmpAuthor);
-                } else { // this indicates multiple authors
-                    boolean found = false;
-                    for (String previousAuthor : mAuthor.toString().split(",")) {
-                        if (previousAuthor.equals(mTmpAuthor.toString())) {
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found) {
-                        mAuthor.append(Constants.COMMA_SPACE);
-                        mAuthor.append(mTmpAuthor);
-                    }
-                }
-            }
-            mTmpAuthor = null;
         }
     }
     // end of method endElement();
@@ -816,8 +854,8 @@ public class RssAtomParser extends DefaultHandler {
      * @return
      */
     private Date parseUpdateDate(String dateStr, boolean tryAllFormat) {
-        // Walk through all possible time and date formats in the RSS feed and try for a match.
-        for (DateFormat format : UPDATE_DATE_FORMATS) {
+        // Loop through all possible time and date formats in the RSS feed and try for a match.
+        for (DateFormat format : UPDATE_DATE_FORMATS.get()) {
             try {
                 if ( ! futureDatesAreAllowed) {
                     Date result = format.parse(dateStr);
@@ -844,7 +882,6 @@ public class RssAtomParser extends DefaultHandler {
      * @return
      */
     private Date parsePubdateDate(String dateStr) {
-
         // first, the day of the week is removed from the string, because not necessary.
         // also some unusual formatting is removed or replaced.
         dateStr = improveDateString(dateStr);
@@ -858,12 +895,12 @@ public class RssAtomParser extends DefaultHandler {
     /**
      * Parse date time for date time string with RSS specifications.
      *
-     * @param dateStr = String mEntryDate = String pubDate
+     * @param dateStr = String mItemPubDate = String pubDate
      * @param tryAllFormat
      * @return
      */
     private Date parsePubdateDate(String dateStr, boolean tryAllFormat) {
-        // Iterate through all possible time and date formats in the RSS feed and try for a match.
+        // Loop through all possible time and date formats in the RSS feed and try for a match.
         for (DateFormat format : PUBDATE_DATE_FORMATS.get()) {
             try {
                 // If we do not allow pubDate being in the future. mNow is current system time of the device
@@ -994,79 +1031,11 @@ public class RssAtomParser extends DefaultHandler {
         }
         values.putNull(FeedColumns.ERROR);
         values.put(FeedColumns.LAST_UPDATE, System.currentTimeMillis() - 3000); // by precaution to not miss some feeds
-        values.put(FeedData.FeedColumns.REAL_LAST_UPDATE, mNewRealLastUpdate);
+        // values.put(FeedColumns.REAL_LAST_UPDATE, mNewRealLastUpdateTimeStamp);
         cr.update(FeedColumns.CONTENT_URI(mId), values, null, null);
       //  Log.e(TAG, "endDocument. We zijn klaar met het parsen van deze RSS feed.");
 
         super.endDocument();
     }
 
-
-    /************
-     *
-     * Performing the filtering of feeds if filters are set.
-     *
-     */
-    private class FeedFilters {
-
-        private final ArrayList<Rule> mFilters = new ArrayList<>();
-
-        public FeedFilters(String feedId) {
-            ContentResolver cr = MainApplication.getContext().getContentResolver();
-            Cursor c = cr.query(FilterColumns.FILTERS_FOR_FEED_CONTENT_URI(feedId), new String[]{FilterColumns.FILTER_TEXT, FilterColumns.IS_REGEX,
-                    FilterColumns.IS_APPLIED_TO_TITLE, FilterColumns.IS_ACCEPT_RULE}, null, null, null);
-            while (c.moveToNext()) {
-                Rule r = new Rule();
-                r.filterText = c.getString(0);
-                r.isRegex = c.getInt(1) == 1;
-                r.isAppliedToTitle = c.getInt(2) == 1;
-                r.isAcceptRule = c.getInt(3) == 1;
-                mFilters.add(r);
-            }
-            c.close();
-
-        }
-
-        public boolean isEntryFiltered(String title, String content) {
-
-            boolean isFiltered = false;
-
-            for (Rule r : mFilters) {
-
-                boolean isMatch = false;
-                if (r.isRegex) {
-                    Pattern p = Pattern.compile(r.filterText);
-                    if (r.isAppliedToTitle) {
-                        Matcher m = p.matcher(title);
-                        isMatch = m.find();
-                    } else if (content != null) {
-                        Matcher m = p.matcher(content);
-                        isMatch = m.find();
-                    }
-                } else if ((r.isAppliedToTitle && title.contains(r.filterText)) || (!r.isAppliedToTitle && content != null && content.contains(r.filterText))) {
-                    isMatch = true;
-                }
-
-                if (r.isAcceptRule) {
-                    if (isMatch) {
-                        // accept rules override reject rules, the rest of the rules must be ignored
-                        isFiltered = false;
-                        break;
-                    }
-                } else if (isMatch) {
-                    isFiltered = true;
-                    // no break, there might be an accept rule later
-                }
-            }
-
-            return isFiltered;
-        }
-
-        private class Rule {
-            public String filterText;
-            public boolean isRegex;
-            public boolean isAppliedToTitle;
-            public boolean isAcceptRule;
-        }
-    }
 }

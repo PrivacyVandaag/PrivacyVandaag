@@ -39,135 +39,72 @@ import java.util.Locale;
 import java.util.TimeZone;
 
 /**
- * Hulpmiddelen om datumtijd conversies te doen voor weergave in de app.
- * Wordt aangeroepen vanuit
- *  > adapter > EntriesCursorAdapter.java en
+ * Util for date time conversions and formatting.
+ * Is used in
+ *  > adapter > EntriesCursorAdapter.java and
  *  > adapter > DrawerAdapter.java
  *
- * Daarnaast nog MD5 berekening voor netwerk-operaties.
+ * At the end, a MD5 calculating method for network operations (filenames).
  *
  */
 
-
-@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class StringUtils {
-
     private static final DateFormat TIME_FORMAT = android.text.format.DateFormat.getTimeFormat(MainApplication.getContext());
+    private static final DateFormat DATE_FORMAT = new SimpleDateFormat("EE d MMMM", DeprecateUtils.locale(MainApplication.getContext()));
     private static final int SIX_HOURS = 21600000; // six hours in milliseconds
-    private static DateFormat DATE_SHORT_FORMAT = null;
-
-    private static final SimpleDateFormat DAY_OF_THE_WEEK_FORMAT = new SimpleDateFormat("E", Locale.ROOT);
-    private static final SimpleDateFormat MONTH_FORMAT = new SimpleDateFormat("M", Locale.ROOT);
-//    private static final SimpleDateFormat DAY_OF_THE_MONTH_FORMAT = new SimpleDateFormat("d", Locale.ROOT);
-    private static final SimpleDateFormat DAY_OF_THE_MONTH_FORMAT = new SimpleDateFormat("d", MainApplication.getContext().getResources().getConfiguration().locale);
-    //private static final String[] DAG = { "Zaterdag", "Zondag", "Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag"} ;
-    private static final String[] DAG_KORT = { "", "Zo", "Ma", "Di", "Wo", "Do", "Vr", "Za" };
-    private static final String[] MAAND_KORT = { "" , "jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec"} ;
-
-    private static final TimeZone TIME_ZONE = TimeZone.getTimeZone("CET");
-
-
-    static {
-        // getBestTimePattern() is only available in API 18 and up (Android 4.3 and better)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            DATE_SHORT_FORMAT = new SimpleDateFormat(android.text.format.DateFormat.getBestDateTimePattern(MainApplication.getContext().getResources().getConfiguration().locale, "EE d MMMM"));
-        }
-        /*
-        else {  // niet gebruikt
-            DATE_SHORT_FORMAT = android.text.format.DateFormat.getDateFormat(MainApplication.getContext());
-        }
-        */
-    }
 
     /**
-     * Simpele mooie weergave van datum tijd voor gebruik in de leftdrawer
-     *
-     * @param timestamp long met de timestamp van het item in UNIX milliseconden
-     * @return String: simpel maar mooi vormgegeven tijdsaanduiding
+     * Date and time formatting for left drawer
+     * @param timestamp of the article in UTC in UNIX milliseconds
      */
     static public String getDateTimeStringSimple(long timestamp) {
-        String outString;
-
         Date date = new Date(timestamp);
-        Calendar calTimestamp = Calendar.getInstance();
-        calTimestamp.setTimeInMillis(timestamp);
-        Calendar calCurrent = Calendar.getInstance();
-
+        long now = System.currentTimeMillis();  // Current time in UTC
         // Give full date for timedates more than six hours in past or future
-        if ((calCurrent.getTimeInMillis() - timestamp < SIX_HOURS) && (calCurrent.getTimeInMillis() - timestamp > 0)) {
-            outString = TIME_FORMAT.format(date);
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
-            outString = DATE_SHORT_FORMAT.format(date) + Constants.SPACE + TIME_FORMAT.format(date);
+        if ((timestamp > now - SIX_HOURS) && (timestamp < now + SIX_HOURS)) {
+            return TIME_FORMAT.format(date);
         } else {
-            String maand = "";
-            int maandVanHetJaar =Integer.valueOf (MONTH_FORMAT.format(date));
-            if (maandVanHetJaar <13) maand = MAAND_KORT[maandVanHetJaar];
-            outString = DAY_OF_THE_MONTH_FORMAT.format(date) + Constants.SPACE + maand + Constants.COMMA_SPACE + TIME_FORMAT.format(date);
+            return (DATE_FORMAT.format(date) + Constants.SPACE + TIME_FORMAT.format(date));
         }
-
-        return outString;
     }
 
     /**
-     * Uitgebreidere functie om een mooie datum tijd weer te geven in de EntryList.
-     * Er wordt ook gekeken of het gisteren, vandaag of morgen is.
-     *
-     * Hier wordt ook rekening gehouden met het tijdsverschil met GMT en zomertijd (daylight saving time) etc.
-     *
-     * @param timestamp
-     * @param yesterdayMidnight
-     * @param lastMidnight
-     * @param comingMidnight
-     * @param tomorrowMidnight
-     * @return String: Uitgebreide mooi vormgegeven tijdsaanduiding
+     * Date and time formatting for EntryList.
      */
     static public String getDateTimeString(long timestamp, long yesterdayMidnight, long lastMidnight, long comingMidnight, long tomorrowMidnight) {
-        String datumString;
-        int offSet = TIME_ZONE.getOffset(timestamp);
-        Date date = new Date(timestamp + offSet);
+        String dateString;
+        Date date = new Date(timestamp);
 
-        // Is het gisteren, vandaag of morgen?
-        if (timestamp > yesterdayMidnight && timestamp < tomorrowMidnight) {// Het is gisteren, vandaag of morgen
-            if (timestamp < lastMidnight) {
-                datumString = MainApplication.getContext().getString(R.string.gisteren);
-            } else if (timestamp < comingMidnight) {
-                datumString = MainApplication.getContext().getString(R.string.vandaag);
-            } else datumString = MainApplication.getContext().getString(R.string.morgen);
+        // Is it yesterday, today or tomorrow?
+        if (timestamp > yesterdayMidnight && timestamp < tomorrowMidnight) {
+            if (timestamp < lastMidnight) { // It is yesterday
+                dateString = MainApplication.getContext().getString(R.string.gisteren);
+            } else if (timestamp < comingMidnight) {    // It is today
+                dateString = MainApplication.getContext().getString(R.string.vandaag);
+            } else {    // It is tomorrow
+                dateString = MainApplication.getContext().getString(R.string.morgen);
+            }
+            return (dateString + Constants.COMMA_SPACE + TIME_FORMAT.format(date));
+        } else {    // Use normal date time format.
+            if (timestamp > lastMidnight - (5 * Constants.DURATION_OF_ONE_DAY)) {   // It is past couple of days, include time.
+                return DATE_FORMAT.format(date) + Constants.COMMA_SPACE + TIME_FORMAT.format(date);
+            } else {    // It is too long ago. Exact time is not really relevant here.
+                return DATE_FORMAT.format(date);
+            }
         }
-        // Geef de gewone dag aanduiding.
-        else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {  // Vanaf API 18 ben je dan in een keer klaar
-            return (DATE_SHORT_FORMAT.format(date) + Constants.SPACE + TIME_FORMAT.format(date));
-        }
-        // Geef de gewone dag aanduiding voor oudere API's
-        else {
-            String dag = "";
-            String maand = "";
-            int dagVanDeWeek =Integer.valueOf (DAY_OF_THE_WEEK_FORMAT.format(date));
-            int maandVanHetJaar =Integer.valueOf (MONTH_FORMAT.format(date));
-
-            if (dagVanDeWeek<8) dag = DAG_KORT[dagVanDeWeek];
-            if (maandVanHetJaar <13) maand = MAAND_KORT[maandVanHetJaar];
-            datumString = dag + Constants.SPACE + DAY_OF_THE_MONTH_FORMAT.format(date) + Constants.SPACE + maand;
-        }
-        // Voeg de tijd toe
-        return (datumString + Constants.COMMA_SPACE + TIME_FORMAT.format(date));
     }
 
 
     /**
-     * Bepaal aan de hand van de huidige tijd wanneer het de laatste keer middernacht was.
-     * Handig om te bepalen of een artikel / evenement gisteren, vandaag of morgen is.
-     *
-     * LET OP! Dit is al lokale tijd, dus hoeft niet te worden aangepast!
-     *
+     * Get last midnight. This is useful to determine what is today or what was yesterday.
      * @return long: timestamp van de laatste middernacht (00.00 uur)
      */
     public static long getLastMidnight() {
-        Calendar mMidnight = Calendar.getInstance();
-        mMidnight.set(Calendar.HOUR_OF_DAY, 0);
+        Calendar mMidnight = Calendar.getInstance();    // Get 'now'
+        mMidnight.set(Calendar.HOUR_OF_DAY, 0); // Set hours, minutes and seconds to 0.
         mMidnight.set(Calendar.MINUTE, 0);
         mMidnight.set(Calendar.SECOND, 0);
-        return mMidnight.getTimeInMillis();
+        return mMidnight.getTimeInMillis(); // and we have the timestamp of last midnight.
     }
 
 

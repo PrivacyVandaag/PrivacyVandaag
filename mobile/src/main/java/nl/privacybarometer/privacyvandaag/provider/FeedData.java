@@ -123,8 +123,8 @@ public class FeedData {
         public static final String NOTIFY = "notify";
         public static final String IS_GROUP = "isgroup";
         public static final String GROUP_ID = "groupid";
-        public static final String LAST_UPDATE = "lastupdate";
-        public static final String REAL_LAST_UPDATE = "reallastupdate";
+        public static final String LAST_UPDATE = "lastupdate"; // Used to display status of feed in left drawer
+        public static final String REAL_LAST_UPDATE = "reallastupdate"; // Used as a selector in refreshing feeds
         public static final String RETRIEVE_FULLTEXT = "retrievefulltext";
         public static final String ICON = "icon";   // name of the icon file in the res/drawable folder.
         public static final String ERROR = "error";

@@ -587,7 +587,8 @@ public class FetcherService extends IntentService {
             int idPosition = cursor.getColumnIndex(FeedColumns._ID);
             int titlePosition = cursor.getColumnIndex(FeedColumns.NAME);
             int fetchModePosition = cursor.getColumnIndex(FeedColumns.FETCH_MODE);
-            int realLastUpdatePosition = cursor.getColumnIndex(FeedColumns.REAL_LAST_UPDATE);
+            int lastUpdatePosition = cursor.getColumnIndex(FeedColumns.LAST_UPDATE);
+            // int realLastUpdatePosition = cursor.getColumnIndex(FeedColumns.REAL_LAST_UPDATE);
             int iconPosition = cursor.getColumnIndex(FeedColumns.ICON); // Only used if favicons from the website are retrieved
             int retrieveFullscreenPosition = cursor.getColumnIndex(FeedColumns.RETRIEVE_FULLTEXT);
             int buildNotificationPosition = cursor.getColumnIndex(FeedColumns.NOTIFY);
@@ -612,7 +613,8 @@ public class FetcherService extends IntentService {
                 // Check if it is the first time a feed is read. If that's the case, do not
                 // get all articles from the past, but just the articles from the past period
                 // according to the DEFAULT_FETCH_OLD_NEWS_TIME (in days) setting
-                long lastRetrieveTime = cursor.getLong(realLastUpdatePosition);
+                //long lastRetrieveTime = cursor.getLong(realLastUpdatePosition);
+                long lastRetrieveTime = cursor.getLong(lastUpdatePosition);
               //  Log.e(TAG, "lastRetrieveTime = " + lastRetrieveTime);
                 if (lastRetrieveTime == 0) {    // Updating for the first time, so set a fictional lastRetrieveTime.
                     lastRetrieveTime = System.currentTimeMillis() - (Long.parseLong(DEFAULT_FETCH_OLD_NEWS_TIME) * Constants.DURATION_OF_ONE_DAY);

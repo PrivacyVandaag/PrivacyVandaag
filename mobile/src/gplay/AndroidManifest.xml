@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="nl.privacybarometer.privacyvandaag"
+          xmlns:tools="http://schemas.android.com/tools"
+          android:installLocation="auto">
+
+    <!-- By removing the backup facility, this permission is still needed (only) for update process
+        As of api 19 (android 4.4 kitkat) apps get their own storage folder, so the general permission is no longer needed.
+	 This is only needed when distributing outside Gplay store -->
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="18" 
+        tools:node="remove" />
+
+</manifest>
