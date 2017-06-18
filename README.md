@@ -50,4 +50,4 @@ Do you want to adapt this app to follow some interesting feeds of your own? Chec
 * In /res/drawable-xhdpi/ most of the icons are located. You can add or replace them by your own. 
 
 
-Privacy Vandaag is a fork from [spaRSS](https://github.com/Etuldan/spaRSS)
+Privacy Vandaag is a fork from [spaRSS](https://github.com/Etuldan/spaRSS) 
