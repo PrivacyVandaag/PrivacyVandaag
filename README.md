@@ -37,7 +37,7 @@ If you have any idea to improve Privacy Vandaag, feel free to add it [here](http
 
 ## Links
 GitHub project: https://github.com/PrivacyVandaag/PrivacyVandaag.
-The app is currently in beta test. As soon as the app becomes publically available, we will post a link here to the app in the play store.
+The app can be found in Google Play Store: https://play.google.com/store/apps/details?id=nl.privacybarometer.privacyvandaag.gplay
 
 
 ## Hints for using this app for your own use
