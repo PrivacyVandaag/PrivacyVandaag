@@ -1,9 +1,6 @@
 /*
  * Copyright (c) 2015-2017 Privacy Vandaag / Privacy Barometer
  *
- * Copyright (c) 2015 Arnaud Renaud-Goud
- * Copyright (c) 2012-2015 Frederic Julian
- *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -19,26 +16,19 @@
  *
  */
 
-package nl.privacybarometer.privacyvandaag;
+package nl.privacybarometer.privacyvandaag.servicecontroller;
 
-import android.app.Application;
 import android.content.Context;
+import android.content.Intent;
 
-import nl.privacybarometer.privacyvandaag.utils.PrefUtils;
+/**
+ * Interface for the specific RefreshServiceController that is used on a specific device.
+ * The right RefreshServiceController is selected by the RefreshControllerFactory.
+ * The selection is based on the android version of the device.
+ */
+public interface RefreshServiceController {
 
-public class MainApplication extends Application {
+    void setRefreshJob(Context context, boolean resetJob, String trigger);
+    void finishRefreshJob (Context context,Intent intent);
 
-    private static Context mContext;
-
-    public static Context getContext() {
-        return mContext;
-    }
-
-    @Override
-    public void onCreate() {
-        super.onCreate();
-        mContext = getApplicationContext();
-
-        PrefUtils.putBoolean(PrefUtils.IS_REFRESHING, false); // init
-    }
 }

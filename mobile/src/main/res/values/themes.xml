@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:android="http://schemas.android.com/apk/res/android">
 
-    // @layout/view_drawer_list_selector toegevoegd om de kleur van de menufocus te wijzigen. Zie ook layout > view_drawer_list_selecter.xml
+    <!-- @layout/view_drawer_list_selector added to be able to change color of menu focus.
+    See also layout > view_drawer_list_selecter.xml -->
     <style name="Theme.Light" parent="Theme.AppCompat.Light">
         <item name="windowActionBar">false</item>
         <item name="windowActionModeOverlay">true</item>

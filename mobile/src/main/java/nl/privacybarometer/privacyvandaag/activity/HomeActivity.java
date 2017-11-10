@@ -1,22 +1,22 @@
-/**
- * Privacy Vandaag
- * <p/>
- * Copyright (c) 2015 Privacy Barometer
+/*
+ * Copyright (c) 2015-2017 Privacy Vandaag / Privacy Barometer
+ *
  * Copyright (c) 2015 Arnaud Renaud-Goud
  * Copyright (c) 2012-2015 Frederic Julian
- * <p/>
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * <p/>
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * <p/>
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 package nl.privacybarometer.privacyvandaag.activity;
@@ -24,18 +24,18 @@ package nl.privacybarometer.privacyvandaag.activity;
 import android.app.AlertDialog;
 import android.app.LoaderManager;
 import android.app.NotificationManager;
+import android.content.Context;
 import android.content.CursorLoader;
 import android.content.Intent;
 import android.content.Loader;
 import android.content.SharedPreferences;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 
 import android.support.design.widget.CoordinatorLayout;
@@ -63,7 +63,6 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import java.io.File;
 import java.util.ArrayList;
 
 import nl.privacybarometer.privacyvandaag.BuildConfig;
@@ -76,7 +75,9 @@ import nl.privacybarometer.privacyvandaag.provider.FeedData;
 import nl.privacybarometer.privacyvandaag.provider.FeedData.EntryColumns;
 import nl.privacybarometer.privacyvandaag.provider.FeedData.FeedColumns;
 import nl.privacybarometer.privacyvandaag.service.FetcherService;
-import nl.privacybarometer.privacyvandaag.service.RefreshService;
+import nl.privacybarometer.privacyvandaag.servicecontroller.RefreshServiceController;
+import nl.privacybarometer.privacyvandaag.servicecontroller.RefreshControllerFactory;
+
 import nl.privacybarometer.privacyvandaag.utils.DeprecateUtils;
 import nl.privacybarometer.privacyvandaag.utils.PrefUtils;
 import nl.privacybarometer.privacyvandaag.utils.UpgradeActions;
@@ -117,6 +118,7 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
             ") > 0)";
 
     private static final int DRAWER_LOADER_ID = 0;
+    public static final String ON_CREATE = "onCreate";
 
     private DrawerLayout mDrawerLayout;
     private View mLeftDrawer;
@@ -130,27 +132,48 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
     private boolean rebuildViewPager = true;
     private int feedIdOnNewIntent = 0;
 
-    // This listener checks if the preference setting for the floating action button has changed
-    private final SharedPreferences.OnSharedPreferenceChangeListener mPositionFabListener =
-                        new SharedPreferences.OnSharedPreferenceChangeListener() {
-        @Override
-        public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-                if (PrefUtils.POSITION_FLOATING_MENU_BUTTON.equals(key)) {
-                    FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-                    CoordinatorLayout.LayoutParams paramsFab = (CoordinatorLayout.LayoutParams) fab.getLayoutParams();
-                    if (PrefUtils.getBoolean(PrefUtils.POSITION_FLOATING_MENU_BUTTON, false)) {
-                        paramsFab.gravity = Gravity.BOTTOM | Gravity.START;
-                    } else {
-                        paramsFab.gravity = Gravity.BOTTOM | Gravity.END;
-                    }
-                }
-            }
-
-    };
 
     // In order to scale icons for high res screens, we need to know the screendensity.
     // Also used inthe formula to determine if we are on a widescreen (tablet) or on a phone.
     private float screenDensity = 1f;
+
+    private RefreshServiceController mRefreshServiceController = RefreshControllerFactory.getController();
+    private Context mContext;
+
+    // This listener checks if the preference settings have been changed by the user.
+    // If it concerns refreshing or the floating action button some action should be taken.
+    private final SharedPreferences.OnSharedPreferenceChangeListener mPreferenceChangeListener =
+            new SharedPreferences.OnSharedPreferenceChangeListener() {
+                @Override
+                public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+                    if (PrefUtils.POSITION_FLOATING_MENU_BUTTON.equals(key)) {
+                        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+                        CoordinatorLayout.LayoutParams paramsFab = (CoordinatorLayout.LayoutParams) fab.getLayoutParams();
+                        if (PrefUtils.getBoolean(PrefUtils.POSITION_FLOATING_MENU_BUTTON, false)) {
+                            paramsFab.gravity = Gravity.BOTTOM | Gravity.START;
+                        } else {
+                            paramsFab.gravity = Gravity.BOTTOM | Gravity.END;
+                        }
+                    }
+                    // If there is a change in refresh settings.
+                    // Check of automatisch verversen wordt ingeschakeld. Dan wordt namelijk
+                    // direct nieuwe achtergrondservice gestart.
+                    if (PrefUtils.REFRESH_ENABLED.equals(key)) {
+                            mRefreshServiceController.setRefreshJob(mContext,true,PrefUtils.REFRESH_ENABLED);
+                    }
+                    if (PrefUtils.REFRESH_INTERVAL.equals(key)) {
+                            //we have got a change in refresh settings, so recreate the jobscheduler!
+                            // we need to override the current settings if the job already exists, so 'true'.
+                            mRefreshServiceController.setRefreshJob(mContext,true,PrefUtils.REFRESH_INTERVAL);
+                    }
+                    if (PrefUtils.REFRESH_WIFI_ONLY.equals(key)) {
+                            //we have got a change in refresh settings, so recreate the jobscheduler!
+                            // we need to override the current settings if the job already exists, so 'true'.
+                            mRefreshServiceController.setRefreshJob(mContext,true,PrefUtils.REFRESH_WIFI_ONLY);
+                    }
+                }
+            };
+
 
 
     /*  *** ONCREATE ***   *** ONCREATE ***   *** ONCREATE *** */
@@ -160,7 +183,10 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
         UiUtils.setPreferenceTheme(this);
         super.onCreate(savedInstanceState);
 
-         //*** Check whether upgrade took place and perform upgrade actions if necessary
+        // We need to store the context, so it can be included as a parameter to the RefreshServiceController
+        mContext=this;
+
+        //*** Check whether upgrade took place and perform upgrade actions if necessary
         // Perform upgrade actions only if not fresh install
         if ( ! (PrefUtils.getBoolean(PrefUtils.FIRST_OPEN, true)) ) {
             // read old versionCode of the app
@@ -173,8 +199,8 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
         //*** end upgrade
 
 
-        // Perform these actions only on the first occassion the app is run.
-        // There are also some ont time only actions in selectDrawerItem(), so
+        // Perform these actions only the first time the app is run.
+        // There are also some one time only actions in selectDrawerItem(), so
         // FIRST_OPEN is not set to false yet.
         if (PrefUtils.getBoolean(PrefUtils.FIRST_OPEN, true)) {
             // Add the sources for the newsfeeds to the database
@@ -214,6 +240,7 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
 
 
         //*** Left drawer *** Left drawer *** Left drawer *** Left drawer ***
@@ -307,8 +334,8 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
 
 
 
-        ///*** FLOATING BUTTON *** FLOATING BUTTON ***
-        // Vaste floating button rechtsonder om het menu te openen of te sluiten.
+        ///*** Floating button *** Floating button ***
+        // Fixed floating button rechtsonder om het menu te openen of te sluiten.
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         CoordinatorLayout.LayoutParams paramsFab = (CoordinatorLayout.LayoutParams) fab.getLayoutParams();
         // Check the preferences if button should be to the left or to the right.
@@ -332,68 +359,31 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
         //*** End floating button ***
 
 
-        // Start het checken op nieuwe artikelen als dat zo staat ingesteld.
-        if (PrefUtils.getBoolean(PrefUtils.REFRESH_ENABLED, true)) {
-            // starts the service independent to this activity
-            startService(new Intent(this, RefreshService.class));
-        } else {
-            stopService(new Intent(this, RefreshService.class));
-        }
+
+        //*** Refresh *** Job Scheduler *** Refresh timer / Alarm Manager ***//
+        // Start to check for new articles if preferences are set that way.
+        // As of Android SDK 21 (5.0 Lollipop) the use of AlarmManager for these tasks is
+        // deprecated. The new JobScheduler is recommended as it saves battery life.
+        // The RefreshControllerFactory determines wheter AlarmManager or JobScheduler
+        // has to be used. We store this in mRefreshServiceController.
+        mRefreshServiceController.setRefreshJob(mContext,false,ON_CREATE);
+
+        // Preferences say: Refresh as soon as app is opened.
         if (PrefUtils.getBoolean(PrefUtils.REFRESH_ON_OPEN_ENABLED, false)) {
-            if (!PrefUtils.getBoolean(PrefUtils.IS_REFRESHING, false)) {
+            if ( ! PrefUtils.getBoolean(PrefUtils.IS_REFRESHING, false)) {
                 startService(new Intent(HomeActivity.this, FetcherService.class).
                         setAction(FetcherService.ACTION_REFRESH_FEEDS));
             }
         }
 
+
         // Register the listener for change in preferences. Is destroyed in onDestroy()
-        PrefUtils.registerOnPrefChangeListener(mPositionFabListener);
+        PrefUtils.registerOnPrefChangeListener(mPreferenceChangeListener);
+
 
     }
     /*  *** END ONCREATE *** */
 
-
-    // *** NOT FOR PRODUCTION RELEASE!!!  FOR DEBUGGING OF CACHE ONLY !! *** //
-    /*
-    public void logFilesInDir (File baseDir, String itemName) {
-        long fileSize;
-        long totalFileSize = 0;
-        File subItem;
-        String dirType;
-        if (itemName == null) {   // Scan the root first
-            subItem = baseDir;
-            dirType = "Root directory: ";
-        } else {  // Scan the subdir
-            subItem = new File(baseDir, itemName + "/");
-            dirType = "Subdirectory: ";
-        }
-        if (subItem.exists()) {
-            if (subItem.isDirectory()) {
-                Log.e(TAG, dirType + subItem);
-                File[] subFiles = subItem.listFiles();
-                if (subFiles != null) {
-                    for (File subFile : subFiles) {
-                        fileSize = subFile.length();
-                        Log.e(TAG, "  - File: " + subFile.getName() + " (" + fileSize +" Bytes)");
-                        totalFileSize += fileSize;
-                        // if (f.getName().contains("hwuicache")) subFile.delete();
-                    }
-                    Log.e(TAG, "Total size of subdir: " + subItem + " = " + totalFileSize + " Bytes.");
-                    Log.e(TAG, "-----------------------------");
-
-                    //Start looking for next level subdirs
-                    for (File subFile : subFiles) {
-                        logFilesInDir(subItem, subFile.getName());
-                    }
-                } else Log.e(TAG, "No files found.");
-            }
-            else if (subItem.isFile()) {
-                //Log.e(TAG, "File name = " + subItem.getName() + " and has size of " + subItem.length());
-            }
-        } else Log.e (TAG, subItem.getName() + " does not exists");
-    }
-
-    //*/
 
 
     /*  *** CONTEXT MENU LEFT DRAWER ***   *** CONTEXT MENU LEFT DRAWER ***   *** CONTEXT MENU LEFT DRAWER *** */
@@ -409,7 +399,7 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
             int pos = info.position;    // the position of the item in the menu.
             if (mDrawerAdapter.hasContextMenu(pos)) {
                 menu.setHeaderTitle(mDrawerAdapter.getTitle(pos));
-                // Bepaal de inhoud van het context menu afhankelijk van de volg-status van de feed.
+                // Create the context menu depending on status of the feed.
                 if (mDrawerAdapter.hasActiveFetchMode(info.position)) {
                     if (mDrawerAdapter.getNotifyMode(info.position)) menu.add(0, 1, 1, R.string.turn_notification_off);
                     else menu.add(0, 2, 1, R.string.turn_notification_on);
@@ -466,15 +456,12 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
     private void getFeedIdInExtras (Bundle extras) {
         feedIdOnNewIntent = -1;
         if(extras != null) {
-            // Log.e(TAG, "Extras are found");
             if (extras.containsKey(NOTIFICATION_FEED_ID)) {
                 // extract the extra data in the notification
                 String feedIdString = extras.getString(NOTIFICATION_FEED_ID);
                 if (feedIdString != null) {
                     try {
                         feedIdOnNewIntent = Integer.parseInt(feedIdString);
-                        // Log.e(TAG, "From extras: feedId = " + feedIdOnNewIntent);
-                        // Log.e(TAG, "feedIdOnNewIntent = " + feedIdOnNewIntent);
                     } catch (NumberFormatException nfe) {
                         Log.e(TAG, "Error: feed ID could not be extracted from notification.");
                     }
@@ -501,7 +488,7 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     protected void onDestroy() {
-        PrefUtils.unregisterOnPrefChangeListener(mPositionFabListener);
+        PrefUtils.unregisterOnPrefChangeListener(mPreferenceChangeListener);
         super.onDestroy();
     }
 
@@ -570,7 +557,6 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {
-        // Log.e(TAG, "onPostCreate");
         super.onPostCreate(savedInstanceState);
         // Sync the toggle state after onRestoreInstanceState has occurred.
         if (mDrawerToggle != null) {
@@ -580,7 +566,6 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
-        // Log.e(TAG,"via onConfigChannged");
         super.onConfigurationChanged(newConfig);
         if (mDrawerToggle != null) {
             mDrawerToggle.onConfigurationChanged(newConfig);
@@ -598,7 +583,9 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
      *     In onCreateLoader the query for the database is defined.
      *     The query is performed in the background on a seperate thread.
      *     When the query has been executed, onLoadFinished is called with the results.
-     *     Use getLoaderManager().restartLoader() to force refresh of the query, but that is in most cases not necessary.
+     *     Use getLoaderManager().restartLoader() to force refresh of the query, but that is
+     *     in most cases not necessary.
+     *
      *     onLoaderReset is called when the app is destroyed. All references to the cursor should be
      *     removed, in order to get this process destroyed when the app has finished.
      */
@@ -630,8 +617,6 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
         if (mLoaderId== DRAWER_LOADER_ID) {
             if (cursor.moveToFirst()) { // Do we have a non-empty cursor?
                 cursor.moveToPosition(-1);  // Reset cursor position.
-
-                // Log.e(TAG, "Loader finished. > Create LeftDrawer");
                 // Log.e (TAG, DatabaseUtils.dumpCursorToString(cursor));   // Tool to see what's inside the cursor
                 if (mDrawerAdapter != null) {
                     // Set the new cursor and check if the new data has consequences for the ViewPager
@@ -641,13 +626,12 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
                     mDrawerList.setAdapter(mDrawerAdapter);
                     // We don't have any menu yet, we need to display it
 
-                    rebuildViewPager = true; // New adapter, new menu, therefor new ViewPager.
+                    rebuildViewPager = true; // New adapter, new menu, therefore new ViewPager.
                 }
 
 
                 // Log.e(TAG, "Loader finished. > Create ViewPager");
                 if (rebuildViewPager) { // Do we have NEW relevant data to (re)build the ViewPager?
-                    // Log.e(TAG, "We are going to (re)build the ViewPager.");
                     if (mPagerAdapter != null) {
                         mPagerAdapter.updateViewPager();
                     } else {
@@ -751,7 +735,6 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
         mCancelNotification.run();
 
         // Set title and icon in toolbar
-        // TODO: Recycle bitmap if possible for efficient memory usage. Is it possible here?
         getSupportActionBar().setTitle(TITLE_SPACES + mTitle);  // TITLE_SPACES because margin cannot be set easily to icon.
         if (mIconResourceId > 0) {  // We have an icon. Let's display it in the toolbar
             mIconDrawable = ContextCompat.getDrawable(this, mIconResourceId);
@@ -833,7 +816,7 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
                 notifyDataSetChanged();
                 // If the ViewPager  has changed, the title and logo in toolbar needs to change with it
                 // mCurrentDrawerPos = mDrawerAdapter.getMenuPositionFromPagePosition(mCurrentViewPagerPos);
-                // Go to first page to prevent confusing page selection when p[ages are removed or added.
+                // Go to first page to prevent confusing page selection when pages are removed or added.
                 selectDrawerItem(1, false);
             }
             rebuildViewPager = false;
@@ -850,14 +833,6 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
             mNumberOfPages = 0; // mNumberOfPages is number of pages the ViewPager gets.
             viewPagerPageFeedId.clear(); // reset all the viewPagerPages and feedIds
 
-            /* For debugging only
-            for (MenuListAdapter.MenuItemObject mObject : mMenuListAdapter.drawerMenuList()) {
-                // Log.e(TAG, "Menu item :  " +  mObject.sectionTitle);
-                Log.e(TAG, "Menu item from the viewpager:  " + mObject.feedId);
-                Log.e(TAG, "Menu fetchmode:  " + mObject.fetchMode);
-                Log.e(TAG, "Menu hasViewPagerPage:  " + mObject.hasViewPagerPage);
-            }
-            */
 
             // Iterate through whole MenuList to see which MenuItem gets a page in the ViewPager
             // If the menuitem gest a page, link the feedId to it to display the entries drawerMenuList of that feed on the page

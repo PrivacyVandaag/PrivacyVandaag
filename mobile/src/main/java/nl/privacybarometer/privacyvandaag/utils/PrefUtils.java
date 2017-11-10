@@ -1,22 +1,19 @@
-/**
- * Privacy Vandaag
- * <p/>
- * Copyright (c) 2015 Privacy Barometer
- * Copyright (c) 2015 Arnaud Renaud-Goud
- * Copyright (c) 2012-2015 Frederic Julian
- * <p/>
+/*
+ * Copyright (c) 2015-2017 Privacy Vandaag / Privacy Barometer
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * <p/>
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * <p/>
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 package nl.privacybarometer.privacyvandaag.utils;
@@ -73,6 +70,8 @@ public class PrefUtils {
 
     public static final String FONT_SIZE = "fontsize";
 
+    // This var stores the time of the last scheduled automatic refresh.
+    // It is set bij FetcherService (as you might have expected) and is used to schedule next automatic refresh
     public static final String LAST_SCHEDULED_REFRESH = "lastscheduledrefresh";
 
     public static final String SHOW_READ = "show_read";

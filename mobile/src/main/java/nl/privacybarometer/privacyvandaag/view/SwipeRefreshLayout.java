@@ -58,7 +58,7 @@ import nl.privacybarometer.privacyvandaag.utils.DeprecateUtils;
  * provide accessibility events; instead, a menu item must be provided to allow
  * refresh of the content wherever this gesture is used.</p>
  *
- * Hier wordt het swypen zelf gedetecteerd en worden
+ * Hier wordt het swipen zelf gedetecteerd en worden
  * ook elementen van de progressbar geregeld.
  *
  *

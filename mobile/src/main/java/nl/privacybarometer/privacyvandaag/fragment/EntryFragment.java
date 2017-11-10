@@ -1,22 +1,22 @@
-/**
- * Privacy Vandaag
- * <p/>
- * Copyright (c) 2015 Privacy Barometer
+/*
+ * Copyright (c) 2015-2017 Privacy Vandaag / Privacy Barometer
+ *
  * Copyright (c) 2015 Arnaud Renaud-Goud
  * Copyright (c) 2012-2015 Frederic Julian
- * <p/>
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * <p/>
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * <p/>
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 package nl.privacybarometer.privacyvandaag.fragment;
@@ -90,7 +90,7 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
     private static final String STATE_ENTRIES_IDS = "STATE_ENTRIES_IDS";
     private static final String STATE_INITIAL_ENTRY_ID = "STATE_INITIAL_ENTRY_ID";
 
-    private static final String TITLE_SPACES = "  "; // Twee spaties als margin tussen icon en title in toolbar.
+    private static final String TITLE_SPACES = "  "; // Two spaces as margin between icon and title in toolbar.
 
     private int mTitlePos = -1, mDatePos, mMobilizedHtmlPos, mAbstractPos, mLinkPos, mIsFavoritePos, mIsReadPos, mEnclosurePos, mAuthorPos, mFeedNamePos, mFeedUrlPos, mFeedIconPos;
     private int mIconIdPos;    //  Added to find reference to logo drawable resource
@@ -389,15 +389,15 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
             activity.setTitle(TITLE_SPACES + feedTitle);    // Add spaces to get some margin between icon and title.
 
             // Get icon from resource drawable instead of retrieved favicon blob in database
-            // We have to scale the icon because of different screen resolutions on phones and tablets.
-            // Like in the HomeActivity, we scale from 32 standard pixels
-            int bitmapSize = (int) screenDensity * 32; // Scale toolbar logo's to right size. Convert 32 normal px to 32 density pixels.
             int mIconResourceId = entryCursor.getInt(mIconIdPos);
             if (mIconResourceId > 0) {
                 Drawable mDrawable = ContextCompat.getDrawable(MainApplication.getContext(), mIconResourceId);
                 Bitmap bitmap = ((BitmapDrawable) mDrawable).getBitmap();
                 if (bitmap != null) {
                     BitmapDrawable mIcon;
+                    // We have to scale the icon because of different screen resolutions on phones and tablets.
+                    // Like in the HomeActivity, we scale from 32 standard pixels
+                    int bitmapSize = (int) screenDensity * 32; // Scale toolbar logo's to right size. Convert 32 normal px to 32 density pixels.
                     mIcon = new BitmapDrawable(getResources(), Bitmap.createScaledBitmap(bitmap, bitmapSize, bitmapSize, true));
                     activity.getSupportActionBar().setIcon(mIcon);
                 }

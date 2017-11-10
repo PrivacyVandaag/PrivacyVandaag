@@ -9,9 +9,9 @@
         <!--    <item>1800000</item>    30 minutes -->
         <item>3600000</item>
         <item>7200000</item>    <!-- 2 uur, standaard instelling vind je in xml > general_preferences.xml -->
-        <item>21600000</item>
-        <item>43200000</item>
-        <item>86400000</item>
+        <item>21600000</item>   <!-- 6 hours -->
+        <item>43200000</item>   <!-- 12 hours -->
+        <item>86400000</item>   <!-- 24 hours -->
     </string-array>
     <string-array name="settings_keep_time_values" translatable="false">
         <item>1</item>

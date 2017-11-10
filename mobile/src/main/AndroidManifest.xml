@@ -4,36 +4,42 @@
           xmlns:tools="http://schemas.android.com/tools"
           android:installLocation="auto">
 
+    <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <!-- By removing the backup facility, this permission is still needed (only) for update process
         As of api 19 (android 4.4 kitkat) apps get their own storage folder, so the general permission is no longer needed.
 	 This is only needed when distributing outside Gplay store -->
+    <!-- Also needed for debugging tool to write to log file. -->
 	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="18" />
-        
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+         android:maxSdkVersion="18" />
     <uses-permission android:name="android.permission.VIBRATE"/>
+    <!-- permissions for automatic background refresh settings -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
 
     <permission
     android:name="nl.privacybarometer.privacyvandaag.provider.WRITE_PERMISSION"
     android:protectionLevel="signature"/>
 
+
+    <!-- Application -->
     <application
         android:name="nl.privacybarometer.privacyvandaag.MainApplication"
-        android:allowBackup="true"
+        android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/Theme.Light">
-        <service android:name="nl.privacybarometer.privacyvandaag.service.RefreshService"/>
+        android:theme="@style/Theme.Light" >
+        <service android:name="nl.privacybarometer.privacyvandaag.service.AlarmManagerRefreshService"/>
         <service android:name="nl.privacybarometer.privacyvandaag.service.FetcherService"/>
 
+        <!-- Database -->
         <provider
             android:name="nl.privacybarometer.privacyvandaag.provider.FeedDataContentProvider"
             android:authorities="nl.privacybarometer.privacyvandaag.provider.FeedData"
             android:exported="true"
             android:writePermission="nl.privacybarometer.privacyvandaag.provider.WRITE_PERMISSION"/>
 
+        <!-- Activities -->
         <activity
             android:name="nl.privacybarometer.privacyvandaag.activity.HomeActivity"
             android:label="@string/app_name"
@@ -52,7 +58,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
-
         <activity
             android:name="nl.privacybarometer.privacyvandaag.activity.EditFeedsListActivity"
             android:label="@string/feeds"
@@ -72,17 +77,27 @@
             android:label="@string/menu_settings"
             android:launchMode="singleTask"/>
 
-        <receiver android:name="nl.privacybarometer.privacyvandaag.receiver.BootCompletedBroadcastReceiver">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED"/>
-            </intent-filter>
-        </receiver>
-        <receiver android:name="nl.privacybarometer.privacyvandaag.receiver.ConnectionChangeReceiver">
-            <intent-filter>
-                <action android:name="android.net.conn.CONNECTIVITY_CHANGE"/>
-            </intent-filter>
-        </receiver>
-        <receiver android:name="nl.privacybarometer.privacyvandaag.service.RefreshService$RefreshAlarmReceiver"/>
+
+        <!-- Automatic background refresh settings -->
+            <service
+                android:name="nl.privacybarometer.privacyvandaag.service.JobSchedulerRefreshService"
+                android:permission="android.permission.BIND_JOB_SERVICE" >
+            </service>
+            <!-- Needed for refresh settings. Used by AlarmManager as well as JobScheduler -->
+            <receiver android:name="nl.privacybarometer.privacyvandaag.receiver.BootCompletedBroadcastReceiver">
+                <intent-filter>
+                    <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                </intent-filter>
+            </receiver>
+            <!-- Needed for refresh settings. Used by AlarmManager. Not needed for SDK's >= 21 -->
+            <receiver android:name="nl.privacybarometer.privacyvandaag.receiver.ConnectionChangeReceiver">
+                <intent-filter>
+                    <action android:name="android.net.conn.CONNECTIVITY_CHANGE"/>
+                </intent-filter>
+            </receiver>
+            <receiver android:name="nl.privacybarometer.privacyvandaag.service.AlarmManagerRefreshService$RefreshAlarmReceiver" />
+
+
     </application>
 
 </manifest>

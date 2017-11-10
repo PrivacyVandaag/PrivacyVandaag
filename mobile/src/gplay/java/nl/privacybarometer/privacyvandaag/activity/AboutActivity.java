@@ -1,22 +1,22 @@
-/**
- * Privacy Vandaag
- * <p/>
- * Copyright (c) 2015 Privacy Barometer
+/*
+ * Copyright (c) 2015-2017 Privacy Vandaag / Privacy Barometer
+ *
  * Copyright (c) 2015 Arnaud Renaud-Goud
  * Copyright (c) 2012-2015 Frederic Julian
- * <p/>
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * <p/>
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * <p/>
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 package nl.privacybarometer.privacyvandaag.activity;
@@ -27,8 +27,6 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.text.Html;
-import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.method.LinkMovementMethod;
@@ -36,7 +34,6 @@ import android.text.style.URLSpan;
 import android.text.util.Linkify;
 import android.util.Log;
 import android.view.MenuItem;
-import android.view.View;
 import android.widget.TextView;
 
 import nl.privacybarometer.privacyvandaag.R;
@@ -44,8 +41,6 @@ import nl.privacybarometer.privacyvandaag.utils.DeprecateUtils;
 import nl.privacybarometer.privacyvandaag.utils.PrefUtils;
 import nl.privacybarometer.privacyvandaag.utils.UiUtils;
 
-import static android.text.util.Linkify.EMAIL_ADDRESSES;
-import static nl.privacybarometer.privacyvandaag.utils.NetworkUtils.setupConnection;
 
 /**
  * Shows background information about the app.
@@ -55,6 +50,7 @@ import static nl.privacybarometer.privacyvandaag.utils.NetworkUtils.setupConnect
  *
  */
 public class AboutActivity extends AppCompatActivity {
+    private static final String TAG = AboutActivity.class.getSimpleName() + " ~> ";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,7 +68,7 @@ public class AboutActivity extends AppCompatActivity {
             PackageInfo info = manager.getPackageInfo(this.getPackageName(), 0);
             title += " " + info.versionName + " (" + PrefUtils.getInt(PrefUtils.APP_VERSION_CODE, 0) + ")";
         } catch (NameNotFoundException e) {
-            Log.e("AboutAcitivty >> ","Error while fetching app version: " + e);
+            Log.e(TAG,"Error while fetching app version: " + e);
         }
         TextView titleView = (TextView) findViewById(R.id.about_title);
         titleView.setText(title);

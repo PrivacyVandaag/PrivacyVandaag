@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) 2017 Privacy Vandaag -->
 <resources>
 
     <!-- GENERAL -->
@@ -41,7 +40,7 @@
 
     <string name="all_feeds">Alle artikelen</string>
     <string name="error">Fout</string>
-    <string name="error_fetching_feed">Onleesbaar. Fout in lijst met artikelen.</string>
+    <string name="error_fetching_feed">Het verversen is niet gelukt</string>
     <string name="network_error">Er is geen netwerkverbinding</string>
     <string name="loading">Loading…</string>
     <string name="dont_follow_feed">Niet volgen</string>

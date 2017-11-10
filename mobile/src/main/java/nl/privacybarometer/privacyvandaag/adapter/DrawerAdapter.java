@@ -1,22 +1,22 @@
-/**
- * Privacy Vandaag
- * <p/>
- * Copyright (c) 2015-2017 Privacy Barometer
+/*
+ * Copyright (c) 2015-2017 Privacy Vandaag / Privacy Barometer
+ *
  * Copyright (c) 2015 Arnaud Renaud-Goud
  * Copyright (c) 2012-2015 Frederic Julian
- * <p/>
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * <p/>
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * <p/>
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
  */
 
 package nl.privacybarometer.privacyvandaag.adapter;
@@ -110,6 +110,7 @@ public class DrawerAdapter extends BaseAdapter {
 
     private static final String COLON = MainApplication.getContext().getString(R.string.colon);
 
+    // Cache to keep some recent formatted date-times. Formatting is expensive, so a cache can be helpful.
     private static final int CACHE_MAX_ENTRIES = 100;
     private final Map<Long, String> mFormattedDateCache = new LinkedHashMap<Long, String>(CACHE_MAX_ENTRIES + 1, .75F, true) {
         @Override
@@ -271,41 +272,44 @@ public class DrawerAdapter extends BaseAdapter {
         // data concerning the current item can be found.
         int cursorPosition = mMenuList.get(menuPosition).cursorPosition;   // cursor positie is het nummer van de rij in de feeds Tabel.
         if (mFeedsCursor != null && mFeedsCursor.moveToPosition(cursorPosition)) {
-            if (cursorPosition != serviceChannelCursorPosition) { // if not the channel with app related service messages
-                holder.stateTxt.setVisibility(View.VISIBLE);
-                // Check whether this is an active feed or one that is not to be refreshed.
-                if (!(mFeedsCursor.getInt(POS_FETCH_MODE) == FETCHMODE_DO_NOT_FETCH)) {
-                    if (mFeedsCursor.isNull(POS_ERROR)) { // if it is an active feed and no error
-                        long timestamp = mFeedsCursor.getLong(POS_LAST_UPDATE);
-                        // Date formatting is expensive, look at the cache
-                        String formattedDate = mFormattedDateCache.get(timestamp);
-                        if (formattedDate == null) {
-                            formattedDate = mContext.getString(R.string.update) + COLON;
-                            if (timestamp == 0) {
-                                formattedDate += mContext.getString(R.string.never);
-                            } else {
-                                formattedDate += StringUtils.getDateTimeStringSimple(timestamp);
+                // Check whether this is an active feed. If so, create the menu view including status info.
+                if ( (mFeedsCursor.getInt(POS_FETCH_MODE) != FETCHMODE_DO_NOT_FETCH)) {
+                    // We do not display status information with the service channel
+                    if (cursorPosition == serviceChannelCursorPosition) holder.stateTxt.setVisibility(View.GONE);
+                    else holder.stateTxt.setVisibility(View.VISIBLE);
+
+                        // create status information
+                        if (mFeedsCursor.isNull(POS_ERROR)) { // if it is an active feed and no error
+                            if (cursorPosition != serviceChannelCursorPosition) {
+                                long timestamp = mFeedsCursor.getLong(POS_LAST_UPDATE);
+                                // Date formatting is expensive, look at the cache
+                                String formattedDate = mFormattedDateCache.get(timestamp);
+                                if (formattedDate == null) {
+                                    formattedDate = mContext.getString(R.string.update) + COLON;
+                                    if (timestamp == 0) {
+                                        formattedDate += mContext.getString(R.string.never);
+                                    } else {
+                                        formattedDate += StringUtils.getDateTimeStringSimple(timestamp);
+                                    }
+                                    mFormattedDateCache.put(timestamp, formattedDate);
+                                }
+                                holder.stateTxt.setText(formattedDate);
+                                holder.stateTxt.setTextColor(NORMAL_STATE_TEXT_COLOR_LIGHT_THEME);
                             }
-                            mFormattedDateCache.put(timestamp, formattedDate);
-                        }
-                        holder.stateTxt.setText(formattedDate);
-                        holder.stateTxt.setTextColor(NORMAL_STATE_TEXT_COLOR_LIGHT_THEME);
 
+                            // Get and display number of unread articles
+                            int unread = mFeedsCursor.getInt(POS_UNREAD);
+                            if (unread != 0) {
+                                holder.unreadTxt.setText(String.valueOf(unread));
+                            }
 
-                        // Get and display number of unread articles
-                        int unread = mFeedsCursor.getInt(POS_UNREAD);
-                        if (unread != 0) {
-                            holder.unreadTxt.setText(String.valueOf(unread));
-                        }
-
-                        // else there is an error reading the feed. Most likely it is a format error in the
-                        // RSS feed itself. Check the original rss feed with a feed-validator on the internet.
-                    } else {
+                            // else there is an error reading the feed. Most likely it is a format error in the
+                            // RSS feed itself. Check the original rss feed with a feed-validator on the internet.
+                        } else {
                             //holder.stateTxt.setText(new StringBuilder(mContext.getString(R.string.error)).append(COLON).append(mFeedsCursor.getString(POS_ERROR)));
                             holder.stateTxt.setText(new StringBuilder(mContext.getString(R.string.error_fetching_feed)));
-                            Log.e("Privacy Vandaag", mContext.getString(R.string.error_fetching_feed));
-                            Log.e("Privacy Vandaag", "refresh fout: " + mFeedsCursor.getString(POS_ERROR));
-                    }
+                            Log.e(TAG, "refresh fout: " + mFeedsCursor.getString(POS_ERROR));
+                        }
 
                         // Check of de meldingen aan of uitstaan
                         // If the article is favorited, show the favorite image over the title.
@@ -315,6 +319,7 @@ public class DrawerAdapter extends BaseAdapter {
                     }
                     // Feed is inactief. Zet alles uit en/of op donker
                     else {
+                        holder.stateTxt.setVisibility(View.VISIBLE);
                         holder.stateTxt.setText(mContext.getString(R.string.dont_follow_feed));
                         holder.iconView.setAlpha(0.3f);
                         holder.unreadTxt.setText("");
@@ -322,7 +327,7 @@ public class DrawerAdapter extends BaseAdapter {
                         holder.titleTxt.setTextColor(DO_NOT_FETCH_TEXT_COLOR_LIGHT_THEME);
                         holder.noNotification.setVisibility(View.GONE);
                     }
-                }
+
 
                 // Do not get favicons from internet, get icons from package instead
                 int mIconResourceId = mMenuList.get(menuPosition).iconDrawable;
@@ -610,12 +615,14 @@ public class DrawerAdapter extends BaseAdapter {
     }
     // Check whether menu item gets a contextMenu in the left drawer.
     public boolean hasContextMenu (int menuPosition) {
-        return (mMenuList.get(menuPosition).cursorPosition != serviceChannelCursorPosition) &&
-                (mMenuList.get(menuPosition).feedId > 0 && mMenuList.get(menuPosition).feedId < MAX_REAL_FEED_ID);
+       // return (mMenuList.get(menuPosition).cursorPosition != serviceChannelCursorPosition) &&
+       //         (mMenuList.get(menuPosition).feedId > 0 && mMenuList.get(menuPosition).feedId < MAX_REAL_FEED_ID);
+        return (mMenuList.get(menuPosition).feedId > 0 && mMenuList.get(menuPosition).feedId < MAX_REAL_FEED_ID);
     }
     // Has the menu-item that has a contextmenu also a website to go to from that contextmenu?
     public boolean hasWebsite (int menuPosition) {
-        return ( ! mMenuList.get(menuPosition).title.contains("in het nieuws"));
+        return ! ( mMenuList.get(menuPosition).title.contains("in het nieuws")
+                    || mMenuList.get(menuPosition).title.equals(SERVICE_CHANNEL_FEEDNAME) );
     }
     // Not very efficient, but is needed only once in HomeActivity if app starts from notification
     public int getMenuPositionFromFeedId(int feedId) {

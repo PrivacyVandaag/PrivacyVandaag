@@ -1,47 +1,22 @@
-/**
- * Privacy Vandaag
- * <p/>
- * Copyright (c) 2015 Privacy Barometer
+/*
+ * Copyright (c) 2015-2017 Privacy Vandaag / Privacy Barometer
+ *
  * Copyright (c) 2015 Arnaud Renaud-Goud
  * Copyright (c) 2012-2015 Frederic Julian
- * <p/>
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * <p/>
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * <p/>
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * <p/>
- * <p/>
- * Some parts of this software are based on "Sparse rss" under the MIT license (see
- * below). Please refers to the original project to identify which parts are under the
- * MIT license.
- * <p/>
- * Copyright (c) 2010-2012 Stefan Handschuh
- * <p/>
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- * <p/>
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * <p/>
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
+ *
  */
 
 package nl.privacybarometer.privacyvandaag.receiver;
@@ -50,16 +25,35 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 
-import nl.privacybarometer.privacyvandaag.service.RefreshService;
-import nl.privacybarometer.privacyvandaag.utils.PrefUtils;
+import nl.privacybarometer.privacyvandaag.servicecontroller.RefreshControllerFactory;
+import nl.privacybarometer.privacyvandaag.servicecontroller.RefreshServiceController;
 
-public class BootCompletedBroadcastReceiver extends BroadcastReceiver {
+import static nl.privacybarometer.privacyvandaag.servicecontroller.RefreshControllerFactory.JOB_SCHEDULER_READY;
+
+/**
+ * This class is called when device is (re)booted. It ensures that the background service
+ * to check on new articles is started when a device is booted up.
+ *
+ * This receiver is only necessary for pre Android version 5.0 Lollipop devices
+ * As of Android 5 a different process is used for background services.
+ * This new JobScheduler has internal checks for booting devices.
+ * JobScheduler has internal listeners if boot is completed.
+ *
+ * Therefore, this receiver is only registered in the AndroidManifest file for Android SDK < 21
+ *
+ */
+public class  BootCompletedBroadcastReceiver extends BroadcastReceiver {
+    public static final String BOOT_COMPLETED = "bootCompleted";
+
     @Override
     public void onReceive(Context context, Intent intent) {
-        PrefUtils.putLong(PrefUtils.LAST_SCHEDULED_REFRESH, 0);
-        if (PrefUtils.getBoolean(PrefUtils.REFRESH_ENABLED, true)) {
-            context.startService(new Intent(context, RefreshService.class));
+
+        if ( ! JOB_SCHEDULER_READY ) {  // If we have JobScheduler, we already set a persistent job that survives rebooting the device.
+            // Get a RefreshServiceController and start the RefreshService.
+            RefreshServiceController mRefreshServiceController = RefreshControllerFactory.getController();
+            mRefreshServiceController.setRefreshJob(context, true, BOOT_COMPLETED);
         }
     }
+
 
 }

@@ -1,40 +1,39 @@
-/**
- * Privacy Vandaag
- * <p/>
- * Copyright (c) 2015 Privacy Barometer
+/*
+ * Copyright (c) 2015-2017 Privacy Vandaag / Privacy Barometer
+ *
  * Copyright (c) 2015 Arnaud Renaud-Goud
  * Copyright (c) 2012-2015 Frederic Julian
- * <p/>
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * <p/>
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * <p/>
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- * <p/>
- * <p/>
+ *
+ *
  * Some parts of this software are based on "Sparse rss" under the MIT license (see
  * below). Please refers to the original project to identify which parts are under the
  * MIT license.
- * <p/>
+ *
  * Copyright (c) 2010-2012 Stefan Handschuh
- * <p/>
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * <p/>
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * <p/>
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -55,7 +54,6 @@ import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
-import android.database.DatabaseUtils;
 import android.graphics.BitmapFactory;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -63,7 +61,6 @@ import android.net.Uri;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.support.v4.app.NotificationCompat;
-import android.text.Html;
 import android.text.TextUtils;
 import android.util.Log;
 import android.util.Xml;
@@ -78,6 +75,8 @@ import nl.privacybarometer.privacyvandaag.provider.FeedData;
 import nl.privacybarometer.privacyvandaag.provider.FeedData.EntryColumns;
 import nl.privacybarometer.privacyvandaag.provider.FeedData.FeedColumns;
 import nl.privacybarometer.privacyvandaag.provider.FeedData.TaskColumns;
+import nl.privacybarometer.privacyvandaag.servicecontroller.RefreshControllerFactory;
+import nl.privacybarometer.privacyvandaag.servicecontroller.RefreshServiceController;
 import nl.privacybarometer.privacyvandaag.utils.ArticleTextExtractor;
 import nl.privacybarometer.privacyvandaag.utils.DeprecateUtils;
 import nl.privacybarometer.privacyvandaag.utils.HtmlUtils;
@@ -86,7 +85,6 @@ import nl.privacybarometer.privacyvandaag.utils.PrefUtils;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -133,6 +131,8 @@ public class FetcherService extends IntentService {
     private static final Pattern FEED_LINK_PATTERN = Pattern.compile(
             "[.]*<link[^>]* ((rel=alternate|rel=\"alternate\")[^>]* href=\"[^\"]*\"|href=\"[^\"]*\"[^>]* (rel=alternate|rel=\"alternate\"))[^>]*>",
             Pattern.CASE_INSENSITIVE);
+
+
 
     private final Handler mHandler;
 
@@ -191,7 +191,6 @@ public class FetcherService extends IntentService {
      *
      *  if item are to be mobilized and images are te be retrieved, the request to do so is stored in the database.
      *  If mobilisation was previously not succesfull, this service will try again each time the feed is refreshed.
-     *  // TODO: In case of an error, the error will keep coming back.
      *
      *
      * @param intent
@@ -201,7 +200,6 @@ public class FetcherService extends IntentService {
         if (intent == null) { // No intent, we quit
             return;
         }
-
         boolean isFromAutoRefresh = intent.getBooleanExtra(Constants.FROM_AUTO_REFRESH, false);
 
         ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -217,6 +215,7 @@ public class FetcherService extends IntentService {
                     }
                 });
             }
+            finishRefreshJob(intent);
             return;
         }
 
@@ -224,6 +223,7 @@ public class FetcherService extends IntentService {
                 && networkInfo.getType() != ConnectivityManager.TYPE_WIFI;
         // We need to skip the fetching process, so we quit
         if (skipFetch) {
+            finishRefreshJob(intent);
             return;
         }
 
@@ -235,7 +235,7 @@ public class FetcherService extends IntentService {
         } else { // == Constants.ACTION_REFRESH_FEEDS
             PrefUtils.putBoolean(PrefUtils.IS_REFRESHING, true);    // turn the refresh animation on
 
-            // If the refreshFeeds is called automatically from the timer, store the time to restart the timer with.
+            // If this is a scheduled automatic refresh, store the time to be used for rescheduling automatic refresh
             if (isFromAutoRefresh) {
                 PrefUtils.putLong(PrefUtils.LAST_SCHEDULED_REFRESH, SystemClock.elapsedRealtime());
             }
@@ -249,7 +249,7 @@ public class FetcherService extends IntentService {
             String feedId = intent.getStringExtra(Constants.FEED_ID);
 
             // Start refreshing the feed or the feeds. This can be called by the user
-            // or by the auto refresh timer in RefreshService.java
+            // or by the auto refresh timer in AlarmManagerRefreshService.java
             // The number of newly retrieved articles is stored in newCount
             int newCount = ((feedId == null) ?
                     refreshFeeds(keepDateBorderTime, isFromAutoRefresh) : // There is no feedId, so refresh all feeds
@@ -269,8 +269,23 @@ public class FetcherService extends IntentService {
             downloadAllImages();    // Get the images we don not have already.
 
             PrefUtils.putBoolean(PrefUtils.IS_REFRESHING, false);
+
+            if (isFromAutoRefresh) {
+                finishRefreshJob(intent);
+            }
+
         }
     }
+
+
+    private void finishRefreshJob (Intent intent) {
+        // If this service was called from the JobScheduler, we need to call back to say we are finished here.
+        // So this is really only necessary if Fetcher Service was started from Job Scheduler
+        RefreshServiceController mRefreshServiceController = RefreshControllerFactory.getController();
+        mRefreshServiceController.finishRefreshJob(this,intent);
+    }
+
+
 
     /**
      * Retrieve the full article by following the link provided with the retrieved RSS-item.
@@ -489,7 +504,6 @@ public class FetcherService extends IntentService {
             }
             cursor.close();
         }
-
     }
 
 
@@ -865,11 +879,9 @@ public class FetcherService extends IntentService {
             // Bepaal de ID van de feed. Dat wordt ook de ID van de melding. Elke feed krijgt eigen melding.
             int mNotificationId = 1;
             try {
-
                 mNotificationId = Integer.parseInt(feedId);
-                // Log.e(TAG, "notification wordt gemaakt voor feed " + mNotificationId);
             } catch (NumberFormatException nfe) {
-                Log.e(TAG, "notification ID kon niet worden gemaakt.");
+                Log.e(TAG, "notification ID could not be created from feedId.");
             }
 
 

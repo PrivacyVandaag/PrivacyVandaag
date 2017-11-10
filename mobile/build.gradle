@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 25
-    buildToolsVersion "25.0.2"
+    buildToolsVersion "25.0.3"
 
     signingConfigs {
         release {
@@ -19,8 +19,8 @@ android {
         applicationId "nl.privacybarometer.privacyvandaag"
         minSdkVersion 14
         targetSdkVersion 25
-        versionCode 128
-        versionName "2.3.0"
+        versionCode 148
+        versionName "2.4.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -32,13 +32,14 @@ android {
     }
     productFlavors {
         // This is the build variant for distibution outside Google Play store
-        // The only difference is that is has an built-in update function in the AboutActivity class.
+        // The main difference is that is has an built-in update function in the AboutActivity class.
         floss {
             applicationId 'nl.privacybarometer.privacyvandaag'
             buildConfigField "String", "PRODUCT_FLAVOR", "\"floss\""
         }
         // This is the build variant for the distibution through Google Play Store
         // Since apps are updated through Google App, this variant has no update function in AboutActivity class
+        // Instead, we add 'play-services' in the dependencies.
         gplay {
             applicationId 'nl.privacybarometer.privacyvandaag.gplay'
             buildConfigField "String", "PRODUCT_FLAVOR", "\"gplay\""
@@ -51,22 +52,22 @@ dependencies {
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    compile 'com.android.support:appcompat-v7:25.3.0'
+    compile 'com.android.support:appcompat-v7:25.3.1'
     compile 'com.android.support.constraint:constraint-layout:1.0.1'
-    compile 'com.android.support:design:25.3.0'
+    compile 'com.android.support:design:25.3.1' // necessary for Floatin Action Button
 
-    compile 'com.google.android.gms:play-services-gcm:10.2.0'
-
-
+    gplayCompile 'com.google.android.gms:play-services-gcm:11.0.0'  // Only needed for gplay release
 
 
-    // compile 'com.melnykov:floatingactionbutton:+' // We gebruiken de FloatingActionButton niet
-    // compile 'org.jsoup:jsoup:+'     // De + wordt afgeraden.
-    // compile 'com.squareup.picasso:picasso:+'    // De + wordt afgeraden omdat je niet weet of er ineens een nieuwe update gepakt wordt.
 
-    // Zoek op de package naam en kijk wat de laatste versie is en gebruik die versie nummers.
-    compile 'org.jsoup:jsoup:1.10.2'     // is nodig om de DOM van de ingelezen webpagina te knippen en scheren
-    compile 'com.squareup.picasso:picasso:2.5.2'    // hiermee kan je afbeeldingen downloaden en bijsnijden
+
+    // compile 'com.melnykov:floatingactionbutton:+' // Not needed any longer. Floating Action Button is included in standard Android libs
+    // compile 'org.jsoup:jsoup:+'     // The use of + is discouraged because you don't know when an update is fetched.
+    // compile 'com.squareup.picasso:picasso:+'    // The use of + is discouraged.
+
+    // Search on package name, see what latest available version is and use those version numbers.
+    compile 'org.jsoup:jsoup:1.10.2'     // Necessary to make selections in the DOM of a webpage to cut out the main article and images.
+    compile 'com.squareup.picasso:picasso:2.5.2'    // Necessary to transform / cut images.
 
     testCompile 'junit:junit:4.12'
 }
