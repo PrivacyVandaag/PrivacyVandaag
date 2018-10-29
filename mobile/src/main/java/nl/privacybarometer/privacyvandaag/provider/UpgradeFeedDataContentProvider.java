@@ -65,8 +65,7 @@ public class UpgradeFeedDataContentProvider {
             String feedName;
             int iconResourceId = 0;
 
-
-            while (cursor.moveToNext()) {
+            while (cursor != null && cursor.moveToNext()) {
                 values.clear(); // reset values to be used again. This is more efficient than declaring each time a new ContentValues object.
                 feedId = Long.parseLong(cursor.getString(posFeedId));   // cursor results are always returned as String
                 iconFileName = cursor.getString(posIconName);   // read the filename of the icon
@@ -124,7 +123,7 @@ public class UpgradeFeedDataContentProvider {
         // First add the new feeds to the database
         addFeed(context, "https://www.privacybarometer.nl/app/privacy_vandaag_tweetselectie_to_rss.php", "Privacy in het nieuws", false, "logo_icon_privacy_in_het_nieuws");
         addFeed(context, "https://www.vrijbit.nl/index.php?option=com_k2&view=itemlist&format=feed", "Vrijbit", true, "logo_icon_vrijbit");
-        addFeed(context, "http://www.kdvp.nl/?format=feed&type=rss", "KDVP", true, "logo_icon_kdvp");
+        addFeed(context, "https://www.kdvp.nl/?format=feed&type=rss", "KDVP", true, "logo_icon_kdvp");
 
 
         // Next, update the feeds with new information and put them in right order.
@@ -143,7 +142,7 @@ public class UpgradeFeedDataContentProvider {
                 2:  "https://www.bof.nl/feed/", "Bits of Freedom", true, "logo_icon_bof");
                 3:  "https://www.privacyfirst.nl/index.php?option=com_k2&view=itemlist&format=feed", "Privacy First", true, "logo_icon_pf");
                 4:  "https://www.vrijbit.nl/index.php?option=com_k2&view=itemlist&format=feed", "Vrijbit",  true, "logo_icon_vrijbit");
-                5:  "http://www.kdvp.nl/?format=feed&type=rss", "KDVP",  true, "logo_icon_kdvp");
+                5:  "https://www.kdvp.nl/?format=feed&type=rss", "KDVP",  true, "logo_icon_kdvp");
                 6:  "https://autoriteitpersoonsgegevens.nl/nl/rss", "Autoriteit Persoonsgegevens",  false, "logo_icon_ap");
                 7: "https://www.privacybarometer.nl/app/feed/" + BuildConfig.PRODUCT_FLAVOR, SERVICE_CHANNEL_FEEDNAME,  false, "logo_icon_serviceberichten"); // 61 is het aantal dagen dat items bewaard moeten worden.
         */
@@ -174,7 +173,7 @@ public class UpgradeFeedDataContentProvider {
                         updateFeed(context, feedId,
                                 "https://www.privacybarometer.nl/feed/", "Privacy Barometer", true, "logo_icon_pb",1);
                     else if (feedName.toLowerCase().contains("freedom"))
-                        updateFeed(context, feedId, "https://www.bof.nl/feed/",
+                        updateFeed(context, feedId, "https://www.bitsoffreedom.nl/feed/",
                                 "Bits of Freedom", true, "logo_icon_bof",2);
                     else if (feedName.toLowerCase().contains("first"))
                         updateFeed(context, feedId, "https://www.privacyfirst.nl/index.php?option=com_k2&view=itemlist&format=feed",
@@ -183,7 +182,7 @@ public class UpgradeFeedDataContentProvider {
                         updateFeed(context, feedId, "https://www.vrijbit.nl/index.php?option=com_k2&view=itemlist&format=feed",
                                 "Vrijbit", true, "logo_icon_vrijbit",4);
                     else if (feedName.toLowerCase().contains("kdvp"))
-                        updateFeed(context, feedId, "http://www.kdvp.nl/?format=feed&type=rss",
+                        updateFeed(context, feedId, "https://www.kdvp.nl/?format=feed&type=rss",
                                 "KDVP", true, "logo_icon_kdvp", 5);
                     else if (feedName.toLowerCase().contains("persoonsgegevens"))
                         updateFeed(context, feedId, "https://autoriteitpersoonsgegevens.nl/nl/rss",
@@ -204,6 +203,60 @@ public class UpgradeFeedDataContentProvider {
             }
         }
     }
+
+
+
+
+
+    /**
+     * Update feed information in database from app build version < 149 to build version 151.
+     *
+     * @param context   necessary for getting access to database and resources.
+     */
+    public static void updateExistingFeedsFromVersion149To152(Context context) {
+
+        ContentResolver cr = context.getContentResolver();
+        Cursor cursor = null;
+        // perform query to lookup feed Id's and feed names in the database.
+        try {
+            cursor = cr.query(FeedData.FeedColumns.CONTENT_URI, // table to query
+                    new String[]{FeedData.FeedColumns._ID, FeedData.FeedColumns.NAME}, // return columns
+                    null, // selection
+                    null, // selection args
+                    null // order by
+            );
+            //  Log.e(TAG,DatabaseUtils.dumpCursorToString(cursor)); // Debugging: See what's in the cursor
+            int posFeedId = 0;  // position of feedId in the returned results in the cursor
+            int posFeedName = 1; // position of name of the feed in the returned results in the cursor
+            long feedId;
+            String feedName;
+            while (cursor != null && cursor.moveToNext()) {
+                feedId = Long.parseLong(cursor.getString(posFeedId));   // cursor results are always returned as String
+                feedName = cursor.getString(posFeedName);   // read the feed name to determine the belonging icon.
+                if (feedName != null) {
+                    if (feedName.toLowerCase().contains("freedom"))
+                        updateFeed(context, feedId, "https://www.bitsoffreedom.nl/feed/",
+                                "Bits of Freedom", true, "logo_icon_bof",2);
+                    else if (feedName.toLowerCase().contains("kdvp"))
+                        updateFeed(context, feedId, "https://www.kdvp.nl/?format=feed&type=rss",
+                                "KDVP", true, "logo_icon_kdvp", 5);
+                }
+            }
+
+        } catch (Exception e) {
+            Log.e(TAG, "Update of existing feeds not succeeded." + e);
+            // TODO: display message update not succeeded. Delete all data and start app again.
+        } finally {
+            if (cursor != null) {
+                cursor.close();
+            }
+        }
+    }
+
+
+
+
+
 
     /**
      *

@@ -300,10 +300,11 @@ public class FeedData {
          */
         FeedDataContentProvider.addFeed(context, "https://www.privacybarometer.nl/app/privacy_vandaag_tweetselectie_to_rss.php", "Privacy in het nieuws", false, "logo_icon_privacy_in_het_nieuws");
         FeedDataContentProvider.addFeed(context, "https://www.privacybarometer.nl/feed/", "Privacy Barometer", true, "logo_icon_pb");
-        FeedDataContentProvider.addFeed(context, "https://www.bof.nl/feed/", "Bits of Freedom", true, "logo_icon_bof");
+        // CHANGED FROM : FeedDataContentProvider.addFeed(context, "https://www.bof.nl/feed/", "Bits of Freedom", true, "logo_icon_bof");
+        FeedDataContentProvider.addFeed(context, "https://www.bitsoffreedom.nl/feed/", "Bits of Freedom", true, "logo_icon_bof");
         FeedDataContentProvider.addFeed(context, "https://www.privacyfirst.nl/index.php?option=com_k2&view=itemlist&format=feed", "Privacy First", true, "logo_icon_pf");
         FeedDataContentProvider.addFeed(context, "https://www.vrijbit.nl/index.php?option=com_k2&view=itemlist&format=feed", "Vrijbit",  true, "logo_icon_vrijbit");
-        FeedDataContentProvider.addFeed(context, "http://www.kdvp.nl/?format=feed&type=rss", "KDVP",  true, "logo_icon_kdvp");
+        FeedDataContentProvider.addFeed(context, "https://www.kdvp.nl/?format=feed&type=rss", "KDVP",  true, "logo_icon_kdvp");
         FeedDataContentProvider.addFeed(context, "https://autoriteitpersoonsgegevens.nl/nl/rss", "Autoriteit Persoonsgegevens",  false, "logo_icon_ap");
         // channel for service messages
         FeedDataContentProvider.addFeed(context, "https://www.privacybarometer.nl/app/feed/" + BuildConfig.PRODUCT_FLAVOR, SERVICE_CHANNEL_FEEDNAME,  false, "logo_icon_serviceberichten"); // 61 is het aantal dagen dat items bewaard moeten worden.

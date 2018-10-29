@@ -26,8 +26,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.SystemClock;
-import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import nl.privacybarometer.privacyvandaag.Constants;
 import nl.privacybarometer.privacyvandaag.utils.PrefUtils;
 
@@ -46,7 +47,8 @@ public class JobSchedulerRefreshService extends JobService {
             // Unlikely, but race condition can occur with onStopJob, so try / catch block is necessary.
             try {
                 LocalBroadcastManager.getInstance(context).unregisterReceiver(this); //Unregister receiver to avoid receiver leaks exception
-            } catch (IllegalArgumentException ignore) {
+            } catch (IllegalArgumentException e) {
+                Log.e(TAG,"Illegal state on unregistering receiver " + e);
             }
             JobParameters jobParams = intent.getParcelableExtra(BNDL_PARAMS);
             boolean needsReschedule = intent.getBooleanExtra(NEEDS_RESCHEDULE, false);
@@ -62,6 +64,7 @@ public class JobSchedulerRefreshService extends JobService {
     }
 
 
+    // This method is called each time the job is executed from the JobScheduler
     public boolean onStartJob(JobParameters params) {
         // Check if we really should refresh. JobScheduler can be a little trigger happy
         // and can fire multiple times in short succession, even if refresh interval has not yet passed.
@@ -69,6 +72,7 @@ public class JobSchedulerRefreshService extends JobService {
         // We set a back off policy to retry after 10 minutes if initial refresh failed.
         // So there definitely cannot be a new refresh service started within, let's say 5 minutes of the previous one.
         int refreshLockPeriod = 300000; // 5 minutes = 5 * 60 * 1000 milliseconds = 300.000
+
         long lastRefreshTime = PrefUtils.getLong(PrefUtils.LAST_SCHEDULED_REFRESH, 0);  // last refresh time set by FetcherService
         long elapsedRealTime = SystemClock.elapsedRealtime();
 
@@ -85,12 +89,15 @@ public class JobSchedulerRefreshService extends JobService {
             // Use LocalBroadcastManager to catch the intents only from this app
             LocalBroadcastManager.getInstance(this).registerReceiver(downloadFinishedReceiver, filter);
 
-            Intent intent = new Intent(this, FetcherService.class);
+            final Intent intent = new Intent(this, FetcherService.class);
             intent.putExtra(BNDL_PARAMS, params)
                     .setAction(FetcherService.ACTION_REFRESH_FEEDS)
                     .putExtra(Constants.FROM_AUTO_REFRESH, true);
 
-            startService(intent);
+
+
+            // Start the background intent service to poll sites for new articles.
+            FetcherJobIntentService.enqueueWork(this,intent);
 
             // If true, the job stays active. We have to close it later ourselves
             // by calling jobFinished(params, needsRescheduled);

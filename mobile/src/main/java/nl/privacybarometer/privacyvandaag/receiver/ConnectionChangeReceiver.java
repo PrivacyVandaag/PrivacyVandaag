@@ -29,6 +29,7 @@ import android.net.ConnectivityManager;
 import nl.privacybarometer.privacyvandaag.servicecontroller.RefreshControllerFactory;
 import nl.privacybarometer.privacyvandaag.servicecontroller.RefreshServiceController;
 
+
 import static nl.privacybarometer.privacyvandaag.servicecontroller.RefreshControllerFactory.JOB_SCHEDULER_READY;
 
 
@@ -46,29 +47,37 @@ import static nl.privacybarometer.privacyvandaag.servicecontroller.RefreshContro
  *
  */
 public class ConnectionChangeReceiver extends BroadcastReceiver {
+    private static final String TAG = ConnectionChangeReceiver.class.getSimpleName() + " ~> ";
     public static final String CONNECTION_CHANGED = "connectionChanged";
+    public static final String CONNECTION_CHANGED1 = ConnectivityManager.CONNECTIVITY_ACTION;
     private boolean mConnection = false;
 
 
     @Override
     public void onReceive(Context context, Intent intent) {
 
-        if (!JOB_SCHEDULER_READY) {  // If we have JobScheduler, we already set a parameter for connection changed in the Job.
+        // Check whether the received broadcast is indeed the Connection Changed broadcast
+        String intentAction = intent.getAction();
+        if (intentAction != null && intentAction.equals(ConnectivityManager.CONNECTIVITY_ACTION)) {
 
-            // The if-then construction is created to only trigger on CHANGE of the connectivity state.
-            // Connection changed. The device went off line.
-            if (mConnection && intent.getBooleanExtra(ConnectivityManager.EXTRA_NO_CONNECTIVITY, false)) {
-                mConnection = false;
-            }
-            // Connection changed and it is up.
-            else if (!mConnection && !intent.getBooleanExtra(ConnectivityManager.EXTRA_NO_CONNECTIVITY, false)) {
-                mConnection = true;
-                // Get a RefreshServiceController to check whether a RefreshService should be started.
-                RefreshServiceController mRefreshServiceController = RefreshControllerFactory.getController();
-                mRefreshServiceController.setRefreshJob(context, false, CONNECTION_CHANGED);
+            // If we have JobScheduler, we already set a parameter for connection changed in the Job.
+            if (!JOB_SCHEDULER_READY) {
+
+                // The if-then construction is created to only trigger on CHANGE of the connectivity state.
+                // Connection changed. The device went off line.
+                if (mConnection && intent.getBooleanExtra(ConnectivityManager.EXTRA_NO_CONNECTIVITY, false)) {
+                    mConnection = false;
+                }
+
+                // Connection changed and it is up.
+                else if (!mConnection && !intent.getBooleanExtra(ConnectivityManager.EXTRA_NO_CONNECTIVITY, false)) {
+                    mConnection = true;
+                    // Get a RefreshServiceController to check whether a RefreshService should be started.
+                    RefreshServiceController mRefreshServiceController = RefreshControllerFactory.getController();
+                    mRefreshServiceController.setRefreshJob(context, false, CONNECTION_CHANGED);
+                }
             }
         }
-
     }
 
 }

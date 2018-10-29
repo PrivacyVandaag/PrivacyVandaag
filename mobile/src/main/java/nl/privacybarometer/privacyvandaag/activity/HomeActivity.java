@@ -35,22 +35,22 @@ import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 
-import android.support.design.widget.CoordinatorLayout;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentStatePagerAdapter;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.view.GravityCompat;
-import android.support.v4.view.ViewPager;
-import android.support.v4.widget.DrawerLayout;
-import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
+import androidx.annotation.NonNull;
+import androidx.coordinatorlayout.widget.CoordinatorLayout;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentStatePagerAdapter;
+import androidx.core.content.ContextCompat;
+import androidx.core.view.GravityCompat;
+import androidx.viewpager.widget.ViewPager;
+import androidx.drawerlayout.widget.DrawerLayout;
+import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
-import android.support.design.widget.FloatingActionButton;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import android.util.Log;
 import android.view.ContextMenu;
@@ -83,7 +83,7 @@ import nl.privacybarometer.privacyvandaag.utils.PrefUtils;
 import nl.privacybarometer.privacyvandaag.utils.UpgradeActions;
 import nl.privacybarometer.privacyvandaag.utils.UiUtils;
 
-import static nl.privacybarometer.privacyvandaag.service.FetcherService.NOTIFICATION_FEED_ID;
+import static nl.privacybarometer.privacyvandaag.utils.NotificationUtils.NOTIFICATION_FEED_ID;
 
 
 /**
@@ -147,7 +147,7 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
                 @Override
                 public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
                     if (PrefUtils.POSITION_FLOATING_MENU_BUTTON.equals(key)) {
-                        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+                        FloatingActionButton fab = findViewById(R.id.fab);
                         CoordinatorLayout.LayoutParams paramsFab = (CoordinatorLayout.LayoutParams) fab.getLayoutParams();
                         if (PrefUtils.getBoolean(PrefUtils.POSITION_FLOATING_MENU_BUTTON, false)) {
                             paramsFab.gravity = Gravity.BOTTOM | Gravity.START;
@@ -216,7 +216,7 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
 
         //*** ViewPager *** ViewPager *** ViewPager *** ViewPager ***
         // Get the view ID for the ViewPager
-        mPager = (ViewPager) findViewById(R.id.pager_container_home);
+        mPager = findViewById(R.id.pager_container_home);
 
         // Create the listener for page swipes in the ViewPager.
         mPager.addOnPageChangeListener(new ViewPager.SimpleOnPageChangeListener() {
@@ -237,15 +237,16 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
 
         //*** Settings for the toolbar.
         mTitle = getTitle();
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        }
 
 
         //*** Left drawer *** Left drawer *** Left drawer *** Left drawer ***
         mLeftDrawer = findViewById(R.id.left_drawer);
-        mDrawerList = (ListView) findViewById(R.id.drawer_list);
+        mDrawerList = findViewById(R.id.drawer_list);
         mDrawerList.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
         mDrawerList.setOnItemClickListener(new ListView.OnItemClickListener() {
             @Override
@@ -273,7 +274,7 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
         // Register a context menu to the menu items in the Left Drawer.
         registerForContextMenu(mDrawerList);
 
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawerLayout = findViewById(R.id.drawer_layout);
         if (mDrawerLayout != null) {
             mDrawerLayout.setDrawerShadow(R.drawable.drawer_shadow, GravityCompat.START);
 
@@ -298,7 +299,7 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
         if (newWidth > maxWidth) newWidth = maxWidth; // max width for use in landscape orientation.
         boolean layoutWidescreen = !findViewById(R.id.activity_home).getTag().toString().equals("normal");
         if ( ! layoutWidescreen) {  // In normal mode (smartphone), the menu is in a drawerlayout and can be opened and closed
-            DrawerLayout.LayoutParams params = (android.support.v4.widget.DrawerLayout.LayoutParams) mLeftDrawer.getLayoutParams();
+            DrawerLayout.LayoutParams params = (DrawerLayout.LayoutParams) mLeftDrawer.getLayoutParams();
             params.width = newWidth;
             mLeftDrawer.setLayoutParams(params);
         }
@@ -336,7 +337,7 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
 
         ///*** Floating button *** Floating button ***
         // Fixed floating button rechtsonder om het menu te openen of te sluiten.
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        FloatingActionButton fab = findViewById(R.id.fab);
         CoordinatorLayout.LayoutParams paramsFab = (CoordinatorLayout.LayoutParams) fab.getLayoutParams();
         // Check the preferences if button should be to the left or to the right.
         if (PrefUtils.getBoolean(PrefUtils.POSITION_FLOATING_MENU_BUTTON, false)) {
@@ -456,7 +457,7 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
     private void getFeedIdInExtras (Bundle extras) {
         feedIdOnNewIntent = -1;
         if(extras != null) {
-            if (extras.containsKey(NOTIFICATION_FEED_ID)) {
+            if (extras.containsKey(NOTIFICATION_FEED_ID)) { // This is set with the PendingIntent in NotificationUtils.class
                 // extract the extra data in the notification
                 String feedIdString = extras.getString(NOTIFICATION_FEED_ID);
                 if (feedIdString != null) {
@@ -782,7 +783,9 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
 
         public void run() {
             NotificationManager mNotifyMgr = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-            mNotifyMgr.cancel(mNotificationId);
+            if (mNotifyMgr != null) {
+                mNotifyMgr.cancel(mNotificationId);
+            }
         }
     }
 
@@ -872,9 +875,10 @@ public class HomeActivity extends AppCompatActivity implements LoaderManager.Loa
          * ( when a user decides to follow or unfollow a specific feed).
          */
         @Override
-        public int getItemPosition(Object object) {
-            // The object is a EntriesListFragment, but we do nothing with it.
-            EntriesListFragment f = (EntriesListFragment) object;
+        public int getItemPosition(@NonNull Object object) {
+            // The object is a EntriesListFragment, but we do nothing with it, so commented out.
+            // EntriesListFragment f = (EntriesListFragment) object;
+
             // Log.e (TAG, "fragmentNumber = " + f.mEntriesListFragmentNumber + " with feedId = " + f.mFeedId + " has been removed and will be renewed if necessary.");
             return POSITION_NONE;
         }

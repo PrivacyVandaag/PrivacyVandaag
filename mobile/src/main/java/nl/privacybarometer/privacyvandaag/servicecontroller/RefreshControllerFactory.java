@@ -44,7 +44,7 @@ import android.os.Build;
  */
 
 public class RefreshControllerFactory {
-    public static final boolean JOB_SCHEDULER_READY = (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) ? true : false;
+    public static final boolean JOB_SCHEDULER_READY = (android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP);
 
     public static RefreshServiceController getController() {
         if (JOB_SCHEDULER_READY)

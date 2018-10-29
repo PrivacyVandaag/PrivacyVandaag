@@ -1,8 +1,8 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion "25.0.3"
+    compileSdkVersion 28
+    buildToolsVersion "28.0.2"
 
     signingConfigs {
         release {
@@ -18,10 +18,10 @@ android {
     defaultConfig {
         applicationId "nl.privacybarometer.privacyvandaag"
         minSdkVersion 14
-        targetSdkVersion 25
-        versionCode 148
-        versionName "2.4.0"
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        targetSdkVersion 28
+        versionCode 161
+        versionName "2.5.0"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
@@ -30,6 +30,7 @@ android {
             zipAlignEnabled true
         }
     }
+    flavorDimensions "version"
     productFlavors {
         // This is the build variant for distibution outside Google Play store
         // The main difference is that is has an built-in update function in the AboutActivity class.
@@ -37,7 +38,7 @@ android {
             applicationId 'nl.privacybarometer.privacyvandaag'
             buildConfigField "String", "PRODUCT_FLAVOR", "\"floss\""
         }
-        // This is the build variant for the distibution through Google Play Store
+        // This is the build variant for the distribution through Google Play Store
         // Since apps are updated through Google App, this variant has no update function in AboutActivity class
         // Instead, we add 'play-services' in the dependencies.
         gplay {
@@ -48,26 +49,33 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
-    androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestImplementation('androidx.test.espresso:espresso-core:3.1.0-beta01', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    compile 'com.android.support:appcompat-v7:25.3.1'
-    compile 'com.android.support.constraint:constraint-layout:1.0.1'
-    compile 'com.android.support:design:25.3.1' // necessary for Floatin Action Button
+    implementation 'androidx.core:core:1.0.0' /* Needed at least for notifications. Probably not necessary to call it here separately, but just to be sure. */
+    implementation 'androidx.media:media:1.0.0' /* somewhere there exists an old dependency, so we call this explicitly */
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0' /* somewhere there exists an old dependency, so we call this explicitly */
+    implementation 'androidx.appcompat:appcompat:1.0.0'
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.0-alpha2'
+    implementation 'com.google.android.material:material:1.0.0' // necessary for Floatin Action Button
 
-    gplayCompile 'com.google.android.gms:play-services-gcm:11.0.0'  // Only needed for gplay release
+    // Needed for the new Architecture Components by google.
+    def lifecycle_version = "2.0.0"
+    // ViewModel and LiveData
+    implementation "androidx.lifecycle:lifecycle-extensions:$lifecycle_version"
 
 
+    // Play Store and Play Services
+    gplayImplementation 'com.google.android.gms:play-services-gcm:16.0.0'  // Only needed for gplay release
 
 
-    // compile 'com.melnykov:floatingactionbutton:+' // Not needed any longer. Floating Action Button is included in standard Android libs
-    // compile 'org.jsoup:jsoup:+'     // The use of + is discouraged because you don't know when an update is fetched.
-    // compile 'com.squareup.picasso:picasso:+'    // The use of + is discouraged.
+    // For updating SSL security patches. Used in NetworkUtils.java
+    implementation 'com.google.android.gms:play-services-auth:16.0.1'
 
     // Search on package name, see what latest available version is and use those version numbers.
-    compile 'org.jsoup:jsoup:1.10.2'     // Necessary to make selections in the DOM of a webpage to cut out the main article and images.
-    compile 'com.squareup.picasso:picasso:2.5.2'    // Necessary to transform / cut images.
+    implementation 'org.jsoup:jsoup:1.10.2'     // Necessary to make selections in the DOM of a webpage to cut out the main article and images.
+    implementation 'com.squareup.picasso:picasso:2.5.2'    // Necessary to transform / cut images.
 
-    testCompile 'junit:junit:4.12'
+    androidTestImplementation 'junit:junit:4.12'
 }

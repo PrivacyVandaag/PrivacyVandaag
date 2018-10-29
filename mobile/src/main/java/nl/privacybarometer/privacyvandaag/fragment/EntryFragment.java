@@ -45,10 +45,11 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
-import android.support.v4.content.ContextCompat;
-import android.support.v4.view.PagerAdapter;
-import android.support.v4.view.ViewPager;
-import android.util.Log;
+import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
+import androidx.viewpager.widget.PagerAdapter;
+import androidx.viewpager.widget.ViewPager;
+
 import android.util.SparseArray;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -68,10 +69,7 @@ import nl.privacybarometer.privacyvandaag.provider.FeedData.EntryColumns;
 import nl.privacybarometer.privacyvandaag.provider.FeedData.FeedColumns;
 import nl.privacybarometer.privacyvandaag.service.FetcherService;
 import nl.privacybarometer.privacyvandaag.utils.PrefUtils;
-import nl.privacybarometer.privacyvandaag.utils.ResetUtils;
 import nl.privacybarometer.privacyvandaag.view.EntryView;
-
-import static android.R.attr.screenDensity;
 
 
 /**
@@ -94,7 +92,7 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
 
     private int mTitlePos = -1, mDatePos, mMobilizedHtmlPos, mAbstractPos, mLinkPos, mIsFavoritePos, mIsReadPos, mEnclosurePos, mAuthorPos, mFeedNamePos, mFeedUrlPos, mFeedIconPos;
     private int mIconIdPos;    //  Added to find reference to logo drawable resource
-    private int mGuidPos;    //  Added to find reference to logo drawable resource
+    //private int mGuidPos;    //  Added to find reference to logo drawable resource
 
     private int mCurrentPagerPos = -1;
     private Uri mBaseUri;
@@ -265,8 +263,10 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
 
                             // Update the cursor
                             Cursor updatedCursor = cr.query(uri, null, null, null, null);
-                            updatedCursor.moveToFirst();
-                            mEntryPagerAdapter.setUpdatedCursor(mCurrentPagerPos, updatedCursor);
+                            if (updatedCursor != null) {
+                                updatedCursor.moveToFirst();
+                                mEntryPagerAdapter.setUpdatedCursor(mCurrentPagerPos, updatedCursor);
+                            }
                         }
                     }.start();
                     break;
@@ -294,7 +294,9 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
                     String link = cursor.getString(mLinkPos);
                     ClipboardManager clipboard = (ClipboardManager) activity.getSystemService(Context.CLIPBOARD_SERVICE);
                     ClipData clip = ClipData.newPlainText("Copied Text", link);
-                    clipboard.setPrimaryClip(clip);
+                    if (clipboard != null) {
+                        clipboard.setPrimaryClip(clip);
+                    }
 
                     Toast.makeText(activity, R.string.copied_clipboard, Toast.LENGTH_SHORT).show();
                     break;
@@ -387,23 +389,25 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
             String feedTitle = entryCursor.isNull(mFeedNamePos) ? entryCursor.getString(mFeedUrlPos) : entryCursor.getString(mFeedNamePos);
             BaseActivity activity = (BaseActivity) getActivity();
             activity.setTitle(TITLE_SPACES + feedTitle);    // Add spaces to get some margin between icon and title.
+            androidx.appcompat.app.ActionBar supportActionBar = activity.getSupportActionBar();
+
 
             // Get icon from resource drawable instead of retrieved favicon blob in database
             int mIconResourceId = entryCursor.getInt(mIconIdPos);
             if (mIconResourceId > 0) {
                 Drawable mDrawable = ContextCompat.getDrawable(MainApplication.getContext(), mIconResourceId);
-                Bitmap bitmap = ((BitmapDrawable) mDrawable).getBitmap();
+                Bitmap bitmap = (mDrawable != null) ? ((BitmapDrawable) mDrawable).getBitmap() : null;
                 if (bitmap != null) {
                     BitmapDrawable mIcon;
                     // We have to scale the icon because of different screen resolutions on phones and tablets.
                     // Like in the HomeActivity, we scale from 32 standard pixels
                     int bitmapSize = (int) screenDensity * 32; // Scale toolbar logo's to right size. Convert 32 normal px to 32 density pixels.
                     mIcon = new BitmapDrawable(getResources(), Bitmap.createScaledBitmap(bitmap, bitmapSize, bitmapSize, true));
-                    activity.getSupportActionBar().setIcon(mIcon);
+                    if (supportActionBar!= null) supportActionBar.setIcon(mIcon);
                 }
             }
             else {
-                activity.getSupportActionBar().setIcon(null);
+                if (supportActionBar!= null) supportActionBar.setIcon(null);
             }
             /* Following code no longer needed
             byte[] iconBytes = entryCursor.getBlob(mFeedIconPos);
@@ -442,8 +446,10 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
 
                         // Update the cursor
                         Cursor updatedCursor = cr.query(uri, null, null, null, null);
-                        updatedCursor.moveToFirst();
-                        mEntryPagerAdapter.setUpdatedCursor(mCurrentPagerPos, updatedCursor);
+                        if (updatedCursor != null) {
+                            updatedCursor.moveToFirst();
+                            mEntryPagerAdapter.setUpdatedCursor(mCurrentPagerPos, updatedCursor);
+                        }
                     }
                 }).start();
             }
@@ -502,7 +508,7 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
             });
         } else if (!isRefreshing()) {
             ConnectivityManager connectivityManager = (ConnectivityManager) activity.getSystemService(Context.CONNECTIVITY_SERVICE);
-            final NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+            final NetworkInfo networkInfo = (connectivityManager != null) ? connectivityManager.getActiveNetworkInfo() : null;
 
             // since we have acquired the networkInfo, we use it for basic checks
             if (networkInfo != null && networkInfo.getState() == NetworkInfo.State.CONNECTED) {
@@ -555,7 +561,9 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
                             r.allowScanningByMediaScanner();
                             r.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
                             DownloadManager dm = (DownloadManager) MainApplication.getContext().getSystemService(Context.DOWNLOAD_SERVICE);
-                            dm.enqueue(r);
+                            if (dm != null) {
+                                dm.enqueue(r);
+                            }
                         } catch (Exception e) {
                             Toast.makeText(getActivity(), R.string.error, Toast.LENGTH_LONG).show();
                         }
@@ -621,9 +629,7 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
                 mFeedUrlPos = cursor.getColumnIndex(FeedColumns.URL);
                 mFeedIconPos = cursor.getColumnIndex(FeedColumns.ICON);
                 mIconIdPos = cursor.getColumnIndex(FeedColumns.ICON_DRAWABLE);
-
-
-                mGuidPos = cursor.getColumnIndex(EntryColumns.GUID);
+                // mGuidPos = cursor.getColumnIndex(EntryColumns.GUID);
             }
 
             int position = loader.getId();
@@ -687,7 +693,7 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
         }
 
         @Override
-        public Object instantiateItem(ViewGroup container, int position) {
+        public @NonNull Object instantiateItem(@NonNull ViewGroup container, int position) {
             EntryView view = new EntryView(getActivity());
             mEntryViews.put(position, view);
             container.addView(view);
@@ -697,14 +703,14 @@ public class EntryFragment extends SwipeRefreshFragment implements BaseActivity.
         }
 
         @Override
-        public void destroyItem(ViewGroup container, int position, Object object) {
+        public void destroyItem(@NonNull ViewGroup container, int position, @NonNull Object object) {
             getLoaderManager().destroyLoader(position);
             container.removeView((View) object);
             mEntryViews.delete(position);
         }
 
         @Override
-        public boolean isViewFromObject(View view, Object object) {
+        public boolean isViewFromObject(@NonNull View view,@NonNull Object object) {
             return view == object;
         }
 

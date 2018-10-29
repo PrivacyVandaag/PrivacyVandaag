@@ -23,8 +23,8 @@ package nl.privacybarometer.privacyvandaag.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.v7.widget.Toolbar;
-import android.util.Log;
+import androidx.appcompat.widget.Toolbar;
+
 import android.view.MenuItem;
 
 import nl.privacybarometer.privacyvandaag.R;

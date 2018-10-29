@@ -27,12 +27,11 @@ import android.content.res.TypedArray;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.support.v4.util.LongSparseArray;
-import android.util.Log;
+import androidx.collection.LongSparseArray;
+
 import android.util.TypedValue;
 import android.view.View;
 import android.widget.ListView;
-import android.widget.Toast;
 
 // import com.melnykov.fab.FloatingActionButton;
 

@@ -27,10 +27,11 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
-import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 import java.util.List;
 
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 import nl.privacybarometer.privacyvandaag.activity.HomeActivity;
 import nl.privacybarometer.privacyvandaag.service.AlarmManagerRefreshService;
 import nl.privacybarometer.privacyvandaag.service.JobSchedulerRefreshService;
@@ -43,17 +44,14 @@ import static nl.privacybarometer.privacyvandaag.service.JobSchedulerRefreshServ
 
 /**
  * This class can be called from the RefreshControllerFactory depending of the Android version.
- *
  * This is the controller for the JobScheduler and can be used on Android 5.0 and above.
  */
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)    // Support for this class only on Android 5.0 and above.
 class JobSchedulerController implements RefreshServiceController {
     private static final String TAG = JobSchedulerController.class.getSimpleName() + " ~> ";
+
     // random job ID. Since it should be unique and may collide with libraries using a JobScheduler.
-    // As far as we know right now, the app does not use libraries with jobscheduler
     private static final int REFRESH_JOB_ID = 4287978;
-
-
 
     public void setRefreshJob(Context context, boolean resetJob, String trigger) {
         boolean isJobAlreadySet = false;
@@ -71,6 +69,10 @@ class JobSchedulerController implements RefreshServiceController {
         }
 
         JobScheduler scheduler = (JobScheduler) context.getSystemService(JOB_SCHEDULER_SERVICE);
+        if (scheduler == null) {
+            Log.e (TAG, "No JobSchedulerService available");
+            return;
+        }
 
         // Automatic refresh is enabled, so let's start a JobScheduler to do this
         if (PrefUtils.getBoolean(PrefUtils.REFRESH_ENABLED, true)) {
@@ -107,13 +109,14 @@ class JobSchedulerController implements RefreshServiceController {
                         .setBackoffCriteria(initialBackoffMillis, BACKOFF_POLICY_EXPONENTIAL)
                         .build();
                 int result = scheduler.schedule(jobInfo);
-                // if (result == JobScheduler.RESULT_SUCCESS) { }
-
+                if (result == JobScheduler.RESULT_FAILURE) {
+                    Log.e(TAG, "Job NOT scheduled");
+                }
             }
         }
         // refresh is turned off so cancel all scheduled automatic refresh jobs.
         else {
-            scheduler.cancelAll();
+                scheduler.cancelAll();
         }
 
     }   //*** End Job Scheduler for Android 5 and above.

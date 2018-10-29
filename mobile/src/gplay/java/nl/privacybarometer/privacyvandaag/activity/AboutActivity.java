@@ -25,8 +25,8 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.method.LinkMovementMethod;
@@ -46,7 +46,7 @@ import nl.privacybarometer.privacyvandaag.utils.UiUtils;
  * Shows background information about the app.
  *
  * An AsyncTask is included to check for update of the app and to download and install it.
- * This is only included with ditribution outside google play store!
+ * This is only included with distribution outside google play store!
  *
  */
 public class AboutActivity extends AppCompatActivity {
@@ -58,7 +58,7 @@ public class AboutActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_about);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
@@ -78,7 +78,7 @@ public class AboutActivity extends AppCompatActivity {
             In Android, complex operations are simple and simple things are difficult to achieve.
             This is one of those difficult cases.
 
-            In order to make active links of webpages AND emailaddress, the following is needed.
+            In order to turn url's and emailaddress to active links, the following is needed.
             First the html - formatted string is retrieved from the resources.
             To linkify the included webpages / emailaddress, linkify.ALL is used.
             However, linkify removes all the previous HTML styles. So, we have to retrieve

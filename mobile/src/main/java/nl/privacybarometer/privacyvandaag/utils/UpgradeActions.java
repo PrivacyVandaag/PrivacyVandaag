@@ -36,8 +36,6 @@ public class UpgradeActions {
 
     /**
      * If some tasks need to be performed on upgrade of the app, they should be put here.
-     *
-     * @return
      */
     public static boolean startUpgradeActions(Context context, int oldVersionCode) {
 
@@ -52,20 +50,25 @@ public class UpgradeActions {
             UpgradeFeedDataContentProvider.updateExistingFeedsFromVersion100To137(context);
             // Since this is a major update, reset all settings and act like it is first open.
             PrefUtils.putBoolean(PrefUtils.FIRST_OPEN, true);
-        } else {
-            // Resource identifiers change if images are added to or delete from the resources of the app.
-            // Get the right resource identifiers for the logo's in case they changed
-            // This should always be done to make sure the right resource identifiers are used!!!
-            UpgradeFeedDataContentProvider.updateIconResourceIds(context);
+        } else if (oldVersionCode < 151) {  // KDVP feed changed to https
+
+            UpgradeFeedDataContentProvider.updateExistingFeedsFromVersion149To152(context);
+
         }
+
+        // Resource identifiers change if images are added to or delete from the resources of the app.
+        // Get the right resource identifiers for the logo's in case they changed
+        // This should always be done to make sure the right resource identifiers are used!!!
+        UpgradeFeedDataContentProvider.updateIconResourceIds(context);
+
+
+
         return true;
     }
 
     /**
      * In older versions, picasso did not scale down images. Cache can be several megabytes.
      * To free up storage space, we make sure old picasso files are removed on upgrade.
-     *
-     * @param context
      */
     private static void wipePicassoCache(Context context) {
         File cacheDirectory = context.getCacheDir();

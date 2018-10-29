@@ -31,6 +31,10 @@ import android.net.NetworkInfo;
 import android.net.Uri;
 import android.util.Log;
 
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
+import com.google.android.gms.security.ProviderInstaller;
+
 import nl.privacybarometer.privacyvandaag.Constants;
 import nl.privacybarometer.privacyvandaag.MainApplication;
 import nl.privacybarometer.privacyvandaag.provider.FeedData;
@@ -48,9 +52,15 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.ProxySelector;
 import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
 
 public class NetworkUtils {
     private static final String TAG = NetworkUtils.class.getSimpleName() + " ~> ";
@@ -307,25 +317,7 @@ public class NetworkUtils {
                 }
             }
         }
-        // Delete also older picasso files from cache
-        // no need to exclude favorites, cause images will be recreated if necessary.
-        /* NOT NECESSARY
-        if (PICASSO_FOLDER_FILE.exists()) {
 
-            final String journal = "journal";
-            // Get the list of files (images) and loop through them.
-            File[] files = PICASSO_FOLDER_FILE.listFiles();
-            if (files != null) {
-                for (File file : files) {
-                    // If the file (image) is older than the keep datetime.
-                    // Exclude the file "journal" as deleting this would invalidate whole cache.
-                    if ( ( ! file.getName().contains(journal)) && (file.lastModified() < keepDateBorderTime)) {
-                        file.delete();
-                    }
-                }
-            }
-        }
-        */
     }
 
 
@@ -375,43 +367,21 @@ public class NetworkUtils {
     }
 
     /**
-     * Get the Favicon from the website where the feed originates.
-     * @param context
-     * @param url   url of the website where the feed originates
-     * @param id    ID of the feed in the database
+     * Before feeds are refreshed, check if SSL should be patched.
+     * This check is done with Google patch service provided in the ProviderInstaller class
      *
-     * This method is no longer needed, because the icons of the feeds are included in the package.
+     * We need this dependency: implementation 'com.google.android.gms:play-services-auth:16.0.1'
+     *
+     * @param context
      */
-    public static void retrieveFavicon(Context context, URL url, String id) {
-        boolean success = false;
-        HttpURLConnection iconURLConnection = null;
+    public static void updateConnectionSecurity (Context context) {
+        //Log.e(TAG,"try SSL security patches sync");
         try {
-            iconURLConnection = setupConnection(new URL(url.getProtocol() + PROTOCOL_SEPARATOR + url.getHost() + FILE_FAVICON));
-
-            byte[] iconBytes = getBytes(iconURLConnection.getInputStream());
-            if (iconBytes != null && iconBytes.length > 0) {
-                Bitmap bitmap = BitmapFactory.decodeByteArray(iconBytes, 0, iconBytes.length);
-                if (bitmap != null) {
-                    if (bitmap.getWidth() != 0 && bitmap.getHeight() != 0) {
-                        ContentValues values = new ContentValues();
-                        values.put(FeedData.FeedColumns.ICON, iconBytes);
-                        context.getContentResolver().update(FeedData.FeedColumns.CONTENT_URI(id), values, null, null);
-                        success = true;
-                    }
-                    bitmap.recycle();
-                }
-            }
-        } catch (Throwable ignored) {
-        } finally {
-            if (iconURLConnection != null) {
-                iconURLConnection.disconnect();
-            }
-        }
-         if (!success) {
-            // no icon found or error
-            ContentValues values = new ContentValues();
-            values.putNull(FeedData.FeedColumns.ICON);
-            context.getContentResolver().update(FeedData.FeedColumns.CONTENT_URI(id), values, null, null);
+            ProviderInstaller.installIfNeeded(MainApplication.getContext());
+        } catch (GooglePlayServicesRepairableException e) {
+            Log.e(TAG,"error 1 syncing SSL security patches");
+        } catch (GooglePlayServicesNotAvailableException e) {
+            Log.e(TAG,"error 2 syncing SSL security patches");
         }
     }
 
@@ -455,18 +425,20 @@ public class NetworkUtils {
                 }
             } catch (Throwable ignored) {}
         }
-        HttpURLConnection connection = null;
+
+
+        HttpsURLConnection connection = null;
         CookieManager cookieManager = new CookieManager();
         CookieHandler.setDefault(cookieManager);
         int status = 0;
         boolean first = true;
-        while(first || status == HttpURLConnection.HTTP_MOVED_TEMP || status == HttpURLConnection.HTTP_MOVED_PERM || status == HttpURLConnection.HTTP_SEE_OTHER) {
+        while(first || status == HttpsURLConnection.HTTP_MOVED_TEMP || status == HttpsURLConnection.HTTP_MOVED_PERM || status == HttpsURLConnection.HTTP_SEE_OTHER) {
             if(!first) {
                 url = new URL(connection.getHeaderField("Location"));
             } else {
                 first = false;
             }
-            connection = proxy == null ? (HttpURLConnection) url.openConnection() : (HttpURLConnection) url.openConnection(proxy);
+            connection = proxy == null ? (HttpsURLConnection) url.openConnection() : (HttpsURLConnection) url.openConnection(proxy);
             connection.setRequestProperty("Cookie", cookie);
             connection.setDoInput(true);
             connection.setDoOutput(false);

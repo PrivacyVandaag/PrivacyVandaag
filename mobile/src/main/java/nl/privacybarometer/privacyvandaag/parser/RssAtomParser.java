@@ -47,6 +47,7 @@ package nl.privacybarometer.privacyvandaag.parser;
 import android.content.ContentProviderOperation;
 import android.content.ContentProviderResult;
 import android.content.ContentResolver;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
@@ -62,6 +63,7 @@ import nl.privacybarometer.privacyvandaag.provider.FeedData.FeedColumns;
 import nl.privacybarometer.privacyvandaag.service.FetcherService;
 import nl.privacybarometer.privacyvandaag.utils.HtmlUtils;
 import nl.privacybarometer.privacyvandaag.utils.NetworkUtils;
+import nl.privacybarometer.privacyvandaag.utils.NotificationUtils;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -232,6 +234,8 @@ public class RssAtomParser extends DefaultHandler {
     private StringBuilder mGuid;
     private StringBuilder mItemAuthor, mTmpAuthor;
 
+    private final ArrayList<NotificationUtils.NotificationData> mNotificationList = new ArrayList<>();
+
     private boolean futureDatesAreAllowed = true;   // Allow articles with time and date in the future. Usefull for announcement of events.
 
     /**
@@ -296,6 +300,7 @@ public class RssAtomParser extends DefaultHandler {
         } else {
             mKeepDateBorder = new Date(keepDateBorderTime);
         }
+
         // Log.e(TAG, "Keep Border Time = " + mKeepDateBorder);
         // *** We got a date set now beyond we retrieve no articles.
 
@@ -632,9 +637,10 @@ public class RssAtomParser extends DefaultHandler {
             // start cleaning it up and store it in the database
 
             // Please note that if one item is found that does not meet the following criteria
-            // the process is cancelled. All the items that follow are discarded,
-            // basically because they are already retrieved in the previous refresh of the feed
-            // or they are too old.
+            // the process is cancelled. The parser assumes that the feed being read is sorted by datetime DESC.
+            // All the items that follow are discarded, because they are considered to be older and
+            // therefore are already retrieved in the previous refresh of the feed or they are too old.
+            //
             //  Orig: if (mTitle != null && (mItemPubDate == null || (mItemPubDate.after(mRealLastUpdateDate) && mItemPubDate.after(mKeepDateBorder)))) {
 
             // Check if we have a title and datetime. If not, go to next item.
@@ -756,12 +762,22 @@ public class RssAtomParser extends DefaultHandler {
                         isUpdated = (cr.update(mFeedEntriesUri, values, existenceStringBuilder.toString(), existenceValues) > 0 );
                         // Log.e(TAG, "Item " + mItemTitle + " is updated.");
                     }
-                    // Insert it only if necessary
+                    // Insert it only if it is a brand new item
                     if ( ! isUpdated ) {
                         values.put(EntryColumns.DATE, mItemPubDate.getTime());
                         values.put(EntryColumns.LINK, mItemLink);
                         mInsertedEntriesImages.add(imagesUrls);
                         mInserts.add(ContentProviderOperation.newInsert(mFeedEntriesUri).withValues(values).build());
+                        // Add the title and main image of the item to the list for notifications.
+                       mNotificationList.add(new NotificationUtils.NotificationData(0,mItemTitle,mFeedName,mainImageUrl,0));
+
+                        // TODO:
+
+
+
+
+
+                        // TODO:
                         mNewCount++;
                         // Log.e(TAG, "Item " + mItemTitle + " is inserted.");
                     }
@@ -797,6 +813,11 @@ public class RssAtomParser extends DefaultHandler {
 
     public int getNewCount() {
         return mNewCount;
+    }
+
+    // get the list of new notifications to be made
+    public ArrayList<NotificationUtils.NotificationData> getNotificationList() {
+        return mNotificationList;
     }
 
     public boolean isDone() {
@@ -1000,6 +1021,21 @@ public class RssAtomParser extends DefaultHandler {
             if (!mInserts.isEmpty()) {
                 ContentProviderResult[] results = cr.applyBatch(FeedData.AUTHORITY, mInserts);
 
+                // Check: https://stackoverflow.com/questions/23521963/android-get-contact-id-after-insert
+                // Each notification needs an unique ID. We take the record ID from the database for this
+                for (int j = 0; j < results.length; j++) {
+
+                    //int insertId = Integer.parseInt(results[j].uri.getLastPathSegment());
+                    mNotificationList.get(j).itemId = (int) ContentUris.parseId(results[j].uri);
+                    //int insertId2 = (int) ContentUris.parseId(results[j].uri);
+
+                    //Log.e(TAG,"this is probably the same ID " + insertId2);
+                    // TODO:
+
+
+                    // TODO:
+
+                }
                 if (mFetchImages) {
                     for (int i = 0; i < results.length; ++i) {
                         ArrayList<String> images = mInsertedEntriesImages.get(i);

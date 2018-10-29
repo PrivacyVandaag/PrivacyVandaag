@@ -18,19 +18,13 @@
 
 package nl.privacybarometer.privacyvandaag.utils;
 
-import android.app.Activity;
 import android.content.Context;
-import android.support.annotation.ColorRes;
+import androidx.annotation.ColorRes;
 import android.text.Html;
 import android.text.Spanned;
 import android.view.View;
 
 import java.util.Locale;
-
-import nl.privacybarometer.privacyvandaag.MainApplication;
-import nl.privacybarometer.privacyvandaag.activity.BaseActivity;
-
-import static android.R.attr.id;
 
 /**
  * This class replaces deprecated methods that can not be replaced by a single new method.
@@ -54,6 +48,10 @@ public class DeprecateUtils {
         return result;
     }
 
+
+    /**
+     * DEPRECATED UTILITY FOR LOCALE
+     */
     public static Locale locale (Context context) {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
             return context.getResources().getConfiguration().getLocales().get(0);

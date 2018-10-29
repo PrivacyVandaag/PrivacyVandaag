@@ -51,7 +51,7 @@
     <string name="already_latest_version">U heeft de meest recente versie.</string>
     <string name="download_failed">Download is niet gelukt. Controleer de verbinding en probeer opnieuw.</string>
     <string name="installing_update">Download is gereed. Installeren vanaf</string>
-    <string name="installation_failed">Installeren is helaas niet gelukt. Probeer opnieuw of installeer de update handmatig. Kijk op https://www.privacybarometer.nl/app voor meer informatie.</string>
+    <string name="installation_failed">De nieuwe versie is wel gedownload, maar het installeren is niet gelukt. Om dit op te lossen, kunt u de update handmatig installeren. Hiervoor gaat u naar de download-map van uw telefoon tikt u de gedownloade update aan. U herkent het bestand aan het logo en aan de letters .apk aan het eind. Kijk voor meer op https://wwww.privacybarometer.nl/app.</string>
 
     <!-- FEEDS -->
     <string name="feeds">Organisaties</string>

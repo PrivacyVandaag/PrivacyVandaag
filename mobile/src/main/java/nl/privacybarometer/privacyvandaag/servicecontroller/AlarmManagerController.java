@@ -21,7 +21,7 @@ package nl.privacybarometer.privacyvandaag.servicecontroller;
 import android.content.Context;
 import android.content.Intent;
 import android.os.SystemClock;
-import android.support.v4.content.LocalBroadcastManager;
+import androidx.localbroadcastmanager.content.LocalBroadcastManager;
 
 import nl.privacybarometer.privacyvandaag.Constants;
 import nl.privacybarometer.privacyvandaag.activity.HomeActivity;

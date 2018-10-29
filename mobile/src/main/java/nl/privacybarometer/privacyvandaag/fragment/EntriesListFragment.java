@@ -28,10 +28,10 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.Loader;
+import androidx.loader.app.LoaderManager;
+import androidx.loader.content.Loader;
 
-import android.support.v4.content.CursorLoader;
+import androidx.loader.content.CursorLoader;
 
 //import android.content.CursorLoader;
 
@@ -42,8 +42,8 @@ import android.net.Uri;
 import android.os.Bundle;
 
 
-import android.support.v7.widget.SearchView;
-import android.text.Html;
+import androidx.appcompat.widget.SearchView;
+
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;

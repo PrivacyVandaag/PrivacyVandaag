@@ -28,8 +28,9 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.Toolbar;
+import androidx.core.content.FileProvider;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.method.LinkMovementMethod;
@@ -52,6 +53,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 import nl.privacybarometer.privacyvandaag.BuildConfig;
+import nl.privacybarometer.privacyvandaag.MainApplication;
 import nl.privacybarometer.privacyvandaag.R;
 import nl.privacybarometer.privacyvandaag.utils.DeprecateUtils;
 import nl.privacybarometer.privacyvandaag.utils.PrefUtils;
@@ -63,7 +65,7 @@ import static nl.privacybarometer.privacyvandaag.utils.NetworkUtils.setupConnect
  * Shows background information about the app.
  *
  * An AsyncTask is included to check for update of the app and to download and install it.
- * This is only included with ditribution outside google play store!
+ * This is only included with distribution outside google play store!
  *
  */
 public class AboutActivity extends AppCompatActivity {
@@ -74,7 +76,7 @@ public class AboutActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_about);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
@@ -94,7 +96,7 @@ public class AboutActivity extends AppCompatActivity {
             In Android, complex operations are simple and simple things are difficult to achieve.
             This is one of those difficult cases.
 
-            In order to make active links of webpages AND emailaddress, the following is needed.
+            In order to turn url's and emailaddress into active links, the following is needed.
             First the html - formatted string is retrieved from the resources.
             To linkify the included webpages / emailaddress, linkify.ALL is used.
             However, linkify removes all the previous HTML styles. So, we have to retrieve
@@ -139,7 +141,7 @@ public class AboutActivity extends AppCompatActivity {
 
     // Called when the user touches the check_for_update button
     public void checkForUpdate(View view) {
-        TextView contentView = (TextView) findViewById(R.id.update_feedback);
+        TextView contentView = findViewById(R.id.update_feedback);
         contentView.setVisibility(View.VISIBLE);
         contentView.setText(getString(R.string.checking_for_update));
         int currentVersionCode = BuildConfig.VERSION_CODE;
@@ -232,7 +234,7 @@ public class AboutActivity extends AppCompatActivity {
         // After download, begin installation by opening the resulting file
         @Override
         protected void onPostExecute(String path) {
-            TextView contentView = (TextView) findViewById(R.id.update_feedback);
+            TextView contentView = findViewById(R.id.update_feedback);
             if (path.equals("")) {
                 contentView.setText(getString(R.string.download_failed));
             } else{
@@ -241,8 +243,11 @@ public class AboutActivity extends AppCompatActivity {
                 try {
                     Intent i = new Intent();
                     i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                     i.setAction(Intent.ACTION_VIEW);
-                    i.setDataAndType(Uri.fromFile(updatePackage), "application/vnd.android.package-archive");
+                    Uri uri = FileProvider.getUriForFile(MainApplication.getContext(),"nl.privacybarometer.privacyvandaag.provider.FileProvider",updatePackage);
+                    i.setDataAndType(uri, "application/vnd.android.package-archive");
+                    //i.setDataAndType(Uri.fromFile(updatePackage), "application/vnd.android.package-archive");
                     Log.i("PrivacyVandaag", "About to install new .apk");
                     getApplicationContext().startActivity(i);
                 } catch (Exception e) {

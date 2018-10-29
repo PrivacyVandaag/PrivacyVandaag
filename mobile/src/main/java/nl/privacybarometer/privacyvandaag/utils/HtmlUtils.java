@@ -183,11 +183,12 @@ public class HtmlUtils {
 
     // Some image types cannot be shown.
     private static boolean isCorrectImage(String imgUrl) {
-        if (( ! imgUrl.endsWith(".gif")) && ( ! imgUrl.endsWith(".GIF")) && ( ! imgUrl.endsWith(".img")) && ( ! imgUrl.endsWith(".IMG"))) {
-            return true;
-        }
+        return (( ! imgUrl.endsWith(".gif"))
+                    && ( ! imgUrl.endsWith(".GIF"))
+                    && ( ! imgUrl.endsWith(".img"))
+                    && ( ! imgUrl.endsWith(".IMG"))
+        );
 
-        return false;
     }
 
 

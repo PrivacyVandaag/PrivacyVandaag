@@ -84,49 +84,65 @@ public class ArticleTextExtractor {
      * article is most likely to be found. In most cases, the result is fine, but in some cases it
      * cuts out too much or too little.
      *
-     * @param doc
-     * @param contentIndicator
-     * @param link
-     * @return
      */
 
     private static String extractContent(Document doc, String contentIndicator, String link) {
         if (doc == null) throw new NullPointerException("missing document");
-        final String bitsOfFreedom =  "bof.nl";
+        final String bitsOfFreedom =  "bitsoffreedom.nl";
         final String privacyFirst =  "privacyfirst.nl";
         final String vrijbit =  "vrijbit.nl";
         final String privacyBarometer =  "privacybarometer.nl";
         final String kdvp =  "kdvp.nl";
 
-
-
         // ruim de webpagina alvast wat op door <style>...</style> en <script>...</script> te verwijderen
-        prepareDocument(doc);
+        //doc = prepareDocument(doc);
+        doc = removeScriptsAndStyles(doc);
 
-        // If we know the source of the article, we know exactly how to extract the article from the web page.
-        // To extract content from a web page, we use Jsoup's doc.select(). Selectors work just like within jQuery.
-        // With first() we retrieve the first element that matches the search criteria.
-        // Please note: if the element is not found, NULL is returned,
-        //              so we have check before we can get html() or attr()!!
-        // With html() we get the inner html-text, including the child tags, AS A STRING.
-
-
+        /**
+         * How the article text is extracted from the webpage code:
+         *
+         * If we know the source of the article, we know exactly how to extract the article from the
+         * web page. To extract content from a web page, we use Jsoup's doc.select(). Selectors work
+         * just like within jQuery. With first() we retrieve the first element that matches the
+         * search criteria.
+         *
+         * Please note: if the element is not found, NULL is returned,
+         *              so we have check before we can get html() or attr()!!
+         * With html() we get the inner html-text, including the child tags, AS A STRING.
+         *
+         */
+        //  Log.e (TAG, "starting Extracter");
 
         // Source of article is Bits of Freedom
         if (link.toLowerCase().contains(bitsOfFreedom)) {
-            // The article is in div class="blog-item"> <div class="post_contents"> ... </div></div>
-           // Old:  Element tmpElement = doc.select(".blog_item .post_contents").first();
+            /**
+             * Bits of Freedom uses the <article>-tag.
+             * They split articles in several parts:
+             * 1. title in <h1>
+             * 2. lead paragraph in <h3 class="post__intro"> (only one, but take the first to be sure).
+             * 3. follow-up paragraphs in <div class="post__content .post__message">
+             *
+             * To complicate things, BoF places its links through javascript, so they are unusable
+             * to us. Therefore, we remove these complications <span class="linked-item"> first.
+             *
+             * The main image is a background image in <div class="post__background">.
+             * Because the main image is very large, we look at the available "srcset" and take the
+             * second image from that set. At the moment, that is de smallest available image.
+             *
+             */
 
-            // First remove the links in margin of the text as they mess up the article text.
-            Elements linksSelected= doc.select("span.linked-item");
+            // First cut-out the article in the <article>-tags
+            Element articleRaw = doc.select("article").first();
+            // Remove the links in margin of the text as they mess up the article text.
+            Elements linksSelected= articleRaw.select("span.linked-item");
             for (Element item : linksSelected) {
                 item.remove();
             }
             // Get first part of the text seperately, as it is enclosed by <h3>. We change this to <b>
-            Element tmpElement1 = doc.select(".post__content h3").first();
+            Element tmpElement1 = articleRaw.select(".post__content h3").first();
             String article = (tmpElement1 != null) ? "<b>" + tmpElement1.html() + "</b>" : null;
             // The article can be split in several div's with the class .post__message. We have to get them all.
-            Elements tmpElements = doc.select(".post__content .post__message");
+            Elements tmpElements = articleRaw.select(".post__content .post__message");
             for (int i = 0; i < tmpElements.size(); i++) {
                 if (i != 0) {   // First element already selected in first selection above.
                     if (article == null) article = "";  // convert 'null article' to 'empty article' so we can add new parts.
@@ -136,12 +152,32 @@ public class ArticleTextExtractor {
             // The text has some empty paragraphs. We remove them here
             if (article != null) article = article.replace("<p>&nbsp;</p>", "");
 
+
+
             // Get the main image.
+            String articleMainImageName = null;
             tmpElement1 = doc.select(".post__background .wp-post-image").first();
-            String articleMainImageName = (tmpElement1 != null) ? tmpElement1.attr("src") : null; // Get imagename or make it null
+            // The images Bits of Freedom uses are very large, so take a small version from the 'srcset'.
+            String mainImageSrcSet = (tmpElement1 != null) ? tmpElement1.attr("srcset") : "";
+            // Split the srcset in individual images. Split at the comma and remove white-space.
+            String[] mainImagesArray = mainImageSrcSet.split("\\s*,\\s*");
+            // Take the second image in the array, because that is the smallest image
+            if (mainImagesArray[1] != null) {
+                articleMainImageName = mainImagesArray[1];
+                // Unfortunately, each image in the scrset contains a space and a 'name' at the end.
+                // We have to remove that to get a clean, downloadable image URL.
+                int pos = articleMainImageName.indexOf(" ",2);
+                articleMainImageName = articleMainImageName.substring(0,pos).trim();
+            }
+
+
+
             // Get the meta-data and copyright info belonging to the main info.
             tmpElement1 = doc.select(".post__content .post__credits").first();
             String articleMainImageMetaData = (tmpElement1 != null) ? tmpElement1.html() : null;
+
+
+
             // Combine the collected info.
             if (article != null) {
                 if (articleMainImageName != null) {
@@ -150,7 +186,7 @@ public class ArticleTextExtractor {
                 // Add copyright notice \u00A9 = ©
                 article += "<p> <br>\u00A9 Bits of Freedom <a href=\"https://creativecommons.org/licenses/by-nc-sa/4.0/legalcode.nl\">(CC BY-NC-SA 4.0)</a></p>";
                 if (articleMainImageMetaData != null) {
-                   // Log.e (TAG, "Metatdata: " + articleMainImageMetaData);
+                    // Log.e (TAG, "Metatdata: " + articleMainImageMetaData);
                     // Remove the prefix "Credits:" because we have  the text needs adjustment.
                     int offset = articleMainImageMetaData.indexOf("<br>");
                     // Log.e (TAG, "offset: " + offset);
@@ -165,7 +201,7 @@ public class ArticleTextExtractor {
             } else article = "";
 
             return article;
-        }
+        } // End article extraction Bits of Freedom
 
 
 

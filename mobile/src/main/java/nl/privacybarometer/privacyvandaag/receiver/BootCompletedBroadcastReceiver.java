@@ -48,10 +48,17 @@ public class  BootCompletedBroadcastReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
 
-        if ( ! JOB_SCHEDULER_READY ) {  // If we have JobScheduler, we already set a persistent job that survives rebooting the device.
-            // Get a RefreshServiceController and start the RefreshService.
-            RefreshServiceController mRefreshServiceController = RefreshControllerFactory.getController();
-            mRefreshServiceController.setRefreshJob(context, true, BOOT_COMPLETED);
+        // Check whether the received broadcast is indeed the Boot Completed broadcast
+        String intentAction = intent.getAction();
+        if (intentAction != null && intentAction.equals(Intent.ACTION_BOOT_COMPLETED)) {
+
+            // Check if we have a JobScheduler.
+            // We already set a persistent job that survives rebooting the device.
+            if (!JOB_SCHEDULER_READY) {
+                // Get a RefreshServiceController and start the RefreshService.
+                RefreshServiceController mRefreshServiceController = RefreshControllerFactory.getController();
+                mRefreshServiceController.setRefreshJob(context, true, BOOT_COMPLETED);
+            }
         }
     }
 

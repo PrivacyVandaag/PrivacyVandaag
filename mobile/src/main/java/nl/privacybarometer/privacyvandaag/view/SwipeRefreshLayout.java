@@ -20,7 +20,7 @@ import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
-import android.support.v4.view.ViewCompat;
+import androidx.core.view.ViewCompat;
 import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.view.MotionEvent;
@@ -32,9 +32,7 @@ import android.view.animation.Animation;
 import android.view.animation.Animation.AnimationListener;
 import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Transformation;
-import android.widget.AbsListView;
 
-import nl.privacybarometer.privacyvandaag.R;
 import nl.privacybarometer.privacyvandaag.utils.DeprecateUtils;
 
 
@@ -361,18 +359,7 @@ public class SwipeRefreshLayout extends ViewGroup {
      * scroll up. Override this if the child view is a custom view.
      */
     public boolean canChildScrollUp() {
-        if (android.os.Build.VERSION.SDK_INT < 14) {
-            if (mTarget instanceof AbsListView) {
-                final AbsListView absListView = (AbsListView) mTarget;
-                return absListView.getChildCount() > 0
-                        && (absListView.getFirstVisiblePosition() > 0 || absListView.getChildAt(0)
-                        .getTop() < absListView.getPaddingTop());
-            } else {
-                return mTarget.getScrollY() > 0;
-            }
-        } else {
-            return ViewCompat.canScrollVertically(mTarget, -1);
-        }
+            return mTarget.canScrollVertically( -1);
     }
 
     @Override
@@ -385,7 +372,7 @@ public class SwipeRefreshLayout extends ViewGroup {
         if (isEnabled() && !mReturningToStart && !canChildScrollUp()) {
             handled = onTouchEvent(ev);
         }
-        return !handled ? super.onInterceptTouchEvent(ev) : true;
+        return ( !handled ) ? super.onInterceptTouchEvent(ev) : true;
     }
 
     @Override

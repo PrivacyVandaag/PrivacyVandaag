@@ -45,7 +45,7 @@
 
 package nl.privacybarometer.privacyvandaag.service;
 
-import android.app.IntentService;
+
 import android.content.ContentProviderOperation;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -63,6 +63,7 @@ import android.util.Xml;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.JobIntentService;
 import nl.privacybarometer.privacyvandaag.Constants;
 import nl.privacybarometer.privacyvandaag.MainApplication;
 import nl.privacybarometer.privacyvandaag.R;
@@ -100,8 +101,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
-public class FetcherService extends IntentService {
-    private static final String TAG = FetcherService.class.getSimpleName() + " ~> ";
+public class FetcherJobIntentService extends JobIntentService {
+    private static final String TAG = FetcherJobIntentService.class.getSimpleName() + " ~> ";
     public static final String ACTION_REFRESH_FEEDS = "nl.privacyVandaag.app.REFRESH";
     public static final String ACTION_MOBILIZE_FEEDS = "nl.privacyVandaag.app.MOBILIZE_FEEDS";
     public static final String ACTION_DOWNLOAD_IMAGES = "nl.privacyVandaag.app.DOWNLOAD_IMAGES";
@@ -131,10 +132,19 @@ public class FetcherService extends IntentService {
     private NotificationUtils mNotification;
     private final Handler mHandler = new Handler();
 
-    public FetcherService() {
-        super(FetcherService.class.getSimpleName());
+    public FetcherJobIntentService() {
         HttpURLConnection.setFollowRedirects(true);
     }
+
+    static final int JOB_ID = 1000;
+
+    /**
+     * Convenience method for enqueuing work in to this service.
+     */
+    public static void enqueueWork(Context context, Intent work) {
+        enqueueWork(context, FetcherJobIntentService.class, JOB_ID, work);
+    }
+
 
     // Should the full article be retrieved ( = mobilised) or not?
     public static boolean hasMobilizationTask(long entryId) {
@@ -180,7 +190,7 @@ public class FetcherService extends IntentService {
     }
 
     /**
-     * This is called for every task that must be performed by the FetcherService.
+     * This is called for every task that must be performed by the JobSchedulerRefreshService.
      * This includes:
      * - refresh feeds to check on new articles
      * - retrieve full articles by using the links provided by the RSS feeds. This is called 'mobilization' of an item
@@ -191,13 +201,10 @@ public class FetcherService extends IntentService {
      *
      */
     @Override
-    public void onHandleIntent(Intent intent) {
-        if (intent == null) { // No intent, we quit
-            return;
-        }
+    public void onHandleWork(@NonNull Intent intent) {
         boolean isFromAutoRefresh = intent.getBooleanExtra(Constants.FROM_AUTO_REFRESH, false);
 
-        // Log.e(TAG,"FetcherService is starting.");
+        // Log.e(TAG,"Job IntentService is starting.");
 
         ConnectivityManager connectivityManager = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
         if (connectivityManager == null ) {
@@ -213,7 +220,7 @@ public class FetcherService extends IntentService {
                 mHandler.post(new Runnable() {
                     @Override
                     public void run() {
-                        Toast.makeText(FetcherService.this, R.string.network_error, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(FetcherJobIntentService.this, R.string.network_error, Toast.LENGTH_SHORT).show();
                     }
                 });
             }
@@ -231,7 +238,6 @@ public class FetcherService extends IntentService {
 
         // Check if there are security patches for SSL connections and install them
         NetworkUtils.updateConnectionSecurity(MainApplication.getContext());
-
 
         if (ACTION_MOBILIZE_FEEDS.equals(intent.getAction())) {
             mobilizeAllEntries();
@@ -271,7 +277,7 @@ public class FetcherService extends IntentService {
                 mHandler.post(new Runnable() {
                     @Override
                     public void run() {
-                        Toast.makeText(FetcherService.this, R.string.no_new_entries, Toast.LENGTH_SHORT).show();
+                        Toast.makeText(FetcherJobIntentService.this, R.string.no_new_entries, Toast.LENGTH_SHORT).show();
                     }
                 });
             }
@@ -318,7 +324,7 @@ public class FetcherService extends IntentService {
                 }
 
                 boolean success = false;
-                String link ="";
+                String link  ="";
 
                 Uri entryUri = EntryColumns.CONTENT_URI(entryId);
                 Cursor entryCursor = cr.query(entryUri, null, null, null, null);
@@ -520,6 +526,7 @@ public class FetcherService extends IntentService {
     /**
      * Method to refresh all feeds in order to check whether new articles are available.
      * Called from this same file on line 227 onHandleIntent();
+     *
      */
     private int refreshFeeds(final long keepDateBorderTime, final boolean isFromAutoRefresh) {
         ContentResolver cr = getContentResolver();
@@ -552,6 +559,7 @@ public class FetcherService extends IntentService {
          * PROBLEM: The app runs three (THREAD_NUMBER) threads simultaneously. But RSSAtomParser is not thread safe.
          *
          */
+
         CompletionService<Integer> completionService = new ExecutorCompletionService<>(executor);
         while (cursor.moveToNext()) {
             final String feedId = cursor.getString(0);
@@ -597,7 +605,6 @@ public class FetcherService extends IntentService {
 
     private int refreshFeed(String feedId, long keepDateBorderTime, boolean isFromAutoRefresh) {
         RssAtomParser handler = null;
-        String feedTitle = "";
         boolean buildNotification = false;
 
         ContentResolver cr = getContentResolver();
@@ -614,7 +621,7 @@ public class FetcherService extends IntentService {
             int retrieveFullscreenPosition = cursor.getColumnIndex(FeedColumns.RETRIEVE_FULLTEXT);
             int buildNotificationPosition = cursor.getColumnIndex(FeedColumns.NOTIFY);
 
-            /* if Fetchmode = 99, do not refresh this feed. */
+            /* ModPrivacyVandaag: if Fetchmode = 99, do not refresh this feed. */
             int fetchMode = cursor.getInt(fetchModePosition);
             if (fetchMode == FETCHMODE_DO_NOT_FETCH) {
                 cursor.close();
@@ -623,8 +630,6 @@ public class FetcherService extends IntentService {
 
             buildNotification = (cursor.getInt(buildNotificationPosition)>0);
 
-
-            feedTitle = cursor.getString(titlePosition);    // used for notifications
             String id = cursor.getString(idPosition);
             HttpURLConnection connection = null;
             try {

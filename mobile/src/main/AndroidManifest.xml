@@ -6,6 +6,7 @@
 
     <!-- Permissions -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <!-- By removing the backup facility, this permission is still needed (only) for update process
         As of api 19 (android 4.4 kitkat) apps get their own storage folder, so the general permission is no longer needed.
 	 This is only needed when distributing outside Gplay store -->
@@ -25,19 +26,46 @@
     <!-- Application -->
     <application
         android:name="nl.privacybarometer.privacyvandaag.MainApplication"
+
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/Theme.Light" >
+        <!-- Automatic background refresh settings -->
         <service android:name="nl.privacybarometer.privacyvandaag.service.AlarmManagerRefreshService"/>
         <service android:name="nl.privacybarometer.privacyvandaag.service.FetcherService"/>
+        <service
+            android:name="nl.privacybarometer.privacyvandaag.service.JobSchedulerRefreshService"
+            android:permission="android.permission.BIND_JOB_SERVICE" >
+        </service>
+        <service
+            android:name="nl.privacybarometer.privacyvandaag.service.FetcherJobIntentService"
+            android:permission="android.permission.BIND_JOB_SERVICE" >
+        </service>
+
 
         <!-- Database -->
         <provider
             android:name="nl.privacybarometer.privacyvandaag.provider.FeedDataContentProvider"
             android:authorities="nl.privacybarometer.privacyvandaag.provider.FeedData"
-            android:exported="true"
+            android:exported="false"
             android:writePermission="nl.privacybarometer.privacyvandaag.provider.WRITE_PERMISSION"/>
+
+        <!-- needed to access update package file .apk if app is installed outside Play Store.
+                see: https://stackoverflow.com/questions/38200282/android-os-fileuriexposedexception-file-storage-emulated-0-test-txt-exposed
+                and: https://inthecheesefactory.com/blog/how-to-share-access-to-file-with-fileprovider-on-android-nougat/en -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="nl.privacybarometer.privacyvandaag.provider.FileProvider"
+            android:exported="false"
+            android:grantUriPermissions="true"
+            android:writePermission="nl.privacybarometer.privacyvandaag.provider.WRITE_PERMISSION">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/provider_paths"/>
+        </provider>
+
+
 
         <!-- Activities -->
         <activity
@@ -78,11 +106,7 @@
             android:launchMode="singleTask"/>
 
 
-        <!-- Automatic background refresh settings -->
-            <service
-                android:name="nl.privacybarometer.privacyvandaag.service.JobSchedulerRefreshService"
-                android:permission="android.permission.BIND_JOB_SERVICE" >
-            </service>
+
             <!-- Needed for refresh settings. Used by AlarmManager as well as JobScheduler -->
             <receiver android:name="nl.privacybarometer.privacyvandaag.receiver.BootCompletedBroadcastReceiver">
                 <intent-filter>
